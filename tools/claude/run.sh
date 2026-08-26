@@ -17,7 +17,19 @@ function lets_usage() {
 	echo "Options:"
 	echo "  -p | --path PATH   - path to the directory to mount (default: .)"
 	echo "  -d | --docker      - mount host Docker socket into the container"
+	echo "       --device DEV  - pass a host device into the container, e.g."
+	echo "                       --device /dev/loop-control (repeatable)"
+	echo "       --cap-add CAP - add a Linux capability, e.g. --cap-add SYS_ADMIN"
+	echo "                       (repeatable)"
+	echo "       --privileged  - run the container privileged (all caps + host"
+	echo "                       devices); needed for loop mounting (losetup)"
+	echo "       --rslave      - mount the project dir with rslave propagation so"
+	echo "                       mounts made on the host appear in the container"
+	echo "                       (host source must be shared first: see below)"
 	echo "  -h | --help        - shows this help message"
+	echo ""
+	echo "Note: --rslave requires the host mount to be shared, once per boot:"
+	echo "  sudo mount --make-rshared /"
 	exit 1
 }
 
@@ -36,6 +48,8 @@ function main() {
 	local n=${#args[@]}
 	local path=$(pwd)
 	local docker_mount=0
+	local proj_mount_opts="rw"
+	local -a host_access_args=()
 	local -a LETS_CLAUDE_RUN_REMAINING_ARGS=()
 	local i=0
 
@@ -52,6 +66,33 @@ function main() {
 		# Mount the host Docker socket into the container
 		-d | --docker)
 			docker_mount=1
+			i=$((i + 1))
+			;;
+
+		# Pass a host device node through to the container (repeatable).
+		--device)
+			((i + 1 < n)) || lets_usage "missing value for --device"
+			host_access_args+=(--device "${args[i + 1]}")
+			i=$((i + 2))
+			;;
+
+		# Add a Linux capability to the container (repeatable).
+		--cap-add)
+			((i + 1 < n)) || lets_usage "missing value for --cap-add"
+			host_access_args+=(--cap-add "${args[i + 1]}")
+			i=$((i + 2))
+			;;
+
+		# Run the container privileged (all caps + host devices).
+		--privileged)
+			host_access_args+=(--privileged)
+			i=$((i + 1))
+			;;
+
+		# Bind the project dir with rslave propagation so host-side mounts
+		# under it become visible inside the container.
+		--rslave)
+			proj_mount_opts="rw,rslave"
 			i=$((i + 1))
 			;;
 
@@ -115,8 +156,9 @@ function main() {
 		-v $HOME/.claude:/home/ubuntu/.claude:rw \
 		-v $HOME/.claude.json:/home/ubuntu/.claude.json:rw \
 		-v $HOME/.cache/ms-playwright:/home/ubuntu/.cache/ms-playwright:rw \
-		-v $path:$path:rw \
+		-v $path:$path:$proj_mount_opts \
 		"${docker_args[@]}" \
+		"${host_access_args[@]}" \
 		--workdir $path \
 		$CLAUDE_DOCKER_IMAGE:$CLAUDE_DOCKER_IMAGE_TAG \
 		"${LETS_CLAUDE_RUN_REMAINING_ARGS[@]}"
