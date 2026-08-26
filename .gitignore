@@ -3,7 +3,7 @@
 etc/anthropic_api_key
 # Anchored, no trailing slash so the pattern ignores the root-level var/ and
 # admin/ data whether they are real directories (main checkout) or soft-links
-# back to the main checkout (git worktrees — see specz_link_worktree_data); a
+# back to the main checkout (git worktrees — see scr_link_worktree_data); a
 # trailing-slash pattern would match only directories and leave the worktree
 # symlinks showing as untracked.
 /admin
