@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 47
+sequence: 48
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:27:25+00:00
+updated: 2026-09-17T16:41:02+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -384,6 +384,26 @@ The deterministic policy input is six payload destinations, tests defined, custo
 Pending.
 
 ### Implementation
+
+## Revision 4 probe implementation — blocked at live connectivity
+
+Built bounded approximate-source diagnostic module only. No production counter DEB.
+
+Source reconstruction: NXP `imx_3.10.53_1.1.0_ga_caf` tag peel `39b048b9e31e14ecd7beb05e6f5cdd93d6323699`, checkout `e35e57f24ef5851787812a18a38feeb9deb6ea46`, stable `v3.10.105` tag object `4d6dc2538f6ede3b25fdf30abdf2cda0f1b072c3`, live config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`, reconstructed `PAGE_OFFSET=0x6C000000`. Host build used GCC 12/binutils 2.42; target APT unchanged.
+
+Artifact: `evidence/revision-4/probe/scr_approx_abi_probe-d9637c9a40bdfc38fd245027c1fb226eec653bf9f44275be823e3246a1bf1619.ko`. SHA-256: `d9637c9a40bdfc38fd245027c1fb226eec653bf9f44275be823e3246a1bf1619`.
+
+Static gates: ELF32 little-endian ARM EABI5; vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `; undefined symbols only `printk`, `__aeabi_unwind_cpp_pr0`; disassembly shows fixed-log `module_init` returning `0` and fixed-log `module_exit`; no VFS, MMIO, worker, timer, persistence, boot activation, counter logic, force-load behavior.
+
+Live preflight blocked before copy/load. SSH attempts:
+
+- `2026-09-17T16:38:59Z`: `ssh: connect to host 192.168.68.56 port 22: Connection timed out`, rc `255`.
+- `2026-09-17T16:39:04Z`: same timeout, rc `255`.
+- `2026-09-17T16:39:09Z`: `ssh: connect to host 192.168.68.56 port 22: Connection refused`, rc `255`.
+
+No remote command, target/image mutation, probe copy, `insmod`, `rmmod`, APT change, reboot, or DEB. Credentials stayed environment-only; secret not persisted in evidence. Live blocker evidence SHA-256: `ab24687b722a3fefd3f075640f266eafb425a6672f49cfc011282514fbe65cf8`.
+
+Added `RELEASE.md`, reconstruction/static/blocker evidence, probe source/Makefile/artifact. `./bin/lets sdlc test`: `26 passed in 2.03s`. Production remains blocked until live probe completes and stronger production ABI gates pass.
 
 ## Revision 3 implementation attempt — blocked before build
 
@@ -1094,3 +1114,5 @@ Policy facts: six persistent payload destinations, custom maintainer scripts, bo
 - `2026-09-17T16:27:21+00:00` [approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-17T16:27:25+00:00` [implementing] Implementation started from the approved plan
+
+- `2026-09-17T16:41:02+00:00` [implementing] Updated round 1 implementation section
