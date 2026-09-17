@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 10
+sequence: 11
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T12:57:59+00:00
+updated: 2026-09-17T12:58:11+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -412,3 +412,5 @@ Pending.
 - `2026-09-17T12:52:14+00:00` [drafting-plan] Developer answers committed in planner-questions: use existing-kernel LKM with one-shot boot loading; no kernel rebuild or boot selection change, and any future built-in implementation requires explicit customer approval. Count all causes including unknown; durable empty creation precedes best-effort reason; UTC-millisecond names have random four-letter suffixes and never overwrite; invalid UTC uses current kernel time. CLI provides reset/count and timestamp-only since filtering; storage failure continues boot with retries; uninstall deletes records and remains pending if unload fails without initiating reboot. Investigate supported i.MX6 retained reset counter; absent capability permits documented missed pre-module resets. Developer questions resolved; source/ABI, status retention, image access, persistence, and deferred cleanup remain explicit engineering evidence requirements. Next: draft the reversible LKM package plan against these constraints; no approval or implementation authorized by this transition.
 
 - `2026-09-17T12:57:59+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-17T12:58:11+00:00` [draft-ready] Committed DRAFT revision 1 after complete ledger/Q&A, image evidence and guideline review. Specifies one reversible existing-kernel LKM package, ABI/source and VFS durability gates, one-shot boot activation, durable empty creation before best-effort reason, timestamp-only CLI, nonblocking storage retry, preserved original backups across upgrades, deferred busy-module removal without reboot, namespace conflict refusal, lifecycle/fault/hardware tests, and continuous-lock restoration with quarantine on cleanup failure. No unanswered developer policy question and no implementation performed.

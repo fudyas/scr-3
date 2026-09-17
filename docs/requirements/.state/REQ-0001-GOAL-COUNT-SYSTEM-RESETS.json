@@ -75,6 +75,12 @@
           "sequence": 10,
           "state": "drafting-plan",
           "time": "2026-09-17T12:57:59+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 1 after complete ledger/Q&A, image evidence and guideline review. Specifies one reversible existing-kernel LKM package, ABI/source and VFS durability gates, one-shot boot activation, durable empty creation before best-effort reason, timestamp-only CLI, nonblocking storage retry, preserved original backups across upgrades, deferred busy-module removal without reboot, namespace conflict refusal, lifecycle/fault/hardware tests, and continuous-lock restoration with quarantine on cleanup failure. No unanswered developer policy question and no implementation performed.",
+          "sequence": 11,
+          "state": "draft-ready",
+          "time": "2026-09-17T12:58:11+00:00"
         }
       ],
       "number": 1,
@@ -82,8 +88,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 10,
-  "state": "drafting-plan",
+  "sequence": 11,
+  "state": "draft-ready",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T12:57:59+00:00"
+  "updated": "2026-09-17T12:58:11+00:00"
 }
