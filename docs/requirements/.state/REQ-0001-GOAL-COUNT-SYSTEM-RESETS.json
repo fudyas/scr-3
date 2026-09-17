@@ -269,6 +269,12 @@
           "sequence": 42,
           "state": "drafting-plan",
           "time": "2026-09-17T16:26:01+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 4: preserve revision 3 production counter/package/RELEASE.md/EOL exclusions; add developer-authorized approximate-source init/exit/log-only live probe with static ELF/ARM/vermagic/symbol gate, baseline/recovery, ordinary insmod/rmmod, exact dmesg/taint inspection, cleanup proof, anomaly quarantine, and probe-success limitation. No unanswered developer question; no implementation.",
+          "sequence": 43,
+          "state": "draft-ready",
+          "time": "2026-09-17T16:26:06+00:00"
         }
       ],
       "number": 1,
@@ -276,8 +282,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 42,
-  "state": "drafting-plan",
+  "sequence": 43,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -327,5 +333,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T16:26:01+00:00"
+  "updated": "2026-09-17T16:26:06+00:00"
 }
