@@ -174,6 +174,12 @@
           "sequence": 25,
           "state": "implementing",
           "time": "2026-09-17T14:01:01+00:00"
+        },
+        {
+          "message": "Task T01 attempt 1 validation fail",
+          "sequence": 26,
+          "state": "implementing",
+          "time": "2026-09-17T14:05:21+00:00"
         }
       ],
       "number": 1,
@@ -181,16 +187,16 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 25,
+  "sequence": 26,
   "state": "implementing",
   "task_workflow": {
-    "active": "T01",
+    "active": null,
     "definitions_sha256": "dfb38b4d6bba218ef5aa0b98fa9b36654f6c8365d4076c26e5dd111c4b44e92e",
     "round": 1,
     "tasks": {
       "T01": {
         "attempts": 1,
-        "status": "awaiting-validation"
+        "status": "failed"
       },
       "T02": {
         "attempts": 0,
@@ -223,5 +229,5 @@
     }
   },
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T14:01:01+00:00"
+  "updated": "2026-09-17T14:05:21+00:00"
 }

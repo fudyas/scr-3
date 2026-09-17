@@ -1,0 +1,58 @@
+{
+  "approved_plan_sha256": "a5d45639407a0e98c4e2798ffb4d43763b5129ddabdb55070d7b38580bc2e411",
+  "attempt": 1,
+  "report": {
+    "findings": [
+      {
+        "finding": "Exact vendor source, generated headers, Module.symvers, compiler, ABI build/modpost probe absent.",
+        "id": "T01-V01",
+        "severity": "blocker"
+      },
+      {
+        "finding": "SRC read lifetime and exact-target retained counter support/absence unproven.",
+        "id": "T01-V02",
+        "severity": "blocker"
+      },
+      {
+        "finding": "Unsupported raw extraction lacks replayable exact transcript; rerun through supported image tooling.",
+        "id": "T01-V03",
+        "severity": "high"
+      },
+      {
+        "finding": "Submitted restoration/lock/quarantine proof incomplete; tooling changed during audit and remaining failure paths need tests.",
+        "id": "T01-V04",
+        "severity": "blocker"
+      },
+      {
+        "finding": "Module exit cannot veto unload; contract needs fallible pre-unload quiesce/persist handshake.",
+        "id": "T01-V05",
+        "severity": "high"
+      },
+      {
+        "finding": "Contract drops guard I/O error event and lacks created-but-unsynced retained-inode state, risking duplicate records.",
+        "id": "T01-V06",
+        "severity": "high"
+      },
+      {
+        "finding": "Result lacks explicit A01/A12/A14/A15 mapping and immutable tooling provenance.",
+        "id": "T01-V07",
+        "severity": "medium"
+      }
+    ],
+    "rerun": [
+      "Resolve exact ABI/source/build inputs.",
+      "Amend shutdown, guard-failure, and same-inode retry contracts.",
+      "Pin tooling and rerun metadata/lock/quarantine fault tests.",
+      "Repeat supported read-only inspection with exact evidence."
+    ],
+    "result": "fail",
+    "summary": "T01 evidence honest but required feasibility DoD unmet.",
+    "task": "T01"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "fail",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-17T14:05:21+00:00"
+}
