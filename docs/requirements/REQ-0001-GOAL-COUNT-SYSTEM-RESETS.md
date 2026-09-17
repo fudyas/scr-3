@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 48
+sequence: 49
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:41:02+00:00
+updated: 2026-09-17T16:48:10+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -384,6 +384,28 @@ The deterministic policy input is six payload destinations, tests defined, custo
 Pending.
 
 ### Implementation
+
+## Revision 4 approximate ABI probe — live result
+
+Result: clean compatibility FAIL. Production module/DEB blocked.
+
+Target reachable `2026-09-17T16:43:55Z`: `SCR-7CCC91`, kernel `3.10.105-imx6`, ARMv7, uptime `27754.52s`. Pre-existing taint `4096`; root usage 38%; active `ttymxc0` + operator SSH; recovery path unchanged. Live config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`; `/boot/uImage-3.10.105-imx6` MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`; pre-test dmesg 978 lines, SHA-256 `65074e0b80decd7e730bdf020f093b9aed5ec57c9f92f17263d20668607b4919`.
+
+Initial ARMv5T artifact rejected before target use. Rebuilt host-only GCC 12/binutils 2.42 probe with `KCFLAGS=-march=armv7-a`. Final artifact: `evidence/revision-4/probe/scr_approx_abi_probe-87e10d59c41a47b7af4e48524de728b0d917f223873cbbdfb83c53abbfff7f07.ko`; SHA-256 `87e10d59c41a47b7af4e48524de728b0d917f223873cbbdfb83c53abbfff7f07`. `readelf -A` exactly matched deployed sample (`cmp=0`): 7-A/v7/Thumb-2/v6 unaligned. Vermagic exact. Undefined symbols only `printk`, `__aeabi_unwind_cpp_pr0`; both live exports.
+
+Copied only `/root/.scr-req-0001-approx-abi-probe.ko`, mode `0600 root:root`; remote hash verified. Ordinary `insmod` returned rc `1`:
+
+`insmod: ERROR: could not insert module /root/.scr-req-0001-approx-abi-probe.ko: Invalid module format`
+
+Sole dmesg delta:
+
+`[27840.175560] scr_approx_abi_probe: unknown relocation: 3`
+
+Module never initialized/loaded. Taint stayed `4096`. No init log or kernel anomaly. Per approved clean-rejection branch: no altered rebuild/retry; `rmmod` skipped because module absent. Removed transient file and verified absence. Config/uImage unchanged. SSH/console/recovery usable. `/proc/modules` delta only unrelated `ipv6` refcount `53` to `56` during SSH; probe absent.
+
+No APT, reboot, boot activation, package, kernel, U-Boot, image change, quarantine condition, or residue. Evidence hashes: `RELEASE.md` `e155e39610b1384106a084dd9cd2d6e503c1f5187a047bd71f264935e58c0ad1`; live `16836d9af2ff5f7da2257487efeda7ec3b29c9ae470604b1b95f3559eace2f9d`; reconstruction `95be0754198d97de3d99819ec6fcd7e6c3b6675ef035e348b6329ec0a3ca5470`; static `ad13f1a8ce33bc871ff8310c419c7cf3c2c18dc63198c6589290fddfe3d8bc4f`.
+
+`./bin/lets sdlc test`: `26 passed in 1.66s`. No implementation commit. Next technical gate: build with ARM GCC/binutils compatible with 2018 Ubuntu/Linaro GCC 4.8.4 kernel so output uses relocations accepted by target 3.10 module loader; repeat only under newly approved probe plan.
 
 ## Revision 4 probe implementation — blocked at live connectivity
 
@@ -1116,3 +1138,5 @@ Policy facts: six persistent payload destinations, custom maintainer scripts, bo
 - `2026-09-17T16:27:25+00:00` [implementing] Implementation started from the approved plan
 
 - `2026-09-17T16:41:02+00:00` [implementing] Updated round 1 implementation section
+
+- `2026-09-17T16:48:10+00:00` [implementing] Updated round 1 implementation section
