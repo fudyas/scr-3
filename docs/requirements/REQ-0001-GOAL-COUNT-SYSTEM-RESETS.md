@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: draft-ready
+state: awaiting-approval
 round: 1
-sequence: 11
+sequence: 12
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T12:58:11+00:00
+updated: 2026-09-17T12:58:20+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -414,3 +414,5 @@ Pending.
 - `2026-09-17T12:57:59+00:00` [drafting-plan] Updated round 1 solution-plan section
 
 - `2026-09-17T12:58:11+00:00` [draft-ready] Committed DRAFT revision 1 after complete ledger/Q&A, image evidence and guideline review. Specifies one reversible existing-kernel LKM package, ABI/source and VFS durability gates, one-shot boot activation, durable empty creation before best-effort reason, timestamp-only CLI, nonblocking storage retry, preserved original backups across upgrades, deferred busy-module removal without reboot, namespace conflict refusal, lifecycle/fault/hardware tests, and continuous-lock restoration with quarantine on cleanup failure. No unanswered developer policy question and no implementation performed.
+
+- `2026-09-17T12:58:20+00:00` [awaiting-approval] Trivial policy failed; developer approval is required

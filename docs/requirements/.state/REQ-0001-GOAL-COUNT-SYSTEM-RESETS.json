@@ -81,6 +81,12 @@
           "sequence": 11,
           "state": "draft-ready",
           "time": "2026-09-17T12:58:11+00:00"
+        },
+        {
+          "message": "Trivial policy failed; developer approval is required",
+          "sequence": 12,
+          "state": "awaiting-approval",
+          "time": "2026-09-17T12:58:20+00:00"
         }
       ],
       "number": 1,
@@ -88,8 +94,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 11,
-  "state": "draft-ready",
+  "sequence": 12,
+  "state": "awaiting-approval",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T12:58:11+00:00"
+  "updated": "2026-09-17T12:58:20+00:00"
 }
