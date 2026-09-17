@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: planner-questions
 round: 1
-sequence: 7
+sequence: 8
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T12:20:34+00:00
+updated: 2026-09-17T12:51:55+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -134,7 +134,85 @@ The previous question about reset-reason vocabulary remains an unspecified outpu
 
 ### Planner questions and answers
 
-Pending.
+#### Scope and provenance
+
+The coordinator relayed the developer's intake answers and subsequent clarifications on 2026-09-17. These answers resolve the planning questions for round 1. They amend the original requirements where explicitly stated below. They are not approval of a solution plan. No prior hardware-result round or implementation exists.
+
+#### Reset classes, early resets, and reset reasons
+
+**Question:** Which reset classes count, and must resets before the recording code or persistent filesystem becomes available be counted individually?
+
+**Developer answer:** Count all listed causes: software reboot/reset, watchdog reset, external reset, brownout, power-on/power-cycle, panic-associated reset, and unknown causes. Every reset should create a new file so future logic can count events over a time interval. Reset-loop detection and mitigation remain outside this requirement.
+
+**Clarification presented:** A reset can occur before the kernel/module can record a file. Several resets before recording becomes possible cannot necessarily be reconstructed from a reset-cause register. Existing evidence does not establish a retained hardware event counter.
+
+**Final developer answer:** Investigate whether an i.MX6 reset counter register can preserve/count early resets. If no such supported hardware capability exists, resets occurring before module load may be clobbered or missed; document that limitation rather than block implementation. Do not claim exact counts for events the hardware cannot preserve. Reason writing is best effort; unknown causes still produce reset evidence.
+
+#### Counter and durability
+
+**Question:** Is file count sufficient, and what must survive an interruption between creation and reason writing?
+
+**Developer answer:** File count is the counter. Durable empty-file creation is required before the separate reason-write step. Reason writing is best effort. An empty file therefore remains a valid counted reset event. No separate persistent numeric counter is requested.
+
+**Engineering obligation:** Validate the actual creation/flush boundary and storage behavior. Developer acceptance of the intended durability guarantee is not evidence that the existing filesystem/device already provides it. Never treat successful exclusive creation alone as proof of power-loss persistence.
+
+#### Filename, collisions, and invalid UTC
+
+**Question:** What filename should be used, and what happens when time is invalid or timestamps collide?
+
+**Developer answer:** Use `/var/log/scr/reset-<UTC timestamp milliseconds>-<random 4 letters>` and never overwrite an existing record. If UTC is invalid, record immediately using the kernel's current time rather than waiting for time synchronization.
+
+**Consequence:** The random suffix supports distinct records with equal timestamps; collision handling must still preserve the no-overwrite requirement. Records created with invalid or adjusted kernel time cannot establish accurate real-world event rates for those intervals. Timestamp representation, suffix alphabet, and parser details must be specified in the draft consistently with these answers.
+
+#### Existing kernel, module activation, and source provenance
+
+**Question:** Are a kernel rebuild or changed kernel/boot artifacts permitted, and may a one-shot boot command load a kernel module?
+
+**Developer answer:** Do not rebuild or replace the kernel or change its boot selection. Use the existing kernel and flag any missing capabilities that would require modules/rebuild. A boot-time module is allowed. Use official Debian kernel sources obtainable through apt.
+
+**Additional final constraint:** Proceed with the loadable kernel module (LKM) approach now. A built-in implementation delivered by rebuilding the kernel may be mentioned only as a future option requiring explicit customer approval first; it is not an authorized fallback in this round.
+
+**Interpretation of the explicit clarification:** A one-shot boot-time module-loading integration is allowed; monitoring and recording remain kernel-resident and must not depend on monit or another persistent user-space monitoring service. The manually invoked administrative CLI described below is also expressly requested.
+
+**Unverified prerequisite:** The observed target runs the vendor kernel `3.10.105-imx6`, whereas package metadata names `linux-image-3.10.53-lec-imx6`. Availability through apt does not establish that Debian sources, headers, configuration, symbol versions, or build artifacts match the running vendor ABI. The draft must identify source/build compatibility checks and report a concrete blocker if a compatible module cannot be built or required kernel facilities are unavailable. A kernel replacement is not authorized as a fallback.
+
+#### Administrative command and timestamp filtering
+
+**Question:** Is a query/reset interface required, and what does `--since last` mean?
+
+**Developer answer:** Add `scr-reset-monitor --reset`, which removes all reset records matching the required reset-file scope under `/var/log/scr/`, and `scr-reset-monitor --count`, which counts reset events. Support an optional explicit timestamp filter with `--since <timestamp>`, accepting `yyyy-mm-dd[ hh[:mm[:ss]]]`.
+
+**Final amendment:** Remove `--since last` from the requested interface. Retain timestamp-only filtering. The earlier request for `--count [--since <last|timestamp>]` is superseded. Empty reset files count because the reason is best effort. The draft must specify timestamp parsing, omitted-component defaults, comparison boundary, and safe deletion/error behavior without broadening deletion outside reset records.
+
+#### Storage unavailable or failing
+
+**Question:** Should read-only/full/failing storage block boot, or should the system continue and retry?
+
+**Final developer answer:** Continue boot and retry recording when storage is unavailable. This does not authorize rebooting the system as a response to logging failure. The draft must describe retry behavior and state that a further reset before durable creation can lose the pending evidence unless supported hardware retention proves otherwise.
+
+#### Uninstall, generated data, and a busy module
+
+**Question:** Should uninstall retain or delete reset evidence, and may it initiate a reboot to complete rollback?
+
+**Developer answer:** Uninstall deletes generated reset records as `scr-reset-monitor --reset` does. Do not initiate a controlled reboot for uninstall. If module removal fails, leave removal pending until a reboot occurs for another reason.
+
+**Engineering obligation:** Uninstall must not claim completion or restoration while the recorder remains active. The plan must define how pending removal prevents reactivation after a naturally occurring reboot, preserves restoration backups until cleanup finishes, and allows removal to complete afterward. The repository's cleanup/restoration failure quarantine rule still applies to image/package testing; pending removal is not permission to report successful restoration or bypass quarantine.
+
+#### Development baseline and hardware validation
+
+**Question:** Which image and test resources should be used, and are disruptive hardware tests authorized?
+
+**Developer answer:** The available device may run a close image version such as `8.25.0`, with similar relevant components. Use the existing `./bin/lets scr image` commands for development against the image. Real hardware testing is for when the implementation is ready. Disruptive tests are authorized. Console/reflash access exists but is problematic and should be avoided. A mount-capable environment is expected shortly.
+
+**Evidence boundary:** The prior read-only target inspection found a deployed `8.26.0` configuration marker, but did not prove raw-image identity. Exact runtime compatibility must be checked on any test device rather than inferred from a similar image version. The local baseline remains `var/image_8.26.0`; its filesystem has not yet been inspected because loop-device setup lacked permission.
+
+**Workflow boundary:** Image operations during package development/testing remain subject to the continuous SDLC lock, uninstall/restoration verification, and quarantine on cleanup failure. The request to use the existing image commands does not waive those repository requirements. Hardware mutation remains deferred until the implementation is ready.
+
+#### Remaining engineering investigations; no unanswered developer policy question
+
+The accepted scope now permits drafting. Investigation must establish whether a supported i.MX6 counter preserves early resets; whether reset status survives until module load; which causes can be decoded without invented distinctions; whether a compatible module can be built for the existing kernel using available source/build artifacts; how kernel VFS persistence and retry behavior work on this image; and how safe deferred removal completes without an agent-initiated reboot. These are evidence requirements, not assumed capabilities. Missing module prerequisites or inability to implement the required behavior under the accepted constraints must be reported as concrete tooling/technical blockers.
+
+No solution draft has been written or approved by these answers. A near-final reversible Debian-package plan must be committed as DRAFT before presentation, and implementation must await the required developer approval.
 
 ### Solution plan — DRAFT
 
@@ -171,3 +249,5 @@ Pending.
 - `2026-09-17T12:20:28+00:00` [image-analysis] Updated round 1 image-analysis section
 
 - `2026-09-17T12:20:34+00:00` [planner-questions] Read-only target analysis recorded: i.MX6 SRC/WDOG facilities verified; /var/log/scr absent on root ext4; existing monit/USB counter conflicts with scope; local image loop access blocked by missing permission; kernel provenance and reset semantics need planner questions.
+
+- `2026-09-17T12:51:55+00:00` [planner-questions] Updated round 1 planner-questions section
