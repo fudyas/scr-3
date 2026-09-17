@@ -221,6 +221,12 @@
           "sequence": 34,
           "state": "drafting-plan",
           "time": "2026-09-17T16:14:19+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 3 after developer amendment: count exactly one observable boot reaching module initialization; same-boot unload/reload deduplicated by module-owned guard; pre-init resets/boots uncounted. Removed reset-cause collection, all i.MX6 register/MMIO access, retained-counter research, kernel-source and U-Boot/bootloader patching/replacement. Plan keeps minimal OOT module, Bash transport frontend, RELEASE.md, reversible single DEB, controlled live load/unload/reload/boot checks, no target APT mutation, and continuous-lock install/test/uninstall/restoration/quarantine proof. No new load-bearing question; no implementation.",
+          "sequence": 35,
+          "state": "draft-ready",
+          "time": "2026-09-17T16:14:29+00:00"
         }
       ],
       "number": 1,
@@ -228,8 +234,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 34,
-  "state": "drafting-plan",
+  "sequence": 35,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -279,5 +285,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T16:14:19+00:00"
+  "updated": "2026-09-17T16:14:29+00:00"
 }
