@@ -87,6 +87,12 @@
           "sequence": 12,
           "state": "awaiting-approval",
           "time": "2026-09-17T12:58:20+00:00"
+        },
+        {
+          "message": "Amend DRAFT: use caveman full for all authored REQ sections and subagent instructions; make kernel module sole reset-state authority; make scr-resets-monitor a Bash administrative frontend. Preserve source requirements, evidence, safety, reversibility, and traceability.",
+          "sequence": 13,
+          "state": "drafting-plan",
+          "time": "2026-09-17T13:04:19+00:00"
         }
       ],
       "number": 1,
@@ -94,8 +100,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 12,
-  "state": "awaiting-approval",
+  "sequence": 13,
+  "state": "drafting-plan",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T12:58:20+00:00"
+  "updated": "2026-09-17T13:04:19+00:00"
 }
