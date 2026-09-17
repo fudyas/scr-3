@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 39
+sequence: 40
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:16:54+00:00
+updated: 2026-09-17T16:21:10+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -384,6 +384,24 @@ The deterministic policy input is six payload destinations, tests defined, custo
 Pending.
 
 ### Implementation
+
+## Revision 3 implementation attempt — blocked before build
+
+Approved DRAFT revision 3 SHA-256: `42a33ec51bfd585df1d382afc984fb5ee1eddc418eae51dea0e99368ca0e8d7c`.
+
+Result: BLOCKED. No DEB produced. No image/target mutation, module load/unload, reboot, APT mutation, kernel/U-Boot/boot-artifact change, monit/cron/watchdog change, or reset-record creation.
+
+Read-only live baseline confirms exact target: `root@192.168.68.56`, hostname `SCR-7CCC91`, running `3.10.105-imx6`; `/proc/version` build `developer@scr-dev-Eldad`, GCC `4.8.4 (Ubuntu/Linaro 4.8.4-2ubuntu1~14.04.1)`, `#5 SMP PREEMPT Wed May 16 11:21:53 IDT 2018`. `/boot/config-3.10.105-imx6` and decompressed `/proc/config.gz` SHA-256 both `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`. GNU build-id: `f7b0840244f238080194bd87ce76c704a67db004`. Sample module vermagic: `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `. `CONFIG_MODVERSIONS` and `CONFIG_MODULE_SIG` unset; custom `CONFIG_VMSPLIT_2G_OPT=y`, `CONFIG_PAGE_OFFSET=0x6C000000`. `/run` verified tmpfs `0755 root:root`, 10 MiB.
+
+Exact ABI inputs absent: no live `/lib/modules/3.10.105-imx6/{build,source}`; no matching headers/generated headers/build tree/`Module.symvers`; `/usr/src` lacks inputs; installed dpkg kernel remains `linux-image-3.10.53-lec-imx6` version `7`; target Debian Jessie APT sources expose no `linux-source` or `linux-headers-3.10.105-imx6` candidate; no target APT update/install performed. Matching Ubuntu/Linaro GCC binary/build recipe absent.
+
+Non-mutating public provenance exhausted: official `https://github.com/ADLINK/linux.git` refs expose current 5.15/6.6/6.18 branches plus `master`, no 3.10/i.MX6 branch/tag; public recursive tree/commit search yields no exact `3.10.105-imx6` source binding. NXP `imx_3.10.53_1.1.0_ga_caf` remains near-match only; custom config and unresolved ADLINK patches prevent exact-source claim.
+
+Live `/proc/kallsyms` proves `__ksymtab_*` entries for candidate VFS/misc/workqueue/random calls, but export presence cannot prove prototypes, layouts, generated-header compatibility, compiler ABI, or safe build. `CONFIG_MODVERSIONS=n` removes CRC checks; matching vermagic from approximate source would still not satisfy approved exact-ABI-before-load gate. No force load, version bypass, unexported-symbol trick, speculative compile, package, transfer, or live load attempted.
+
+Evidence: implementation worktree `evidence/revision-3/abi-blocker.md` and `evidence/revision-3/safety.json`. Required unblock: source commit/tree and recipe demonstrably producing build-id `f7b0840244f238080194bd87ce76c704a67db004`, or coordinator-approved equivalent exact provenance, plus exact generated headers/config/toolchain and successful external-module compile/modpost/ELF/vermagic/undefined-symbol verification. Then module/package/live controlled checks may proceed.
+
+Deviation: worktree-local LETS runtime absent; SDLC operations executed only as `/home/fudya/devel/scr/./bin/lets sdlc ...` from main project, targeting same durable ledger/worktree. No `implementation-commit` run; coordinator owns commit and next gate.
 
 ## Attempt 2 — blocked
 
@@ -896,3 +914,5 @@ Policy facts: six payload destinations, custom maintainer scripts, boot activati
 - `2026-09-17T16:16:49+00:00` [approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-17T16:16:54+00:00` [implementing] Implementation started from the approved plan
+
+- `2026-09-17T16:21:10+00:00` [implementing] Updated round 1 implementation section
