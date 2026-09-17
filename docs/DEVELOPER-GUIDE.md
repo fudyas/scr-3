@@ -1,5 +1,8 @@
 # Image mounting (`lets scr image`)
 
+For the requirements-to-package workflow built on top of image mounting, see
+[Agentic SDLC Pipeline Developer Guide](SDLC-DEVELOPER-GUIDE.md).
+
 Loop-mount a disk/filesystem image so its contents are browsable as a normal
 directory. Handles raw and gzipped images, picks the right partition, and mounts
 read-only by default.
