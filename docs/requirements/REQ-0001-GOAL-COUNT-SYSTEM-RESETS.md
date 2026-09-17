@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 33
+sequence: 34
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:11:31+00:00
+updated: 2026-09-17T16:14:19+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -682,6 +682,141 @@ After approval: source/build provenance; single reversible DEB + SHA-256; full o
 
 Deterministic policy facts: six payload destinations, defined tests, custom maintainer scripts, boot/service activation, kernel privilege/security, persistent storage. No known existing SDLC overlap; preflight must prove absence. Nontrivial risks explicit. Only tooling may waive approval; otherwise committed DRAFT revision/hash waits developer approval/amendment. Approval covers specified LKM/module-authority/Bash work, never kernel rebuild or reduced durability.
 
+### Solution plan — DRAFT revision 3
+
+#### DRAFT revision 3 — observable module-initialization boot counter
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 2 after developer amendment checkpoint at sequence 33. Earlier drafts, approval, task evidence, failures remain audit history; none authorizes old reset-cause/MMIO/kernel-source/U-Boot work. No implementation/image mutation authorized by this DRAFT. All load-bearing decisions answered. No new developer question.
+
+#### Sources, evidence, revised boundary
+
+Reviewed full durable REQ, customer source, image analysis, Q&A, DRAFT revisions 1-2, approval/task history, implementation Attempt 2 evidence, amendment checkpoint, `AGENTS.md`, `docs/SDLC-DEVELOPER-GUIDE.md`, `docs/DEVELOPER-GUIDE.md`, `docs/MONIT.md`.
+
+Verified target evidence remains: ADLINK LEC-iMX6 Quad/Dual SMARC, Debian 8 Jessie, ARMv7, SysV, running `3.10.105-imx6`; `/` = `/dev/root` ext4 `rw,noatime,errors=remount-ro,data=ordered`; `/var/log/scr` absent; `/boot` ext2; image marker `8.26.0`; `/boot/uImage-3.10.105-imx6` MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`; installed kernel package metadata says `linux-image-3.10.53-lec-imx6` version `7`, so metadata does not prove running ABI. Local `var/image_8.26.0` = 3,850,371,072 bytes. Later locked partition probe succeeded: `whole /dev/loop2 3.6GB`; source SHA-256 stayed `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`.
+
+Attempt 2 found exact vendor `3.10.105-imx6` source/build tree, matching generated headers, `Module.symvers`, Ubuntu/Linaro GCC 4.8.4 binary/recipe absent; `/lib/modules/3.10.105-imx6/{build,source}` absent; `/usr/src` empty; installed GCC `4.9.2`; dpkg kernel `3.10.53`. Old compile/modpost/link ABI probe therefore blocked. `./bin/lets sdlc test` result: `25 passed in 1.34s`. Restoration fingerprint omitted timestamps, hard links, ACLs, xattrs, capabilities. No DEB, image mutation, module load, reboot, `task-result`, or `implementation-commit` occurred.
+
+New binding semantics: counter measures exactly one observable boot reaching `scr_reset_monitor` module initialization. It does not measure every physical reset. Resets/boots ending before module initialization remain uncounted. Supported same-boot unload/reload must not add another event. Record has no reset cause/reason. Drop all i.MX6 SRC/register access, direct MMIO, reset decoding, retained-reset-counter research, kernel-source patching, U-Boot-source/bootloader patching, kernel/U-Boot replacement, and claims about physical-reset completeness. EOL platform lacks supported source route. Reset-loop detection/mitigation remains out of scope.
+
+Proceed with minimal OOT test module, reversible DEB, Bash administration frontend only where needed, and controlled live-device load/unload/reload/boot checks under approved safety/recovery rules. OOT means separately built loadable module, never kernel-tree patch. Exact running-ABI load compatibility still must be demonstrated before live `insmod`; missing compatible build inputs blocks load test, never permits force load, source patching, kernel replacement, target APT mutation, or unsupported claim.
+
+#### Deliverable and package ownership
+
+Produce exactly one architecture-specific Debian package: `scr-req-0001-goal-count-system-resets`, next implementation version chosen above abandoned/unpublished artifact version and recorded. Determine `armhf`/`armel` from target dpkg evidence. No DKMS, target build, target `apt-get`, dependency upgrade, kernel package, U-Boot package, initramfs/DT/boot-selector edit, `/lib/modules` index change, `depmod`, monit/cron/watchdog/USB-counter change.
+
+Package private payload root: `/usr/lib/scr-req-0001-goal-count-system-resets/payload`. Dpkg owns payload there; maintainer scripts publish managed destinations only after baseline backup.
+
+| Managed surface | Owner and restoration |
+| --- | --- |
+| `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko` | Minimal OOT module, `0644 root:root`; exact build/runtime ABI evidence. Direct `insmod`; no force/version bypass. |
+| `/usr/sbin/scr-resets-monitor` | Bash frontend, `0755 root:root`; argument validation, request transport, output only. No count/delete/guard/event truth. |
+| `/etc/init.d/scr-resets-monitor` | One-shot SysV loader, `0755 root:root`; checks removal-pending + ABI, loads exact module. No event/guard decision, reboot, package install, APT action. |
+| `/etc/rcS.d/S99scr-resets-monitor` | Exact symlink `../init.d/scr-resets-monitor`; prove root and guard storage ready before load. No broad `update-rc.d`. |
+| `/usr/share/doc/scr-resets-monitor/RELEASE.md` | `0644 root:root`; explicit in-scope/out-of-scope, observable initialization boundary, early-boot/physical-reset limits, same-boot reload rule, storage/clock/ABI limits, install/remove/upgrade/test/live-device notes, safety/recovery rules. |
+| `/usr/lib/scr-resets-monitor/package-test` | `0755 root:root`; non-destructive package checks; never loads ARM module into unrelated host. |
+| `/var/log/scr/reset-<epochMs>-<suffix>` | Module-created empty event files only. `epochMs` signed decimal UTC kernel-wall-clock milliseconds; suffix `[a-z]{4}`; `0600 root:root`; exclusive create/no overwrite. |
+| `/run/scr-resets-monitor/boot-guard` and `/dev/scr-resets-monitor` | Module-owned same-boot guard semantics + root-only dynamic control endpoint. Package scripts touch runtime artifact only after confirmed module absence during restoration. |
+| `/var/lib/scr-req-0001-goal-count-system-resets/` | Root-only first-baseline backup, ownership manifest, durable package journal, removal-pending marker. Retain across upgrades/failures; delete only after verified restoration. |
+| `/var/lib/scr-sdlc/owners` entry | Exact destinations + runtime namespace claim. Preserve registry/other claims; remove own claim only after restoration. |
+
+Preflight uses `lstat`, dpkg ownership, hashes, no-follow checks. Refuse unexpected code/loader/control/guard ownership and exact/parent/child/namespace overlap. Preserve unrelated `/var/log/scr` entries. Snapshot original absence/content/type/symlink target/uid/gid/mode/timestamps/hard links/ACLs/xattrs/capabilities and parent-directory metadata. Unsupported preservation blocks mutation. Existing matching records become baseline and must be restored even after `--reset`. No `Replaces`, conffile seizure, or broad deletion.
+
+#### Module event, guard, file, CLI contract
+
+Module initialization is event boundary. Successful supported initialization accepts one event for current observable boot. Failed initialization before acceptance creates no event. Physical cause irrelevant and never read. Module never accesses i.MX6 registers/MMIO.
+
+Module alone owns event recording, guard state, selected filename, retries, count/filter/reset semantics, serialization, cancellation. Loader and Bash contain no duplicate truth. Guard must survive supported same-boot clean unload/reload but reset between boots. Before implementation, prove target `/run` boot lifecycle or another approved kernel-visible boot identity. If `/run` is not reliably cleared/recreated once per boot and no safe existing-kernel boot identity exists, stop as technical blocker; do not shift truth to loader/Bash.
+
+Guard state records `pending:<filename>`, `complete:<filename>`, or `cancelled` using bounded validated content. Module creates/updates it atomically and synchronizes containing runtime directory as supported. First initialization claims absent guard and selects one filename. Reload reading `pending` resumes same filename/inode state; reload reading `complete` or `cancelled` creates nothing. Corrupt/unsafe/replaced guard fails module initialization without record. Guard is same-boot deduplication, not persistent reset counter.
+
+No-reason format = empty regular file. Old create-before-reason-write sequence no longer applies because no reason write exists. Required durable ordering:
+
+1. ACCEPT current observable-boot event during module initialization.
+2. CLAIM module-owned same-boot guard.
+3. SELECT one `reset-<epochMs>-<suffix>` name; persist it as `pending` before any record create.
+4. QUEUE process-context worker; return without blocking boot.
+5. RESOLVE `/var/log/scr` without unexpected symlink/alternate mount.
+6. CREATE missing directory `0755 root:root`; synchronize parent before claiming directory persistence.
+7. CREATE empty record with exclusive no-follow semantics and `0600 root:root`.
+8. ***if*** collision occurs ***then*** choose another suffix, durably update pending guard first, maximum 64 attempts per invocation.
+9. RETAIN same record identity across retries; never create second file after successful create.
+10. SYNCHRONIZE empty inode, then containing directory.
+11. ***if*** both succeed ***then*** atomically mark guard `complete` and synchronize guard directory.
+12. ***if*** storage is read-only/full/EIO/unavailable ***then*** retain one pending event/name, log rate-limited error, retry 1 second exponential to 60 seconds, never block boot or reboot.
+
+Crash/reset before empty inode + directory durability can lose event; another boot before module initialization remains uncounted. Device may violate flush guarantees. `RELEASE.md` states limits. No write follows creation except filesystem metadata needed for empty file. Empty file itself counts.
+
+Commands remain `scr-resets-monitor --count [--since <timestamp>]`, `scr-resets-monitor --reset`, help. `--since` exact `yyyy-mm-dd[ hh[:mm[:ss]]]` UTC; omitted components zero; inclusive `eventTime >= sinceTime`; reject `--since last`, timezone suffix, leap second, invalid Gregorian date/range/overflow/trailing text/conflicts. Module parses semantics. Bash validates shape/bounds, transports literal versioned bounded request through `/dev/scr-resets-monitor`, prints response, maps exit. No filesystem enumeration/deletion/date math/retry/fallback/implicit load.
+
+Scope: immediate non-symlink regular empty files whose complete names match grammar and timestamps parse. Non-empty matching files, symlinks, hard links, malformed names unsafe/non-counted and never deleted; report error where operation cannot give complete truthful result. Count success prints integer + newline. Missing directory = zero/no-op. Reset cancels current pending event, writes `cancelled` guard, deletes only generated scoped records, syncs directory, preserves baseline archive/unrelated files. Partial reset reports nonzero; cancelled state prevents recreation. Next boot may count. Module serializes worker/count/reset. Lost response never triggers automatic retry. Endpoint `0600 root:root`; kernel rechecks privilege; active descriptors pin module.
+
+#### Maintainer lifecycle, upgrades, rollback
+
+| Phase | Required behavior |
+| --- | --- |
+| `preinst install` | Validate architecture, running-kernel contract for live use, dependencies already present, conflicts, metadata support, backup space. Snapshot first baseline + journal before mutation. No APT. |
+| `postinst configure` | Atomically publish files/link after backup; verify modes/hashes/targets. Never auto-load module during install/chroot/offline image mutation; first normal boot activation counts. Idempotent. |
+| upgrade | Preserve first baseline, records, guard, pending-removal state. Do not unload/reload resident module. Reject control/state ABI incompatibility before replacement. New payload activates next boot; failed upgrade restores prior payload. |
+| `prerm remove` | Durably set removal-pending, disable loader link, request module prepare-remove/quiesce, close package control use, attempt ordinary unload. No force unload/reboot/shutdown. Failure returns nonzero with activation disabled, backups/journal retained. |
+| `postrm remove/purge` | Only after module/control endpoint absent: remove generated scoped records, restore every baseline path/record/metadata, remove created empty dirs/runtime artifacts/own ownership claim, verify, then remove backup/journal. Remove and purge both restore. |
+| abort/retry | Resume/reverse durable journal idempotently. Never reactivate after removal request. Never erase last usable baseline. |
+
+Busy unload remains pending until reboot occurs for unrelated approved operational reason. Package never requests reboot. Disabled loader + pending marker prevent later activation. Ordinary remove retry after natural reboot completes. Resident module, endpoint, pending marker, recreatable worker, restoration mismatch = uninstall not complete. Package restoration engine is generic offline lifecycle logic, not alternate monitor semantics.
+
+#### Tests and acceptance
+
+| Group | Required proof |
+| --- | --- |
+| Static/scope | Source and binaries contain no i.MX6 register address, `ioremap`, direct MMIO, reset-cause decode, kernel/U-Boot patch, boot artifact replacement, APT mutation, reason payload. `RELEASE.md` states exact scope/limits/notes. |
+| OOT/ABI | Reproducible minimal module build from recorded inputs; module metadata/hash. Wrong arch/release/vermagic/symbol compatibility rejects safely. Live load only after exact target compatibility proof. Never `--force`, version bypass, unexported-symbol trick. |
+| Guard/exact-once | One empty record after first accepted module initialization. Repeated loader call while loaded changes none. Clean unload/reload same boot changes none. Pending-before-create, created-before-sync, complete-update interruption resumes same name/no duplicate. New boot after verified guard reset adds exactly one. Boot/reset before init adds zero. |
+| Storage/names | Equal/backward/invalid clock and forced 4-letter collisions never overwrite. Fault creation/inode sync/directory sync/guard update; one pending identity, bounded retry, boot continues. Empty record only; no reason write. Symlink/hard-link/path replacement attacks fail safe. |
+| CLI/control | Count/reset/filter parsing, inclusive boundaries, malformed/partial/NUL/overlength/protocol mismatch, privilege, concurrent requests, process death/lost response. Bash has transport/help only; module absent => explicit nonzero, no filesystem fallback. |
+| Package lifecycle | Fresh install/remove, purge, reinstall, v1→v2, failed upgrade, interrupted every journal phase, pre-existing directory/records, busy unload/deferred retry, overlap refusal, disjoint-package coexistence. Restore baseline and preserve unrelated paths. No reboot for uninstall. |
+| Image restoration | Lock/journal evidence, before/after fingerprints + timestamps/hard links/ACLs/xattrs/capabilities/parent metadata, no package/runtime/ownership residue, source SHA-256 unchanged. Fault uninstall/restoration/unmount/source verification; quarantine. |
+| Live device | After ABI proof and recovery readiness: install DEB without APT; controlled `insmod`/count; unload/reload/count unchanged; one approved ordinary reboot then count +1 after module init; uninstall/load suppression/restoration. Optional further approved boots test repetition only. Never claim physical reset coverage or cause. |
+
+Live-device prerequisites: identify exact device/image/kernel; capture baseline + recovery path; verify adequate free space, SSH plus available console/reflash recovery status, module unload support, boot loader-link order, `/run` per-boot semantics; hash package; define abort. Start load/unload/reload. Reboot only for explicit boot-count acceptance, never uninstall. If connectivity/boot recovery fails, stop disruptive tests and preserve device for recovery. No watchdog/external-reset/brownout/panic tests required by revised semantics.
+
+Acceptance:
+
+- Package installation changes only owned surfaces; target APT state, kernel/U-Boot/boot artifacts, module indexes, monit, cron, watchdog, `/mnt/usb` unchanged.
+- Each supported boot that reaches accepted module initialization contributes exactly one durable empty scoped record, subject to stated storage boundary. Same-boot supported unload/reload contributes zero extra. Pre-init boots/resets contribute zero.
+- Count/reset/filter truth resides in module; Bash remains transport. No reasons/MMIO.
+- `RELEASE.md` fully documents scope, exclusions, boundary, limits, install/remove/upgrade/test and recovery.
+- Removing all produced packages (one DEB) restores every managed path/namespace to exact baseline. No success while module active/pending.
+
+#### Lock-bounded image test and restoration proof
+
+1. ACQUIRE SDLC image lock.
+2. VERIFY no quarantine/conflicting mount.
+3. RECORD source `var/image_8.26.0` SHA-256.
+4. CREATE tooling-managed disposable copy.
+5. MOUNT copy inside same lock.
+6. CAPTURE baseline fingerprint + supplemental metadata/ownership.
+7. INSTALL exact hashed DEB without network/APT mutation.
+8. RUN package/static/offline tests; never load ARM module into host kernel.
+9. UNINSTALL every produced package even after test failure.
+10. VERIFY full managed-surface restoration, original records/metadata, no generated records, backup/journal/ownership/runtime residue, active module, endpoint, or pending removal.
+11. UNMOUNT copy.
+12. VERIFY source SHA-256 unchanged.
+13. ***if*** uninstall, restoration, unmount, source verification, or cleanup fails ***then***
+   1. QUARANTINE affected image identity.
+   2. RETAIN phase journal/evidence.
+   3. STOP; OS lock release never clears quarantine or authorizes reuse.
+   4. REQUIRE tooling-reported recovery verification before reuse; never remove marker manually.
+14. ***else***
+   1. RECORD successful restoration evidence.
+   2. RELEASE lock.
+
+Preferred entry: `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <artifact> --test-command /usr/lib/scr-resets-monitor/package-test`. Custom flow only through one `./bin/lets sdlc lock-run` spanning mount/install/test/uninstall/restoration/unmount. Missing enforcement blocks mutation; never bypass. Dpkg DB/log changes inside disposable copy are declared verifier bookkeeping, not raw-byte restoration. No managed path may be excluded.
+
+#### Deliverables and approval gate
+
+After approval: minimal OOT source/build evidence; one reversible DEB + SHA-256; ownership/backup manifest; `RELEASE.md`; static, state, CLI, lifecycle, fault, locked-image evidence; controlled live-device procedure/results; exact limitations. Any inability to produce/load exact-compatible module becomes evidence-bearing blocker, not scope expansion.
+
+Policy facts: six payload destinations, custom maintainer scripts, boot activation, kernel privilege/security, persistent storage/runtime namespace. Nontrivial. Commit DRAFT before display. Only deterministic `trivial-policy` may waive approval; otherwise wait for developer approval/amendment. Never self-approve.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -749,3 +884,5 @@ Deterministic policy facts: six payload destinations, defined tests, custom main
 - `2026-09-17T16:10:28+00:00` [implementing] Activated task T01 attempt 2
 
 - `2026-09-17T16:11:31+00:00` [drafting-plan] Replan approved scope around module-initialization boot counting; exclude kernel/U-Boot patching and reset reasons
+
+- `2026-09-17T16:14:19+00:00` [drafting-plan] Updated round 1 solution-plan section
