@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: approved
+state: implementing
 round: 1
-sequence: 46
+sequence: 47
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:27:21+00:00
+updated: 2026-09-17T16:27:25+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1092,3 +1092,5 @@ Policy facts: six persistent payload destinations, custom maintainer scripts, bo
 - `2026-09-17T16:27:15+00:00` [approved] Developer approved DRAFT revision 4 SHA-256 2be0f002e9bf51b6d622007bd0643626dc77de6e9841fb46ed7496eac5b7d49a
 
 - `2026-09-17T16:27:21+00:00` [approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
+
+- `2026-09-17T16:27:25+00:00` [implementing] Implementation started from the approved plan
