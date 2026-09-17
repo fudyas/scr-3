@@ -1,6 +1,10 @@
 {
   "approval": {
-    "status": "none"
+    "plan_revision": 2,
+    "plan_sha256": "a5d45639407a0e98c4e2798ffb4d43763b5129ddabdb55070d7b38580bc2e411",
+    "reason": "Developer directed pipeline task split and sequential execution; approving DRAFT revision 2 bound to task manifest.",
+    "status": "approved",
+    "time": "2026-09-17T13:41:09+00:00"
   },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
@@ -135,6 +139,12 @@
           "sequence": 20,
           "state": "awaiting-approval",
           "time": "2026-09-17T13:41:05+00:00"
+        },
+        {
+          "message": "Developer directed pipeline task split and sequential execution; approving DRAFT revision 2 bound to task manifest.",
+          "sequence": 21,
+          "state": "approved",
+          "time": "2026-09-17T13:41:09+00:00"
         }
       ],
       "number": 1,
@@ -142,8 +152,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 20,
-  "state": "awaiting-approval",
+  "sequence": 21,
+  "state": "approved",
   "task_workflow": {
     "active": null,
     "definitions_sha256": "dfb38b4d6bba218ef5aa0b98fa9b36654f6c8365d4076c26e5dd111c4b44e92e",
@@ -184,5 +194,5 @@
     }
   },
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T13:41:05+00:00"
+  "updated": "2026-09-17T13:41:09+00:00"
 }

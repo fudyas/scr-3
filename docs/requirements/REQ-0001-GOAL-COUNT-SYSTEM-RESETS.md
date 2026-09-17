@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: approved
 round: 1
-sequence: 20
-approval: none
+sequence: 21
+approval: approved
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T13:41:05+00:00
+updated: 2026-09-17T13:41:09+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -613,3 +613,5 @@ Deterministic policy facts: six payload destinations, defined tests, custom main
 - `2026-09-17T13:13:57+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
 
 - `2026-09-17T13:41:05+00:00` [awaiting-approval] Split approved-plan candidate into 8 bounded tasks
+
+- `2026-09-17T13:41:09+00:00` [approved] Developer directed pipeline task split and sequential execution; approving DRAFT revision 2 bound to task manifest.
