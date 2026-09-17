@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 14
+sequence: 15
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T13:12:49+00:00
+updated: 2026-09-17T13:12:58+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -98,38 +98,39 @@ Reset-reason vocabulary initially unspecified. Hardware inspection must establis
 
 #### Scope and method
 
-- **Verified:** The supplied target was inspected read-only over SSH. No reset, reboot, mount, package operation, or image write was performed.
-- **Verified:** Local source image is the regular 3,850,371,072-byte file `var/image_8.26.0`. `./bin/lets scr image parts --image var/image_8.26.0` attempted its LETS read-only loop setup but failed at `losetup` with `Operation not permitted`; it did not mount the image. Thus no facts below are asserted from the local raw image filesystem.
-- **Verified:** The target has `/etc/monit/conf-available/10-imagenumber` (regular file, mode `0755`, `root:root`, 20 bytes) containing exactly `check system 8.26.0`; `/etc/monit/conf-enabled/10-imagenumber` is a mode-`0777` symlink to it. This verifies a deployed configuration marker, not the raw-image identity or a cryptographic match to `var/image_8.26.0`.
+- Verified: supplied target inspected read-only over SSH. No reset, reboot, mount, package operation, image write.
+- Verified: local `var/image_8.26.0` regular file, 3,850,371,072 bytes. `./bin/lets scr image parts --image var/image_8.26.0` attempted LETS read-only loop setup; `losetup` failed `Operation not permitted`; image never mounted. No raw-image filesystem facts claimed.
+- Verified: `/etc/monit/conf-available/10-imagenumber` regular, `0755`, `root:root`, 20 bytes; exact content `check system 8.26.0`. `/etc/monit/conf-enabled/10-imagenumber` = `0777` symlink to it. Proves deployed configuration marker, not raw-image identity/cryptographic match with `var/image_8.26.0`.
 
-#### Verified target identity, storage, and boot relationships
+#### Verified target identity, storage, boot
 
-- Target is `ADLINK LEC-iMX6 (Quad/Dual) SMARC module`; root compatible is `adlink,lec-imx6,fsl,imx6q`; it runs Debian 8 (jessie), `3.10.105-imx6`, ARMv7, built 2018-05-16.
-- `/` is `/dev/root`, `ext4`, mounted `rw,noatime,errors=remount-ro,data=ordered`; `/var` and `/var/log` are ordinary rootfs directories (both mode `0755`, `root:root`) rather than separate mounts. `/boot` is `/dev/mmcblk0p1`, `ext2`. `/var/log/scr` does not exist. Consequently, `/var/log/scr` would reside on the writable root ext4 filesystem once created; sudden-power-loss durability, available space at boot, and the required atomic/durable semantics remain unproved.
-- `/etc/fstab` makes the root `/dev/mmcblk0p2` ext4, boot `/dev/mmcblk0p1` ext2, and mounts `/dev/mmcblk1p1` at `/mnt/usb`. PID 1 is SysV `init [2]`.
-- `/boot/uImage` is a mode-`0777` symlink to `/boot/uImage-3.10.105-imx6`; both have MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`. This kernel is the running release. However, `dpkg-query -S` assigns `/boot/uImage` and `/boot/config-3.10.105-imx6` to installed `linux-image-3.10.53-lec-imx6` version `7`. This provenance/version mismatch is a material packaging conflict: a plan must not assume Debian metadata represents the running kernel or overwrite the boot artifacts.
+- `ADLINK LEC-iMX6 (Quad/Dual) SMARC module`; root compatible `adlink,lec-imx6,fsl,imx6q`; Debian 8 (jessie), `3.10.105-imx6`, ARMv7, built 2018-05-16.
+- `/`: `/dev/root`, `ext4`, `rw,noatime,errors=remount-ro,data=ordered`. `/var`, `/var/log`: ordinary rootfs directories, both `0755 root:root`; no separate mounts. `/boot`: `/dev/mmcblk0p1`, `ext2`. `/var/log/scr` absent. New directory would reside on writable root ext4. Sudden-power-loss durability, boot free space, atomic/durable semantics unproved.
+- `/etc/fstab`: root `/dev/mmcblk0p2` ext4, boot `/dev/mmcblk0p1` ext2, `/dev/mmcblk1p1` at `/mnt/usb`. PID 1: SysV `init [2]`.
+- `/boot/uImage`: `0777` symlink to `/boot/uImage-3.10.105-imx6`; both MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`. Matches running release. Yet `dpkg-query -S` assigns `/boot/uImage`, `/boot/config-3.10.105-imx6` to installed `linux-image-3.10.53-lec-imx6` version `7`. Material provenance/packaging mismatch; Debian metadata cannot prove running ABI. Preserve boot artifacts.
 
-#### Verified low-level reset facilities and limits
+#### Verified reset facilities and limits
 
-- The live DT contains `fsl,imx6q-src,fsl,imx51-src` at `/proc/device-tree/soc/aips-bus@02000000/src@020d8000` and `fsl,imx6q-wdt,fsl,imx21-wdt` nodes at `wdog@020bc000` and `wdog@020c0000`. The former watchdog is `status = "disabled"`; the latter is `status = "okay"`. `/proc/iomem` maps `0x020c0000-0x020c3fff` to the enabled watchdog.
-- Kernel configuration in `/boot/config-3.10.105-imx6` has `CONFIG_WATCHDOG=y`, `CONFIG_IMX2_WDT=y`, `CONFIG_MFD_SYSCON=y`, `CONFIG_RESET_CONTROLLER=y`, `CONFIG_EXT4_FS=y`, `CONFIG_DEBUG_FS=y`, and `CONFIG_MODULES=y`; `CONFIG_RTC_DRV_SNVS=m`. It does not show enabled `PSTORE`, `RAMOOPS`, or `NVMEM` options. `/dev/watchdog` is character device `10:130`, mode `0600 root:root`; dmesg says `Use WDOG2 as reset source` and that `imx2-wdt 20c0000.wdog` is enabled with a 60-second, non-nowayout timeout.
-- `/proc/kallsyms` exports existing internal `imx_src_init` and `imx_src_reset_module`, plus the reboot-notifier interface. This confirms a kernel path to the i.MX6 SRC exists, but does **not** prove the SRC reset-status register's lifecycle, bit-to-cause mapping, or retention for power-loss events. Those require the exact vendor kernel source and hardware reset exercises.
-- **Inference for planning:** Achieving the customer prohibition on user-space services while creating a regular file requires kernel-resident code using kernel VFS/ext4 facilities, likely built into the specific vendor kernel (a late-loadable module may miss early status or storage readiness). Kernel-context file I/O and metadata/data flush ordering are high-risk on 3.10 and must be explicitly designed/tested; ordinary `O_CREAT|O_EXCL` protects name creation but does not prove power-loss persistence.
-- **Conflict/feasibility limit:** A UTC-millisecond filename cannot be guaranteed by SRC/watchdog registers alone. The observed SNVS RTC support establishes a clock device, but valid UTC at the proposed execution point and collision handling are not established. A counter that records every individual power-cycle reset also cannot be claimed until SRC register semantics and retention have been demonstrated.
+- Live DT: `fsl,imx6q-src,fsl,imx51-src` at `/proc/device-tree/soc/aips-bus@02000000/src@020d8000`; `fsl,imx6q-wdt,fsl,imx21-wdt` at `wdog@020bc000`, `wdog@020c0000`. First watchdog `status = "disabled"`; second `status = "okay"`. `/proc/iomem`: enabled watchdog `0x020c0000-0x020c3fff`.
+- `/boot/config-3.10.105-imx6`: `CONFIG_WATCHDOG=y`, `CONFIG_IMX2_WDT=y`, `CONFIG_MFD_SYSCON=y`, `CONFIG_RESET_CONTROLLER=y`, `CONFIG_EXT4_FS=y`, `CONFIG_DEBUG_FS=y`, `CONFIG_MODULES=y`, `CONFIG_RTC_DRV_SNVS=m`. No enabled `PSTORE`, `RAMOOPS`, `NVMEM` shown. `/dev/watchdog`: character `10:130`, `0600 root:root`. Dmesg: `Use WDOG2 as reset source`; `imx2-wdt 20c0000.wdog` enabled, 60-second timeout, non-nowayout.
+- `/proc/kallsyms` lists internal `imx_src_init`, `imx_src_reset_module`, reboot-notifier interface. Confirms kernel SRC path; symbol visibility alone does not prove LKM export availability. SRC reset-status lifecycle, bit/cause mapping, power-loss retention still require exact vendor source + hardware exercises.
+- Historical planning inference: service-free regular-file recording needs kernel-resident VFS/ext4 code; built-in code initially considered likely because late module could miss status/storage timing. Later developer decision restricts current scope to LKM; built-in remains future customer-approved option only. Kernel-context I/O and metadata/data flush ordering high risk on 3.10. `O_CREAT|O_EXCL` prevents name overwrite; never proves power-loss persistence.
+- Feasibility limits: SRC/watchdog alone cannot guarantee UTC-millisecond names. SNVS RTC support establishes clock device, not valid boot-time UTC/collision handling. Every individual power-cycle count unproved until SRC retention semantics tested.
 
-#### Existing reset-related configuration (explicitly out of bounds as a dependency)
+#### Existing reset configuration; forbidden implementation dependencies
 
-- `monit` and `watchdog` are active: `/usr/bin/monit -c /etc/monit/monitrc` and `/usr/sbin/watchdog`. `watchdog` package version `5.14-3` is installed; `monit` metadata/ownership is unavailable from the target's incomplete dpkg file-list database.
-- `/etc/monit/conf-enabled/99-watchdog` is a mode-`0777` symlink to regular mode-`0755` `/etc/monit/conf-available/99-watchdog` (390 bytes). It starts/stops `/etc/init.d/watchdog` and executes `/sbin/monit-watchdog.sh` after four restarts in ten cycles. `/sbin/monit-watchdog.sh` (regular mode `0755`, 143 bytes) stops monit, removes `/var/lib/monit/state`, then calls `/sbin/reboot`.
-- `/sbin/monit-recover.sh` (regular mode `0755`, 1,204 bytes) creates/appends `/mnt/usb/number_of_resets`, counts its lines, then may call `shutdown -r +1`; the target currently has that 29-byte regular file. `/root/scripts/restartsdatetime.sh` (regular mode `0755`, 1,241 bytes) appends UTC text to `/mnt/usb/restarts.log`, and the root crontab invokes it at `@reboot`. The root crontab also removes `/var/lib/monit/state` at `@reboot`.
-- These paths are not owned according to `dpkg-query -S` (or ownership cannot be proved because package file-list metadata is missing). They rely on user-space services/scripts and `/mnt/usb`, so they conflict with the stated implementation constraint and must neither be reused as the new mechanism nor silently replaced. `docs/MONIT.md` accurately identifies their reset-loop risk; reset-loop mitigation remains out of scope.
-- No earlier SDLC implementation or requirement package is recorded in this requirement ledger; therefore no prior SDLC package path overlap is currently known. The target's unmanaged/custom paths and the mismatched kernel package metadata remain external conflicts to preserve and test against.
+- Active: `/usr/bin/monit -c /etc/monit/monitrc`, `/usr/sbin/watchdog`. Installed `watchdog` version `5.14-3`; monit metadata/ownership unavailable because dpkg file-list database incomplete.
+- `/etc/monit/conf-enabled/99-watchdog`: `0777` symlink to `/etc/monit/conf-available/99-watchdog`, regular `0755`, 390 bytes. Starts/stops `/etc/init.d/watchdog`; runs `/sbin/monit-watchdog.sh` after four restarts in ten cycles. That script: regular `0755`, 143 bytes; stops monit, removes `/var/lib/monit/state`, calls `/sbin/reboot`.
+- `/sbin/monit-recover.sh`: regular `0755`, 1,204 bytes; creates/appends `/mnt/usb/number_of_resets`, counts lines, may call `shutdown -r +1`. Target counter currently regular, 29 bytes. `/root/scripts/restartsdatetime.sh`: regular `0755`, 1,241 bytes; appends UTC text to `/mnt/usb/restarts.log`; root crontab invokes at `@reboot`, also removes `/var/lib/monit/state` at `@reboot`.
+- `dpkg-query -S` reports no owners, or incomplete metadata prevents proof. Service/script/`/mnt/usb` dependence violates new mechanism constraint. Never reuse as reset authority or silently replace. `docs/MONIT.md` identifies their reset-loop risk; mitigation stays out of scope.
+- Ledger records no earlier SDLC implementation/requirement package, hence no known prior SDLC overlap. Unmanaged/custom target paths + mismatched kernel metadata remain conflicts to preserve/test.
 
-#### Planning evidence and open decisions
+#### Planning evidence and decision history
 
-- A reversible package cannot safely deliver a built-in kernel change as an ordinary file-only DEB without an approved kernel-build/boot-artifact strategy, version provenance, ABI handling, and recovery/rollback test. The planner must decide whether a separate vendor-kernel package is in scope; the customer requirement constrains the implementation to kernel/i.MX6 primitives but does not authorize changing boot artifacts without that plan.
-- Required developer decisions remain: reset classes to count (including power-on/power-loss); whether file count is the counter; exact atomicity/power-loss boundary; and acceptable behavior for invalid/colliding UTC. Additionally, confirm whether a kernel rebuild/boot artifact is authorized and provide the matching vendor kernel source/config or a reproducible source provenance.
-- Required validation evidence: decode and exercise SRC reset-status bits on this exact kernel/hardware; show read-before-clear timing; simulate/observe watchdog, software reboot, external reset, and permitted power events; verify one distinct `reset-<UTC-ms>` regular file per accepted event; inject failure between creation and reason write; and test ext4 persistence according to the agreed durability boundary.
+- Built-in kernel change needs explicit kernel-build/boot strategy, version provenance, ABI handling, recovery/rollback testing; ordinary file-only DEB insufficient. Later answers exclude kernel rebuild/boot replacement now; future built-in option requires explicit customer approval.
+- Original material decisions: reset classes including power events; file-derived count; atomicity/power-loss boundary; invalid/colliding UTC; kernel rebuild permission; matching source/config provenance. Coordinator-recorded answers below resolve policy choices. Source/ABI evidence remains prerequisite.
+- Required validation: decode/exercise SRC bits on exact hardware/kernel; prove read-before-clear timing; observe software reboot, watchdog, external reset, authorized power events; verify distinct `reset-<UTC-ms>` records with later approved suffix; inject failure between creation/reason write; test ext4 persistence against agreed boundary.
+- Sequence 13 amendment changes planned authority/frontend, not these measured facts. `/usr/sbin/scr-resets-monitor` Bash only; module owns all reset behavior/state. No new hardware/image inspection claimed by prose rewrite.
 
 ### Planner questions and answers
 
@@ -419,3 +420,5 @@ Pending.
 - `2026-09-17T13:04:19+00:00` [drafting-plan] Amend DRAFT: use caveman full for all authored REQ sections and subagent instructions; make kernel module sole reset-state authority; make scr-resets-monitor a Bash administrative frontend. Preserve source requirements, evidence, safety, reversibility, and traceability.
 
 - `2026-09-17T13:12:49+00:00` [drafting-plan] Updated round 1 requirements-analysis section
+
+- `2026-09-17T13:12:58+00:00` [drafting-plan] Updated round 1 image-analysis section
