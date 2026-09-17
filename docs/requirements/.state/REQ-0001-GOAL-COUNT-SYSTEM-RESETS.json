@@ -6,6 +6,11 @@
   "current_round": 1,
   "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
   "implementation": {},
+  "plan": {
+    "revision": 1,
+    "sha256": "a54ea3d960180383d8492f548f561c3e4e0a87b4fae328970c71d9feacac8a44",
+    "status": "draft"
+  },
   "rounds": [
     {
       "additional_instructions": "",
@@ -64,6 +69,12 @@
           "sequence": 9,
           "state": "drafting-plan",
           "time": "2026-09-17T12:52:14+00:00"
+        },
+        {
+          "message": "Updated round 1 solution-plan section",
+          "sequence": 10,
+          "state": "drafting-plan",
+          "time": "2026-09-17T12:57:59+00:00"
         }
       ],
       "number": 1,
@@ -71,8 +82,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 9,
+  "sequence": 10,
   "state": "drafting-plan",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T12:52:14+00:00"
+  "updated": "2026-09-17T12:57:59+00:00"
 }
