@@ -1,0 +1,6 @@
+interface:
+  display_name: "Git PR Message"
+  short_description: "Draft a PR message from recent branch work"
+  default_prompt: "Use $git-pr to draft a pull-request message for this branch."
+policy:
+  allow_implicit_invocation: false
