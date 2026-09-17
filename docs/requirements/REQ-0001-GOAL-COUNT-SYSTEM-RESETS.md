@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: image-analysis
+state: planner-questions
 round: 1
-sequence: 6
+sequence: 7
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T12:20:28+00:00
+updated: 2026-09-17T12:20:34+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -169,3 +169,5 @@ Pending.
 - `2026-09-17T12:20:03+00:00` [image-analysis] Updated round 1 image-analysis section
 
 - `2026-09-17T12:20:28+00:00` [image-analysis] Updated round 1 image-analysis section
+
+- `2026-09-17T12:20:34+00:00` [planner-questions] Read-only target analysis recorded: i.MX6 SRC/WDOG facilities verified; /var/log/scr absent on root ext4; existing monit/USB counter conflicts with scope; local image loop access blocked by missing permission; kernel provenance and reset semantics need planner questions.

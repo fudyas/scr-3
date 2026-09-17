@@ -46,6 +46,12 @@
           "sequence": 6,
           "state": "image-analysis",
           "time": "2026-09-17T12:20:28+00:00"
+        },
+        {
+          "message": "Read-only target analysis recorded: i.MX6 SRC/WDOG facilities verified; /var/log/scr absent on root ext4; existing monit/USB counter conflicts with scope; local image loop access blocked by missing permission; kernel provenance and reset semantics need planner questions.",
+          "sequence": 7,
+          "state": "planner-questions",
+          "time": "2026-09-17T12:20:34+00:00"
         }
       ],
       "number": 1,
@@ -53,8 +59,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 6,
-  "state": "image-analysis",
+  "sequence": 7,
+  "state": "planner-questions",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T12:20:28+00:00"
+  "updated": "2026-09-17T12:20:34+00:00"
 }
