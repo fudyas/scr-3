@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   bash-completion \
   sudo \
   curl \
+  openssh-client \
   build-essential \
   git \
   vim \
@@ -52,20 +53,31 @@ RUN echo 'ubuntu ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 # written into host-mounted volumes ($HOME/.codex, the workdir) stay owned
 # by the caller instead of the baked-in uid 1000.
 RUN if [ "$HOST_GID" != "1000" ]; then groupmod -g "$HOST_GID" ubuntu; fi && \
-    if [ "$HOST_UID" != "1000" ]; then usermod  -u "$HOST_UID" -g "$HOST_GID" ubuntu; fi && \
-    chown -R "$HOST_UID:$HOST_GID" /home/ubuntu
+  if [ "$HOST_UID" != "1000" ]; then usermod  -u "$HOST_UID" -g "$HOST_GID" ubuntu; fi && \
+  chown -R "$HOST_UID:$HOST_GID" /home/ubuntu
 
 USER ubuntu
 WORKDIR /home/ubuntu
 
-# Install nvm and codex
-RUN curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-RUN bash -i -c "nvm install --lts && nvm use --lts"
-RUN bash -i -c "npm install -g @openai/codex"
+# Installs standalone Codex into its installer-managed staging path
+RUN curl -fsSL https://chatgpt.com/codex/install.sh | sh
+
+# Keeps executable outside /home/ubuntu/.codex because runtime bind mount replaces that tree
+USER root
+RUN test -x /home/ubuntu/.codex/packages/standalone/current/bin/codex && \
+  mkdir -p /opt/codex && \
+  cp -a /home/ubuntu/.codex/packages/standalone/current/. /opt/codex/ && \
+  ln -s /opt/codex/bin/codex /usr/local/bin/codex && \
+  rm -f /home/ubuntu/.local/bin/codex && \
+  ln -s /usr/local/bin/codex /home/ubuntu/.local/bin/codex && \
+  /usr/local/bin/codex --version
+
+USER ubuntu
+ENV PATH="/home/ubuntu/.local/bin:${PATH}"
 
 # Create an entrypoint script
 RUN cat > /home/ubuntu/entrypoint.sh <<'EOF'
-#!/bin/bash -i
+#!/bin/bash
 
 exec codex "$@"
 EOF

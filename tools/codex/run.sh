@@ -79,16 +79,41 @@ function main() {
 		docker_args+=(-v /var/run/docker.sock:/var/run/docker.sock:rw)
 	fi
 
+	# Keep the standalone installation baked into the image visible. Mounting
+	# the complete host ~/.codex directory hides
+	# ~/.codex/packages/standalone/current, which prevents the managed
+	# app-server daemon from starting. Only carry the user's authentication,
+	# configuration, and customizations into the container.
+	local host_codex_home="$HOME/.codex"
+	local container_codex_home="/home/ubuntu/.codex"
+	local codex_path
+	local -a codex_mount_paths=(
+		auth.json
+		config.toml
+		plugins
+		rules
+		skills
+	)
+	local -a codex_mount_args=()
+	for codex_path in "${codex_mount_paths[@]}"; do
+		if [[ -e "$host_codex_home/$codex_path" ]]; then
+			codex_mount_args+=(
+				--mount
+				"type=bind,src=$host_codex_home/$codex_path,dst=$container_codex_home/$codex_path"
+			)
+		fi
+	done
+
 	# Launch a new Codex Docker container
 	info "launching Codex Docker container in $path..."
 	run_print "failed to launch Codex Docker container" \
-		docker run -it --rm \
+		docker run -it --rm --privileged \
 		-u $(id -u):$(id -g) \
-		-v $HOME/.codex:/home/ubuntu/.codex:rw \
-		-v $path:$path:rw \
+		"${codex_mount_args[@]}" \
+		--mount "type=bind,src=$path,dst=$path" \
 		"${docker_args[@]}" \
-		--workdir $path \
-		$CODEX_DOCKER_IMAGE:$CODEX_DOCKER_IMAGE_TAG \
+		--workdir "$path" \
+		"$CODEX_DOCKER_IMAGE:$CODEX_DOCKER_IMAGE_TAG" \
 		"${LETS_CODEX_RUN_REMAINING_ARGS[@]}"
 
 	log_tag_pop
