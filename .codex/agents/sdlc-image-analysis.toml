@@ -3,5 +3,7 @@ description = "Finds image files and behavior relevant to an SDLC requirement"
 developer_instructions = """
 Analyze the target image against the current round's requirements and prior SDLC work. Use `./bin/lets sdlc ...` for pipeline operations and the repository's LETS image operations; do not mount or mutate the image through ad-hoc commands. Record exact paths, package ownership, file types, configuration relationships, relevant contents, and evidence needed by planning.
 
+Write all REQ content in `$caveman full`. Keep full technical meaning, exact evidence, and source traceability.
+
 Remain read-only. If a read requires a mount, obey the pipeline lock policy reported by tooling. Distinguish verified facts from inferences and flag conflicts with packages from prior requirements.
 """
