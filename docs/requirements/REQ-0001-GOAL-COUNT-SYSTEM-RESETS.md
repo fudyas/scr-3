@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: approved
 round: 1
-sequence: 44
-approval: none
+sequence: 45
+approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:26:16+00:00
+updated: 2026-09-17T16:27:15+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1088,3 +1088,5 @@ Policy facts: six persistent payload destinations, custom maintainer scripts, bo
 - `2026-09-17T16:26:06+00:00` [draft-ready] Committed DRAFT revision 4: preserve revision 3 production counter/package/RELEASE.md/EOL exclusions; add developer-authorized approximate-source init/exit/log-only live probe with static ELF/ARM/vermagic/symbol gate, baseline/recovery, ordinary insmod/rmmod, exact dmesg/taint inspection, cleanup proof, anomaly quarantine, and probe-success limitation. No unanswered developer question; no implementation.
 
 - `2026-09-17T16:26:16+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-17T16:27:15+00:00` [approved] Developer approved DRAFT revision 4 SHA-256 2be0f002e9bf51b6d622007bd0643626dc77de6e9841fb46ed7496eac5b7d49a
