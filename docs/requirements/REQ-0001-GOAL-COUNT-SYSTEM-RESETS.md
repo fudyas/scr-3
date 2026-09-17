@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: requirements-analysis
 round: 1
-sequence: 2
+sequence: 3
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T08:56:47+00:00
+updated: 2026-09-17T09:22:24+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -48,51 +48,52 @@ None.
 
 #### Facts and traceability
 
-- Target is SCR image `v8.26.0`.
-- Reported behavior: system “experiences resets and sometimes enters reset loops,” with `docs/MONIT.md` named as contextual documentation.
-- Round-1 goal is exactly “Count system resets reliably.” Customer positions this as groundwork for later reset-loop detection.
-- Required observable artifact: after each in-scope reset, one new `/var/log/scr/reset-<UTC timestamp in msec>` file exists and contains the reset reason.
-- Required ordering: create the file first; write the reason second. The empty file is the minimum durable reset signal if reason writing fails.
+- Round 1 source is the Customer requirements section: “Count system resets reliably” on SCR image `v8.26.0`, as groundwork for future reset-loop detection. No prior hardware-result round exists.
+- Customer reports resets and occasional reset loops and cites `docs/MONIT.md`. Those symptoms and that document's applicability have not yet been independently verified in this analysis.
+- “After each reset, create a new reset-XXXX file” requires a distinct record under `/var/log/scr/reset-<UTC timestamp in milliseconds>` with reset reason content.
+- “Perform file creation first, then reason write as a distinct second step” establishes ordering and an empty-file fallback when reason writing cannot complete.
+- Coordinator relays newly supplied target hardware endpoint `192.168.68.56`. Hardware identity, running image version, reset behavior, and filesystem properties remain unverified; access credentials are intentionally absent from this record.
+- This refines the existing round 1 analysis without treating its assumptions or open questions as customer answers.
 
 #### Constraints
 
-- Detection must rely only on low-level primitives identified by customer: i.MX6 CPU registers and kernel subsystems.
-- Must not rely on `monit` or another user-space service.
-- Reset records belong under `/var/log/scr/`; filename timestamp is UTC with millisecond precision.
+- Customer requires only “i.MX6 CPU registers and kernel subsystems”; detection/counting must not depend on `monit` or another user-space service.
+- Record location, UTC millisecond filename, atomic file operations, and separate creation/reason-writing steps are explicit customer constraints.
 - Image contents and kernel capabilities must be reviewed before solution planning.
-- Any later image change must be delivered as a reversible Debian package under SDLC safety rules.
+- Repository workflow requires any later image change to be a reversible Debian package, with locked testing and verified restoration. This requirements task makes no image change.
 
-#### Assumptions requiring confirmation
+#### Assumptions, not confirmed requirements
 
-- “Counter” means durable count derived from number of reset files, rather than a separate numeric counter.
-- “After each reset” means record creation during the next boot, based on retained reset-cause state; customer has not specified the exact lifecycle point.
-- “Atomic file functions” applies to individual create and reason-write operations while preserving the explicitly required two-step order; transaction/durability semantics are not defined.
-- UTC time is expected to be valid when record is created; behavior when RTC/time is unavailable or timestamps collide is unspecified.
+- Existing reset files are expected to preserve evidence across subsequent resets; actual storage durability and boot-stage availability need investigation.
+- Counting files may satisfy “counter”; a separate numerical state or interface is not expressly requested.
+- A record may be generated on the boot following a reset, but neither the lifecycle point nor coverage of resets before storage becomes available is defined.
+- “Exactly one record per reset” is the testable interpretation of reliable counting, not a supplied list of qualifying reset causes.
+- Valid UTC at record creation, unique timestamps, available storage, and readable retained reset-cause state must not be assumed proven.
 
 #### Acceptance criteria
 
-- On image `v8.26.0`, each in-scope reset produces exactly one new regular file matching `/var/log/scr/reset-<UTC-millisecond-timestamp>`.
-- File existence is established before any reset-reason content is written.
-- When reason writing succeeds, file content identifies the reset reason obtained from an allowed low-level source.
-- If reason writing fails after creation, created file remains as reset evidence.
-- Reboot/reset handling continues without dependency on `monit` or any other user-space service.
-- Repeated resets preserve separate records and yield an unambiguous durable reset count according to confirmed counting semantics.
-- Validation covers supported reset causes and confirms no duplicate record for one reset and no missed record for each exercised reset.
+- On the confirmed target image, each agreed reset event produces one distinct regular file matching the required directory and UTC millisecond naming convention; repeated exercised resets neither overwrite prior records nor create duplicate counts.
+- Evidence demonstrates file creation completes before the separate reason-write step begins.
+- A completed reason write identifies the reset cause from an allowed low-level source; unknown or combined causes are represented without inventing a known cause.
+- An interrupted or failed reason write after creation leaves the created file as reset evidence, within the persistence guarantee agreed below.
+- Detection/counting operates without dependency on `monit` or another user-space service and uses only the customer-authorized low-level primitives.
+- Validation maps each agreed reset class to observed record count and reason. Any unexercised cause or interval before recording becomes possible is stated explicitly; universal coverage is not inferred from successful ordinary boots.
+- These criteria remain conditional on resolution of the material questions below and the image/kernel capability findings.
 
 #### Non-goals
 
-- Detecting reset loops.
-- Mitigating or recovering from reset loops.
-- Using `monit` or another user-space service as part of detection/counting.
-- Broader diagnosis or correction of the underlying reset cause in this round.
+- Reset-loop detection, mitigation, or recovery.
+- Diagnosing or repairing the underlying reset causes in this round.
+- An additional numeric counter, reporting interface, or retention policy unless required by clarification.
 
 #### Unresolved questions that materially affect scope or acceptance
 
-1. Which events count: watchdog reset, software-triggered reboot/reset, external reset pin, brownout, power-on/power-cycle, kernel panic, and other i.MX6-reported causes? Must every listed class create a record, or only abnormal resets?
-2. Is count defined solely as the number of `reset-*` files, or is a separate numeric counter/state also required?
-3. What exact durability guarantee does “atomic file functions” require for each step: syscall atomicity only, or persistence across immediate power loss (including file/data and directory metadata flush)?
-4. What must happen when UTC is unavailable/not trustworthy or two boots resolve to the same millisecond filename: defer creation, use fallback naming, or fail while preserving another signal?
-5. What reset-reason vocabulary/content is accepted, including behavior for unknown or multiple simultaneous hardware cause bits?
+- Which events must count: watchdog, software reboot/reset, external reset, brownout, power-on/power-cycle, panic-associated reset, and other reported causes? Must events occurring before persistent recording is possible also be counted individually?
+- Is the count derived from reset files sufficient, or is a separate persistent numeric counter or exposed count required?
+- Does “atomic file functions” require operation atomicity, persistence through another immediate reset, persistence through abrupt power loss, or all of these? The creation and reason-write steps need an explicit failure boundary for acceptance.
+- What result is acceptable when valid UTC is unavailable or timestamps collide, given the required filename and the requirement to preserve every reset record?
+
+The previous question about reset-reason vocabulary remains an unspecified output detail. Hardware inspection should establish which causes can be distinguished; a separate customer question is necessary only if the proposed representation changes accepted counting or cause semantics. None of the current questions blocks read-only image analysis.
 
 ### Image analysis
 
@@ -127,3 +128,5 @@ Pending.
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
 
 - `2026-09-17T08:56:47+00:00` [requirements-analysis] Updated round 1 requirements-analysis section
+
+- `2026-09-17T09:22:24+00:00` [requirements-analysis] Updated round 1 requirements-analysis section
