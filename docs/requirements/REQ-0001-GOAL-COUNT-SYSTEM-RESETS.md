@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: planner-questions
+state: drafting-plan
 round: 1
-sequence: 8
+sequence: 9
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T12:51:55+00:00
+updated: 2026-09-17T12:52:14+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -251,3 +251,5 @@ Pending.
 - `2026-09-17T12:20:34+00:00` [planner-questions] Read-only target analysis recorded: i.MX6 SRC/WDOG facilities verified; /var/log/scr absent on root ext4; existing monit/USB counter conflicts with scope; local image loop access blocked by missing permission; kernel provenance and reset semantics need planner questions.
 
 - `2026-09-17T12:51:55+00:00` [planner-questions] Updated round 1 planner-questions section
+
+- `2026-09-17T12:52:14+00:00` [drafting-plan] Developer answers committed in planner-questions: use existing-kernel LKM with one-shot boot loading; no kernel rebuild or boot selection change, and any future built-in implementation requires explicit customer approval. Count all causes including unknown; durable empty creation precedes best-effort reason; UTC-millisecond names have random four-letter suffixes and never overwrite; invalid UTC uses current kernel time. CLI provides reset/count and timestamp-only since filtering; storage failure continues boot with retries; uninstall deletes records and remains pending if unload fails without initiating reboot. Investigate supported i.MX6 retained reset counter; absent capability permits documented missed pre-module resets. Developer questions resolved; source/ABI, status retention, image access, persistence, and deferred cleanup remain explicit engineering evidence requirements. Next: draft the reversible LKM package plan against these constraints; no approval or implementation authorized by this transition.

@@ -58,6 +58,12 @@
           "sequence": 8,
           "state": "planner-questions",
           "time": "2026-09-17T12:51:55+00:00"
+        },
+        {
+          "message": "Developer answers committed in planner-questions: use existing-kernel LKM with one-shot boot loading; no kernel rebuild or boot selection change, and any future built-in implementation requires explicit customer approval. Count all causes including unknown; durable empty creation precedes best-effort reason; UTC-millisecond names have random four-letter suffixes and never overwrite; invalid UTC uses current kernel time. CLI provides reset/count and timestamp-only since filtering; storage failure continues boot with retries; uninstall deletes records and remains pending if unload fails without initiating reboot. Investigate supported i.MX6 retained reset counter; absent capability permits documented missed pre-module resets. Developer questions resolved; source/ABI, status retention, image access, persistence, and deferred cleanup remain explicit engineering evidence requirements. Next: draft the reversible LKM package plan against these constraints; no approval or implementation authorized by this transition.",
+          "sequence": 9,
+          "state": "drafting-plan",
+          "time": "2026-09-17T12:52:14+00:00"
         }
       ],
       "number": 1,
@@ -65,8 +71,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 8,
-  "state": "planner-questions",
+  "sequence": 9,
+  "state": "drafting-plan",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T12:51:55+00:00"
+  "updated": "2026-09-17T12:52:14+00:00"
 }
