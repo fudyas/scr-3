@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: approved
 round: 1
-sequence: 36
-approval: none
+sequence: 37
+approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:14:37+00:00
+updated: 2026-09-17T16:16:41+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -890,3 +890,5 @@ Policy facts: six payload destinations, custom maintainer scripts, boot activati
 - `2026-09-17T16:14:29+00:00` [draft-ready] Committed DRAFT revision 3 after developer amendment: count exactly one observable boot reaching module initialization; same-boot unload/reload deduplicated by module-owned guard; pre-init resets/boots uncounted. Removed reset-cause collection, all i.MX6 register/MMIO access, retained-counter research, kernel-source and U-Boot/bootloader patching/replacement. Plan keeps minimal OOT module, Bash transport frontend, RELEASE.md, reversible single DEB, controlled live load/unload/reload/boot checks, no target APT mutation, and continuous-lock install/test/uninstall/restoration/quarantine proof. No new load-bearing question; no implementation.
 
 - `2026-09-17T16:14:37+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-17T16:16:41+00:00` [approved] Developer approved DRAFT revision 3 SHA-256 42a33ec51bfd585df1d382afc984fb5ee1eddc418eae51dea0e99368ca0e8d7c
