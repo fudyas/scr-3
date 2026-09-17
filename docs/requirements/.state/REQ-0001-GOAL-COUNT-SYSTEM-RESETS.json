@@ -156,6 +156,12 @@
           "sequence": 22,
           "state": "approved",
           "time": "2026-09-17T13:41:54+00:00"
+        },
+        {
+          "message": "Implementation started from the approved plan",
+          "sequence": 23,
+          "state": "implementing",
+          "time": "2026-09-17T13:41:58+00:00"
         }
       ],
       "number": 1,
@@ -163,8 +169,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 22,
-  "state": "approved",
+  "sequence": 23,
+  "state": "implementing",
   "task_workflow": {
     "active": null,
     "definitions_sha256": "dfb38b4d6bba218ef5aa0b98fa9b36654f6c8365d4076c26e5dd111c4b44e92e",
@@ -205,5 +211,5 @@
     }
   },
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T13:41:54+00:00"
+  "updated": "2026-09-17T13:41:58+00:00"
 }
