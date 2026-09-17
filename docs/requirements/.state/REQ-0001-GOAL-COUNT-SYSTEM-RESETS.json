@@ -9,7 +9,12 @@
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
   "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
-  "implementation": {},
+  "implementation": {
+    "base_commit": "a3c163ab102c3a7f7a271e6f1456973401d2ac71",
+    "branch": "sdlc-req/req-0001-goal-count-system-resets",
+    "worktree": "/home/fudya/devel/scr/.codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+    "worktree_head": "a3c163ab102c3a7f7a271e6f1456973401d2ac71"
+  },
   "plan": {
     "revision": 2,
     "sha256": "a5d45639407a0e98c4e2798ffb4d43763b5129ddabdb55070d7b38580bc2e411",
@@ -145,6 +150,12 @@
           "sequence": 21,
           "state": "approved",
           "time": "2026-09-17T13:41:09+00:00"
+        },
+        {
+          "message": "Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets",
+          "sequence": 22,
+          "state": "approved",
+          "time": "2026-09-17T13:41:54+00:00"
         }
       ],
       "number": 1,
@@ -152,7 +163,7 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 21,
+  "sequence": 22,
   "state": "approved",
   "task_workflow": {
     "active": null,
@@ -194,5 +205,5 @@
     }
   },
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T13:41:09+00:00"
+  "updated": "2026-09-17T13:41:54+00:00"
 }
