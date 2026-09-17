@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import contextlib
 import datetime as dt
+import errno
 import fcntl
 import hashlib
 import json
@@ -19,6 +21,7 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
+from typing import Any, Dict
 
 SCHEMA_VERSION = 1
 ID_RE = re.compile(r"^REQ-(\d{4})-([A-Z0-9]+(?:-[A-Z0-9]+){0,3})$")
@@ -61,7 +64,27 @@ def run(args: list[str], *, cwd: Path | None = None, check: bool = True,
 
 
 def git(root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return run(["git", "--no-pager", *args], cwd=root, check=check)
+    """Runs Git with repository-managed SSH credentials when available."""
+    command = ["git", "--no-pager"]
+
+    # Finds credentials from both main and linked pipeline worktrees
+    for parent in (root.resolve(), *root.resolve().parents):
+        ssh_config = parent / "admin/ssh_config"
+        identity = parent / "admin/github"
+        known_hosts = parent / "admin/github_known_hosts"
+        if ssh_config.is_file() and identity.is_file() and known_hosts.is_file():
+            ssh_command = " ".join([
+                "ssh",
+                "-F", shlex.quote(str(ssh_config)),
+                "-i", shlex.quote(str(identity)),
+                "-o", "IdentitiesOnly=yes",
+                "-o", f"UserKnownHostsFile={shlex.quote(str(known_hosts))}",
+                "-o", "StrictHostKeyChecking=yes",
+            ])
+            command.extend(["-c", f"core.sshCommand={ssh_command}"])
+            break
+
+    return run([*command, *args], cwd=root, check=check)
 
 
 def now() -> str:
@@ -105,6 +128,10 @@ class Context:
         self.worktrees = configured_path("SDLC_WORKTREE_ROOT", ".codex/worktrees")
         self.runtime = configured_path("SDLC_RUNTIME_ROOT", ".codex/sdlc")
         self.lock_root = configured_path("SDLC_SHARED_LOCK_ROOT", ".codex/sdlc")
+        common_dir = git(self.root, "rev-parse", "--git-common-dir").stdout.strip()
+        common_path = Path(common_dir)
+        self.main_tree_lock_root = ((self.root / common_path).resolve()
+                                   if not common_path.is_absolute() else common_path.resolve()) / "sdlc-locks"
         self.ledger = self.worktrees / "sdlc"
         self.req_dir_name = self.conf.get("SDLC_REQUIREMENTS_DIR", "docs/requirements")
         self.runtime.mkdir(parents=True, exist_ok=True)
@@ -112,17 +139,36 @@ class Context:
         (self.runtime / "quarantine").mkdir(parents=True, exist_ok=True)
         (self.lock_root / "locks").mkdir(parents=True, exist_ok=True)
         (self.lock_root / "quarantine").mkdir(parents=True, exist_ok=True)
+        self.main_tree_lock_root.mkdir(parents=True, exist_ok=True)
 
     @property
     def req_dir(self) -> Path:
         return self.ledger / self.req_dir_name
 
+    def assert_image_available(self, identity: str | None = None, recover: bool = False) -> None:
+        """Rejects image work while global or image-specific quarantine is active.
+
+        Args:
+            identity: stable image identity to check, when known.
+            recover: permits image-specific recovery work while preserving global quarantine.
+
+        Raises:
+            SDLCError: global quarantine exists or image-specific quarantine blocks work.
+        """
+        dirty = self.lock_root / "quarantine" / "image-dirty.json"
+        if dirty.exists() and os.environ.get("SDLC_RECOVERY") != "1":
+            raise SDLCError(f"image operations are logically locked by quarantine: {dirty}")
+        if identity is not None:
+            quarantine = self.lock_root / "quarantine" / f"image-{identity}.json"
+            if quarantine.exists() and not recover:
+                raise SDLCError(f"image is quarantined: {quarantine}")
+
     @contextlib.contextmanager
     def lock(self, name: str, timeout: int | None = None):
-        dirty = self.lock_root / "quarantine" / "image-dirty.json"
-        if name == "image" and dirty.exists() and os.environ.get("SDLC_RECOVERY") != "1":
-            raise SDLCError(f"image operations are logically locked by quarantine: {dirty}")
-        path = self.lock_root / "locks" / f"{name}.lock"
+        if name == "image":
+            self.assert_image_available()
+        lock_dir = self.main_tree_lock_root if name == "main-tree" else self.lock_root / "locks"
+        path = lock_dir / f"{name}.lock"
         path.parent.mkdir(parents=True, exist_ok=True)
         limit = timeout if timeout is not None else int(self.conf.get("SDLC_LOCK_TIMEOUT", "3600"))
         with path.open("a+", encoding="utf-8") as handle:
@@ -141,6 +187,9 @@ class Context:
             handle.flush()
             os.fsync(handle.fileno())
             try:
+                # Closes quarantine race between preflight and flock acquisition
+                if name == "image":
+                    self.assert_image_available()
                 yield path
             finally:
                 fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
@@ -229,6 +278,77 @@ def doc_path(ctx: Context, req_id: str) -> Path:
     return ctx.req_dir / f"{req_id}.md"
 
 
+def task_artifact_dir(ctx: Context, req_id: str, round_no: int) -> Path:
+    """Returns round-scoped task artifact directory."""
+    return ctx.req_dir / "artifacts" / req_id / f"round-{round_no}"
+
+
+def load_json_file(path: Path, label: str) -> Dict[str, Any]:
+    """Loads a JSON object with a contextual error label."""
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SDLCError(f"cannot read {label}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SDLCError(f"{label} must contain a JSON object")
+    return value
+
+
+def manifest_source_path(manifest_path: Path, value: object, label: str) -> Path:
+    """Returns a safe manifest-relative source file."""
+    if not isinstance(value, str) or not value or Path(value).is_absolute():
+        raise SDLCError(f"manifest {label} must be a relative file path")
+    path = (manifest_path.parent / value).resolve()
+    root = manifest_path.parent.resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise SDLCError(f"manifest {label} file is missing or escapes manifest directory: {value}")
+    return path
+
+
+def approved_plan_sha256(state: Dict[str, Any]) -> str:
+    """Returns approved plan hash after validating current binding."""
+    approval = state.get("approval", {})
+    plan = state.get("plan", {})
+    approved = approval.get("plan_sha256")
+    if state["state"] not in {"approved", "auto-approved", "implementing", "implementation-ready", "validating"}:
+        raise SDLCError(f"task workflow requires approved plan, got {state['state']}")
+    if not approved or approved != plan.get("sha256"):
+        raise SDLCError("current plan is not bound to approval")
+    return approved
+
+
+def load_task_manifest(ctx: Context, state: Dict[str, Any]) -> Dict[str, Any]:
+    """Loads task manifest and verifies approval and artifact integrity."""
+    root = task_artifact_dir(ctx, state["id"], state["current_round"])
+    manifest = load_json_file(root / "manifest.json", "task manifest")
+    if manifest.get("approved_plan_sha256") != approved_plan_sha256(state):
+        raise SDLCError("task manifest approved-plan hash does not match current approval")
+    expected = manifest.get("definitions_sha256")
+    definition = {key: value for key, value in manifest.items() if key != "definitions_sha256"}
+    actual = hashlib.sha256(json.dumps(
+        definition, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if expected != actual:
+        raise SDLCError("task manifest definition hash is invalid")
+    for key in ("contract", "interfaces", "acceptance"):
+        path = root / manifest[key]
+        if not path.is_file() or file_sha256(path) != manifest[f"{key}_sha256"]:
+            raise SDLCError(f"immutable task artifact changed: {key}")
+    for task in manifest.get("tasks", []):
+        path = root / task["file"]
+        if not path.is_file() or file_sha256(path) != task["sha256"]:
+            raise SDLCError(f"immutable task artifact changed: {task['id']}")
+    return manifest
+
+
+def task_by_id(manifest: Dict[str, Any], task_id: str) -> Dict[str, Any]:
+    """Returns one task definition by ID."""
+    matches = [task for task in manifest.get("tasks", [])
+               if isinstance(task, dict) and task.get("id") == task_id]
+    if len(matches) != 1:
+        raise SDLCError(f"unknown task id: {task_id}")
+    return matches[0]
+
+
 def load_state(ctx: Context, req_id: str) -> dict:
     match = resolve_id(ctx, req_id)
     path = state_path(ctx, match)
@@ -295,6 +415,9 @@ def commit_ledger(ctx: Context, req_id: str, message: str) -> None:
     claim_number = ID_RE.match(req_id).group(1)  # type: ignore[union-attr]
     claim = (ctx.req_dir / ".ids" / claim_number).relative_to(ctx.ledger)
     paths = [str(rel_doc), str(rel_state)]
+    artifact_root = ctx.req_dir / "artifacts" / req_id
+    if artifact_root.exists():
+        paths.append(str(artifact_root.relative_to(ctx.ledger)))
     if (ctx.ledger / claim).exists():
         paths.append(str(claim))
     git(ctx.ledger, "add", "--", *paths)
@@ -600,7 +723,7 @@ def cmd_abandon(ctx: Context, args: argparse.Namespace) -> None:
 
 def cmd_models(ctx: Context, _args: argparse.Namespace) -> None:
     roles = ["COORDINATOR", "REQUIREMENTS", "IMAGE_ANALYSIS", "PLANNER",
-             "IMPLEMENTATION", "VALIDATION", "FOLLOW_UP"]
+             "IMPLEMENTATION", "VALIDATION", "INTEGRATION", "FOLLOW_UP"]
     for role in roles:
         print(f"{role.lower()}\t{ctx.conf.get(f'SDLC_{role}_MODEL', '')}\t"
               f"{ctx.conf.get(f'SDLC_{role}_EFFORT', '')}")
@@ -627,6 +750,9 @@ def cmd_resume(ctx: Context, args: argparse.Namespace) -> None:
         "abandoned": ("done", "abandoned", "requirement abandoned"),
     }
     kind, action, detail = actions[state["state"]]
+    if state["state"] == "validating" and state.get("validation", {}).get("status") == "pass":
+        kind, action, detail = ("agent", "sdlc_integration",
+                                "verify and merge exact validated work into clean main tree")
     result = {"id": state["id"], "round": state["current_round"], "state": state["state"],
               "kind": kind, "action": action, "detail": detail}
     print(json.dumps(result, indent=2) if args.json else
@@ -662,6 +788,251 @@ def cmd_implement(ctx: Context, args: argparse.Namespace) -> None:
         raise SDLCError("the current DRAFT differs from the approved plan")
     cmd_worktree(ctx, argparse.Namespace(id=state["id"], base=args.base))
     transition(ctx, state["id"], "implementing", "Implementation started from the approved plan")
+
+
+def cmd_task_plan(ctx: Context, args: argparse.Namespace) -> None:
+    """Creates bounded task artifacts from a plan manifest."""
+    manifest_path = Path(args.manifest).resolve()
+    source = load_json_file(manifest_path, "task-plan manifest")
+    with ctx.lock("registry"):
+        ensure_ledger(ctx)
+        sync_ledger(ctx)
+        state = load_state(ctx, args.id)
+        if state["state"] not in {"draft-ready", "awaiting-approval", "approved", "auto-approved"}:
+            raise SDLCError(f"task plan cannot be changed from {state['state']}")
+        plan = state.get("plan", {})
+        if not plan.get("sha256"):
+            raise SDLCError("task plan requires persisted DRAFT plan")
+        if source.get("plan_sha256") not in {None, plan["sha256"]}:
+            raise SDLCError("task-plan manifest plan hash differs from current DRAFT")
+
+        # Validates shared inputs before changing ledger artifacts
+        contract_source = manifest_source_path(manifest_path, source.get("contract"), "contract")
+        interfaces_source = manifest_source_path(manifest_path, source.get("interfaces"), "interfaces")
+        acceptance_source = manifest_source_path(manifest_path, source.get("acceptance"), "acceptance")
+        acceptance = load_json_file(acceptance_source, "acceptance artifact")
+        criteria = acceptance.get("criteria")
+        if not isinstance(criteria, list) or not criteria:
+            raise SDLCError("acceptance artifact requires non-empty criteria list")
+        criterion_values = [item.get("id") for item in criteria if isinstance(item, dict)]
+        if (len(criterion_values) != len(criteria) or
+                any(not isinstance(item, str) or not item for item in criterion_values) or
+                len(set(criterion_values)) != len(criteria)):
+            raise SDLCError("acceptance criterion IDs must be present and unique")
+        criterion_ids = set(criterion_values)
+
+        # Validates task graph, coverage, and bounded source capsules
+        tasks = source.get("tasks")
+        if not isinstance(tasks, list) or not tasks:
+            raise SDLCError("task-plan manifest requires non-empty tasks list")
+        task_ids = [task.get("id") for task in tasks if isinstance(task, dict)]
+        if len(task_ids) != len(tasks) or len(set(task_ids)) != len(tasks):
+            raise SDLCError("task IDs must be present and unique")
+        if any(not isinstance(value, str) or not re.fullmatch(r"T[0-9]{2,}", value) for value in task_ids):
+            raise SDLCError("task IDs must match T followed by at least two digits")
+        seen: set[str] = set()
+        normalized_tasks = []
+        covered: set[str] = set()
+        task_sources: dict[str, Path] = {}
+        for task in tasks:
+            task_id = task["id"]
+            dependencies = task.get("depends_on", [])
+            acceptance_ids = task.get("acceptance", [])
+            if (not isinstance(dependencies, list) or
+                    any(item not in seen for item in dependencies)):
+                raise SDLCError(f"task {task_id} dependencies must name earlier tasks")
+            if (not isinstance(acceptance_ids, list) or not acceptance_ids or
+                    any(not isinstance(item, str) or item not in criterion_ids
+                        for item in acceptance_ids)):
+                raise SDLCError(f"task {task_id} acceptance IDs are missing or unknown")
+            task_source = manifest_source_path(manifest_path, task.get("file"), f"task {task_id}")
+            if task_source.stat().st_size > 12000:
+                raise SDLCError(f"task {task_id} capsule exceeds 12000-byte limit")
+            task_sources[task_id] = task_source
+            covered.update(acceptance_ids)
+            normalized_tasks.append({"id": task_id, "file": f"tasks/{task_id}.md",
+                                     "depends_on": dependencies, "acceptance": acceptance_ids,
+                                     "sha256": file_sha256(task_source)})
+            seen.add(task_id)
+        if covered != criterion_ids:
+            raise SDLCError("task plan does not cover every acceptance criterion")
+
+        # Replaces only pre-implementation task definitions
+        root = task_artifact_dir(ctx, state["id"], state["current_round"])
+        if root.exists():
+            shutil.rmtree(root)
+        (root / "tasks").mkdir(parents=True)
+        (root / "evidence").mkdir()
+        (root / "briefs").mkdir()
+        shutil.copyfile(contract_source, root / "contract.md")
+        shutil.copyfile(interfaces_source, root / "interfaces.md")
+        shutil.copyfile(acceptance_source, root / "acceptance.json")
+        for task_id, task_source in task_sources.items():
+            shutil.copyfile(task_source, root / "tasks" / f"{task_id}.md")
+        canonical = {"schema_version": 1, "requirement": state["id"],
+                     "round": state["current_round"], "plan_revision": plan["revision"],
+                     "approved_plan_sha256": plan["sha256"],
+                     "contract": "contract.md", "interfaces": "interfaces.md",
+                     "acceptance": "acceptance.json",
+                     "contract_sha256": file_sha256(contract_source),
+                     "interfaces_sha256": file_sha256(interfaces_source),
+                     "acceptance_sha256": file_sha256(acceptance_source),
+                     "tasks": normalized_tasks}
+        canonical["definitions_sha256"] = hashlib.sha256(
+            json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        atomic_json(root / "manifest.json", canonical)
+        state["task_workflow"] = {"round": state["current_round"],
+                                  "definitions_sha256": canonical["definitions_sha256"],
+                                  "active": None,
+                                  "tasks": {task_id: {"status": "pending", "attempts": 0}
+                                            for task_id in task_ids}}
+        save_state(ctx, state, f"Split approved-plan candidate into {len(tasks)} bounded tasks")
+        commit_ledger(ctx, state["id"], f"Recorded {state['id']} task plan")
+        print(root / "manifest.json")
+
+
+def make_task_brief(ctx: Context, state: Dict[str, Any], manifest: Dict[str, Any],
+                    task: Dict[str, Any]) -> Path:
+    """Creates a bounded implementation brief for one task."""
+    root = task_artifact_dir(ctx, state["id"], state["current_round"])
+    parts = []
+    for title, relative in (("Contract", "contract.md"), ("Interfaces", "interfaces.md"),
+                            ("Task", task["file"])):
+        content = (root / relative).read_text(encoding="utf-8").strip()
+        if len(content.encode()) > 6000:
+            raise SDLCError(f"{title.lower()} exceeds 6000-byte brief component limit")
+        parts.append(f"## {title}\n\n{content}")
+    predecessors = []
+    workflow = state["task_workflow"]["tasks"]
+    for predecessor in task["depends_on"]:
+        predecessors.append(f"- `{predecessor}`: validated; attempts {workflow[predecessor]['attempts']}")
+    dependency_text = "\n".join(predecessors) if predecessors else "None."
+    header = (f"# {task['id']} implementation brief\n\n"
+              f"Requirement: `{state['id']}`\n\nRound: `{state['current_round']}`\n\n"
+              f"Approved plan SHA-256: `{manifest['approved_plan_sha256']}`\n\n"
+              f"Definitions SHA-256: `{manifest['definitions_sha256']}`\n\n"
+              f"$caveman full. Implement `{task['id']}` only. Preserve exact technical substance.\n\n"
+              f"## Validated predecessors\n\n{dependency_text}\n\n")
+    brief = header + "\n\n".join(parts) + "\n"
+    if len(brief.encode()) > 20000:
+        raise SDLCError("generated brief exceeds 20000-byte limit")
+    path = root / "briefs" / f"{task['id']}.md"
+    path.write_text(brief, encoding="utf-8")
+    return path
+
+
+def cmd_task_next(ctx: Context, args: argparse.Namespace) -> None:
+    """Activates first dependency-ready task."""
+    with ctx.lock("registry"):
+        ensure_ledger(ctx)
+        sync_ledger(ctx)
+        state = load_state(ctx, args.id)
+        if state["state"] != "implementing":
+            raise SDLCError(f"task execution requires implementing, got {state['state']}")
+        manifest = load_task_manifest(ctx, state)
+        workflow = state.get("task_workflow", {})
+        if workflow.get("definitions_sha256") != manifest.get("definitions_sha256"):
+            raise SDLCError("task definitions differ from recorded immutable hash")
+        if workflow.get("active"):
+            raise SDLCError(f"task already active: {workflow['active']}")
+        selected = None
+        for task in manifest["tasks"]:
+            status = workflow["tasks"][task["id"]]["status"]
+            dependencies_pass = all(workflow["tasks"][item]["status"] == "validated"
+                                    for item in task["depends_on"])
+            if status in {"pending", "failed"} and dependencies_pass:
+                selected = task
+                break
+        if selected is None:
+            if all(item["status"] == "validated" for item in workflow["tasks"].values()):
+                print("complete")
+                return
+            raise SDLCError("no task is runnable; dependency or validation gate remains")
+        item = workflow["tasks"][selected["id"]]
+        item["attempts"] += 1
+        item["status"] = "active"
+        workflow["active"] = selected["id"]
+        brief = make_task_brief(ctx, state, manifest, selected)
+        save_state(ctx, state, f"Activated task {selected['id']} attempt {item['attempts']}")
+        commit_ledger(ctx, state["id"], f"Activated {state['id']} {selected['id']}")
+        print(f"{selected['id']}\t{brief}")
+
+
+def cmd_brief(ctx: Context, args: argparse.Namespace) -> None:
+    """Prints an activated task brief or its path."""
+    ensure_ledger(ctx)
+    state = load_state(ctx, args.id)
+    manifest = load_task_manifest(ctx, state)
+    task = task_by_id(manifest, args.task)
+    path = task_artifact_dir(ctx, state["id"], state["current_round"]) / "briefs" / f"{task['id']}.md"
+    if not path.is_file():
+        raise SDLCError(f"task brief does not exist; activate task first: {task['id']}")
+    print(path if args.path else path.read_text(encoding="utf-8"), end="\n" if args.path else "")
+
+
+def cmd_task_result(ctx: Context, args: argparse.Namespace) -> None:
+    """Records implementation evidence for active task attempt."""
+    report = load_json_file(Path(args.report_file), "task result")
+    with ctx.lock("registry"):
+        ensure_ledger(ctx)
+        sync_ledger(ctx)
+        state = load_state(ctx, args.id)
+        manifest = load_task_manifest(ctx, state)
+        task = task_by_id(manifest, args.task)
+        workflow = state["task_workflow"]
+        if workflow.get("active") != task["id"] or workflow["tasks"][task["id"]]["status"] != "active":
+            raise SDLCError(f"task result requires active task: {task['id']}")
+        attempt = workflow["tasks"][task["id"]]["attempts"]
+        evidence = {"schema_version": 1, "requirement": state["id"], "round": state["current_round"],
+                    "task": task["id"], "attempt": attempt, "time": now(),
+                    "approved_plan_sha256": manifest["approved_plan_sha256"], "report": report}
+        root = task_artifact_dir(ctx, state["id"], state["current_round"])
+        atomic_json(root / "evidence" / f"{task['id']}-result-{attempt:03d}.json", evidence)
+        workflow["tasks"][task["id"]]["status"] = "awaiting-validation"
+        save_state(ctx, state, f"Recorded task {task['id']} attempt {attempt} result")
+        commit_ledger(ctx, state["id"], f"Recorded {state['id']} {task['id']} result")
+
+
+def cmd_task_validate(ctx: Context, args: argparse.Namespace) -> None:
+    """Records independent validation for submitted task attempt."""
+    report = load_json_file(Path(args.report_file), "task validation")
+    with ctx.lock("registry"):
+        ensure_ledger(ctx)
+        sync_ledger(ctx)
+        state = load_state(ctx, args.id)
+        manifest = load_task_manifest(ctx, state)
+        task = task_by_id(manifest, args.task)
+        workflow = state["task_workflow"]
+        item = workflow["tasks"][task["id"]]
+        if workflow.get("active") != task["id"] or item["status"] != "awaiting-validation":
+            raise SDLCError(f"task validation requires submitted active task: {task['id']}")
+        attempt = item["attempts"]
+        evidence = {"schema_version": 1, "requirement": state["id"], "round": state["current_round"],
+                    "task": task["id"], "attempt": attempt, "time": now(), "result": args.result,
+                    "approved_plan_sha256": manifest["approved_plan_sha256"], "report": report}
+        root = task_artifact_dir(ctx, state["id"], state["current_round"])
+        atomic_json(root / "evidence" / f"{task['id']}-validation-{attempt:03d}.json", evidence)
+        item["status"] = "validated" if args.result == "pass" else "failed"
+        workflow["active"] = None
+        save_state(ctx, state, f"Task {task['id']} attempt {attempt} validation {args.result}")
+        commit_ledger(ctx, state["id"], f"Validated {state['id']} {task['id']} {args.result}")
+
+
+def cmd_acceptance(ctx: Context, args: argparse.Namespace) -> None:
+    """Prints acceptance coverage and task validation status."""
+    ensure_ledger(ctx)
+    state = load_state(ctx, args.id)
+    manifest = load_task_manifest(ctx, state)
+    root = task_artifact_dir(ctx, state["id"], state["current_round"])
+    acceptance = load_json_file(root / manifest["acceptance"], "acceptance artifact")
+    workflow = state.get("task_workflow", {}).get("tasks", {})
+    rows = []
+    for criterion in acceptance["criteria"]:
+        owners = [task["id"] for task in manifest["tasks"] if criterion["id"] in task["acceptance"]]
+        passed = bool(owners) and all(workflow.get(owner, {}).get("status") == "validated" for owner in owners)
+        rows.append({"id": criterion["id"], "tasks": owners, "status": "validated" if passed else "pending"})
+    print(json.dumps({"requirement": state["id"], "round": state["current_round"],
+                      "plan_sha256": manifest["approved_plan_sha256"], "criteria": rows}, indent=2))
 
 
 def cmd_validate(ctx: Context, args: argparse.Namespace) -> None:
@@ -711,12 +1082,14 @@ def cmd_worktree(ctx: Context, args: argparse.Namespace) -> None:
         state = load_state(ctx, args.id)
         req_id = state["id"]
         path = ctx.worktrees / req_id
-        branch = f"sdlc/{req_id.lower()}"
+        # Keeps requirement branches outside the ledger branch ref namespace
+        branch = f"sdlc-req/{req_id.lower()}"
         if not (path / ".git").exists():
             if git(ctx.root, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}", check=False).returncode == 0:
                 git(ctx.root, "worktree", "add", str(path), branch)
             else:
                 git(ctx.root, "worktree", "add", "-b", branch, str(path), args.base or "HEAD")
+        link_shared_worktree_paths(ctx.root, path)
         values = {"branch": branch, "worktree": str(path),
                   "worktree_head": git(path, "rev-parse", "HEAD").stdout.strip()}
         if "base_commit" not in state["implementation"]:
@@ -727,6 +1100,32 @@ def cmd_worktree(ctx: Context, args: argparse.Namespace) -> None:
         print(path)
 
 
+def link_shared_worktree_paths(main_root: Path, worktree: Path) -> None:
+    """Links untracked runtime directories into a requirement worktree.
+
+    Args:
+        main_root: main checkout containing shared runtime directories.
+        worktree: requirement checkout receiving safe symbolic links.
+
+    Raises:
+        SDLCError: a destination exists but is not the expected symbolic link.
+    """
+    # Shares host runtime state without copying mutable or secret local data
+    for name in ("var", "admin"):
+        source = (main_root / name).resolve()
+        if not source.exists():
+            continue
+        destination = worktree / name
+        expected = os.path.relpath(source, destination.parent)
+        if destination.is_symlink():
+            if os.readlink(destination) == expected and destination.resolve() == source:
+                continue
+            raise SDLCError(f"refusing unexpected existing worktree path: {destination}")
+        if destination.exists() or destination.is_symlink():
+            raise SDLCError(f"refusing unexpected existing worktree path: {destination}")
+        destination.symlink_to(expected, target_is_directory=True)
+
+
 def cmd_implementation_commit(ctx: Context, args: argparse.Namespace) -> None:
     with ctx.lock("registry"):
         ensure_ledger(ctx)
@@ -734,6 +1133,12 @@ def cmd_implementation_commit(ctx: Context, args: argparse.Namespace) -> None:
         state = load_state(ctx, args.id)
         if state["state"] != "implementing":
             raise SDLCError(f"implementation cannot be committed from {state['state']}")
+        workflow = state.get("task_workflow")
+        if workflow and any(item.get("status") != "validated"
+                            for item in workflow.get("tasks", {}).values()):
+            raise SDLCError("implementation commit requires every planned task to pass validation")
+        if workflow:
+            load_task_manifest(ctx, state)
         worktree = Path(state.get("implementation", {}).get("worktree", ""))
         if not (worktree / ".git").exists():
             raise SDLCError("requirement implementation worktree is missing")
@@ -753,55 +1158,113 @@ def cmd_implementation_commit(ctx: Context, args: argparse.Namespace) -> None:
 
 
 def cmd_merge(ctx: Context, args: argparse.Namespace) -> None:
-    with ctx.lock("registry"):
-        ensure_ledger(ctx)
-        sync_ledger(ctx)
-        state = load_state(ctx, args.id)
-        if state["state"] != "validating" or state.get("validation", {}).get("status") != "passed":
-            raise SDLCError(f"merge requires validated work, got {state['state']}")
-        branch = state.get("implementation", {}).get("branch")
-        commit = state.get("implementation", {}).get("commit")
-        if not branch or not commit:
-            raise SDLCError("implementation branch and commit must be recorded before merge")
-        branch_head = git(ctx.root, "rev-parse", branch).stdout.strip()
-        if branch_head != commit or state["validation"].get("implementation_commit") != commit:
-            raise SDLCError("implementation branch moved after the validated commit")
-        target = Path(args.target).resolve() if args.target else ctx.root
-        if git(target, "status", "--porcelain").stdout.strip():
-            raise SDLCError(f"target worktree is not clean: {target}")
-        result = git(target, "merge", "--no-ff", commit, "-m", f"Merged {state['id']} implementation", check=False)
-        if result.returncode != 0:
-            git(target, "merge", "--abort", check=False)
-            raise SDLCError(f"implementation merge needs developer conflict resolution: {result.stderr.strip()}")
-        merge_commit = git(target, "rev-parse", "HEAD").stdout.strip()
-        state["implementation"]["merge_commit"] = merge_commit
-        state["state"] = "awaiting-hardware"
-        save_state(ctx, state, f"Merged implementation as {merge_commit}")
-        commit_ledger(ctx, state["id"], f"Recorded {state['id']} merge commit")
-        print(merge_commit)
+    # Serializes every main-tree inspection and mutation across sessions and worktrees
+    with ctx.lock("main-tree"):
+        with ctx.lock("registry"):
+            ensure_ledger(ctx)
+            sync_ledger(ctx)
+            state = load_state(ctx, args.id)
+            if state["state"] != "validating" or state.get("validation", {}).get("status") != "pass":
+                raise SDLCError(f"merge requires validated work, got {state['state']}")
+            branch = state.get("implementation", {}).get("branch")
+            commit = state.get("implementation", {}).get("commit")
+            if not branch or not commit:
+                raise SDLCError("implementation branch and commit must be recorded before merge")
+            branch_head = git(ctx.root, "rev-parse", branch).stdout.strip()
+            if branch_head != commit or state["validation"].get("implementation_commit") != commit:
+                raise SDLCError("implementation branch moved after the validated commit")
+            deb = Path(state["implementation"].get("deb", ""))
+            validated_deb = state["validation"].get("deb_sha256")
+            if not deb.is_file() or file_sha256(deb) != validated_deb:
+                raise SDLCError("DEB artifact changed after independent validation")
+            target = Path(args.target).resolve() if args.target else ctx.root
+            if git(target, "status", "--porcelain").stdout.strip():
+                raise SDLCError(f"target worktree is not clean: {target}")
+            result = git(target, "merge", "--no-ff", commit, "-m", f"Merged {state['id']} implementation", check=False)
+            if result.returncode != 0:
+                git(target, "merge", "--abort", check=False)
+                raise SDLCError(f"implementation merge needs developer conflict resolution: {result.stderr.strip()}")
+            merge_commit = git(target, "rev-parse", "HEAD").stdout.strip()
+            state["implementation"]["merge_commit"] = merge_commit
+            state["state"] = "awaiting-hardware"
+            save_state(ctx, state, f"Merged implementation as {merge_commit}")
+            commit_ledger(ctx, state["id"], f"Recorded {state['id']} merge commit")
+            print(merge_commit)
+
+
+def fingerprint_xattrs(path: Path) -> Dict[str, Any]:
+    """Returns deterministic extended attributes without following symbolic links.
+
+    Args:
+        path: filesystem entry to inspect.
+
+    Returns:
+        Attribute names mapped to base64 values, or explicit unsupported status.
+
+    Raises:
+        OSError: metadata inspection fails for a reason other than unsupported access.
+    """
+    try:
+        names = sorted(os.listxattr(path, follow_symlinks=False))
+        return {name: base64.b64encode(os.getxattr(
+            path, name, follow_symlinks=False)).decode("ascii") for name in names}
+    except OSError as exc:
+        # Records platform/filesystem limits instead of weakening restoration proof silently
+        unsupported = {errno.ENOTSUP, errno.EOPNOTSUPP}
+        if exc.errno in unsupported:
+            return {"status": "unsupported", "errno": exc.errno}
+        raise
 
 
 def fingerprint_tree(root: Path, excludes: list[str]) -> dict[str, dict]:
+    """Returns content and restoration metadata for a filesystem tree.
+
+    Args:
+        root: mounted image root to inspect.
+        excludes: absolute image paths omitted from inspection.
+
+    Returns:
+        Path-keyed fingerprints including timestamps, xattrs, and hard-link groups.
+    """
     result: dict[str, dict] = {}
+    inode_paths: Dict[tuple[int, int], list[str]] = {}
     normalized = [x.rstrip("/") for x in excludes if x]
+    # Includes mount-root metadata in restoration proof
+    root_stat = root.lstat()
+    result["/"] = {"type": "directory", "mode": root_stat.st_mode,
+                   "uid": root_stat.st_uid, "gid": root_stat.st_gid,
+                   "atime_ns": root_stat.st_atime_ns, "mtime_ns": root_stat.st_mtime_ns,
+                   "xattrs": fingerprint_xattrs(root)}
     for base, dirs, files in os.walk(root, topdown=True, followlinks=False):
         base_path = Path(base)
         rel_base = "/" + str(base_path.relative_to(root)) if base_path != root else ""
-        dirs[:] = [d for d in dirs if not any((rel_base + "/" + d == x or
-                                                (rel_base + "/" + d).startswith(x + "/"))
-                                               for x in normalized)]
+        included_dirs = [d for d in dirs if not any((rel_base + "/" + d == x or
+                                                       (rel_base + "/" + d).startswith(x + "/"))
+                                                      for x in normalized)]
+        # Records directory symlinks as links instead of silently dropping them
+        symlink_dirs = [d for d in included_dirs if (base_path / d).is_symlink()]
+        dirs[:] = [d for d in included_dirs if d not in symlink_dirs]
+        for name in sorted(symlink_dirs):
+            path = base_path / name
+            rel = "/" + str(path.relative_to(root))
+            st = path.lstat()
+            result[rel] = {"type": "symlink", "link": os.readlink(path),
+                           "mode": st.st_mode, "uid": st.st_uid, "gid": st.st_gid,
+                           "size": st.st_size, "atime_ns": st.st_atime_ns,
+                           "mtime_ns": st.st_mtime_ns, "xattrs": fingerprint_xattrs(path)}
         if base_path != root:
             st = base_path.lstat()
             result[rel_base] = {"type": "directory", "mode": st.st_mode,
-                                "uid": st.st_uid, "gid": st.st_gid}
+                                "uid": st.st_uid, "gid": st.st_gid,
+                                "atime_ns": st.st_atime_ns, "mtime_ns": st.st_mtime_ns,
+                                "xattrs": fingerprint_xattrs(base_path)}
         for name in sorted(files):
             path = base_path / name
             rel = "/" + str(path.relative_to(root))
             if any(rel == x or rel.startswith(x + "/") for x in normalized):
                 continue
-            st = path.lstat()
-            entry = {"type": "symlink" if path.is_symlink() else "file", "mode": st.st_mode,
-                     "uid": st.st_uid, "gid": st.st_gid, "size": st.st_size}
+            initial_stat = path.lstat()
+            entry = {"type": "symlink" if path.is_symlink() else "file"}
             if path.is_symlink():
                 entry["link"] = os.readlink(path)
             elif path.is_file():
@@ -810,7 +1273,24 @@ def fingerprint_tree(root: Path, excludes: list[str]) -> dict[str, dict]:
                     for block in iter(lambda: handle.read(1024 * 1024), b""):
                         digest.update(block)
                 entry["sha256"] = digest.hexdigest()
+                inode_paths.setdefault((initial_stat.st_dev, initial_stat.st_ino), []).append(rel)
+            # Captures timestamps after reads so fingerprinting does not report its own atime update
+            st = path.lstat()
+            entry.update({"mode": st.st_mode, "uid": st.st_uid, "gid": st.st_gid,
+                          "size": st.st_size, "atime_ns": st.st_atime_ns,
+                          "mtime_ns": st.st_mtime_ns, "xattrs": fingerprint_xattrs(path)})
             result[rel] = entry
+    # Captures root timestamps after traversal so scanning does not create false drift
+    root_stat = root.lstat()
+    result["/"].update({"mode": root_stat.st_mode, "uid": root_stat.st_uid,
+                        "gid": root_stat.st_gid, "atime_ns": root_stat.st_atime_ns,
+                        "mtime_ns": root_stat.st_mtime_ns, "xattrs": fingerprint_xattrs(root)})
+    # Encodes stable path groups instead of unstable device/inode numbers
+    for paths in inode_paths.values():
+        if len(paths) > 1:
+            group = sorted(paths)
+            for rel in group:
+                result[rel]["hardlink_group"] = group
     return result
 
 
@@ -848,7 +1328,16 @@ def cmd_verify_package(ctx: Context, args: argparse.Namespace) -> None:
     atomic_json(journal_path, journal)
     lock_context = contextlib.nullcontext() if os.environ.get("SDLC_IMAGE_LOCK_HELD") == "1" else ctx.lock("image")
     with lock_context:
-        before = fingerprint_tree(root, excludes)
+        # Rechecks both quarantine scopes after caller or local flock acquisition
+        ctx.assert_image_available(identity, args.recover)
+        try:
+            before = fingerprint_tree(root, excludes)
+        except Exception as exc:  # noqa: BLE001 - failed proof must quarantine image
+            journal.update({"phase": "quarantined", "finished": now(), "error": str(exc)})
+            atomic_json(journal_path, journal)
+            atomic_json(quarantine, journal)
+            atomic_json(dirty, journal)
+            raise SDLCError(f"initial image fingerprint failed and was quarantined: {exc}") from exc
         install_attempted = False
         primary_error: Exception | None = None
         cleanup_error: Exception | None = None
@@ -869,7 +1358,14 @@ def cmd_verify_package(ctx: Context, args: argparse.Namespace) -> None:
                 if removed.returncode:
                     cleanup_error = SDLCError(f"dpkg removal failed with exit code {removed.returncode}")
         journal["phase"] = "verifying-clean"; atomic_json(journal_path, journal)
-        after = fingerprint_tree(root, excludes)
+        try:
+            after = fingerprint_tree(root, excludes)
+        except Exception as exc:  # noqa: BLE001 - failed proof must quarantine image
+            journal.update({"phase": "quarantined", "finished": now(), "error": str(exc)})
+            atomic_json(journal_path, journal)
+            atomic_json(quarantine, journal)
+            atomic_json(dirty, journal)
+            raise SDLCError(f"restoration fingerprint failed and was quarantined: {exc}") from exc
         if before != after or cleanup_error is not None:
             changed = sorted(set(before) ^ set(after) |
                              {p for p in set(before) & set(after) if before[p] != after[p]})
@@ -896,10 +1392,11 @@ def cmd_test_package(ctx: Context, args: argparse.Namespace) -> None:
     identity = hashlib.sha256(str(image).encode()).hexdigest()[:20]
     quarantine = ctx.lock_root / "quarantine" / f"image-{identity}.json"
     dirty = ctx.lock_root / "quarantine" / "image-dirty.json"
-    if quarantine.exists():
-        raise SDLCError(f"image is quarantined: {quarantine}")
+    ctx.assert_image_available(identity)
     active_state = ctx.root / ".lets/scr/image/mount.state"
     with ctx.lock("image"):
+        # Closes image-specific quarantine race after global image flock acquisition
+        ctx.assert_image_available(identity)
         if active_state.exists():
             raise SDLCError("an image is already mounted; unmount it before SDLC package testing")
         original_hash = file_sha256(image)
@@ -910,15 +1407,15 @@ def cmd_test_package(ctx: Context, args: argparse.Namespace) -> None:
         journal = {"run": run_id, "image": str(image), "source_sha256": original_hash,
                    "deb": str(deb), "phase": "copying", "started": now()}
         atomic_json(scratch / "journal.json", journal)
-        mounted = False
+        mount_attempted = False
         functional_error: Exception | None = None
         cleanup_error: Exception | None = None
         try:
             run(["cp", "--reflink=auto", "--sparse=always", "--", str(image), str(image_copy)], capture=False)
             journal["phase"] = "mounting-copy"; atomic_json(scratch / "journal.json", journal)
+            mount_attempted = True
             run([str(ctx.root / "bin/lets"), "scr", "image", "mount", "--image", str(image_copy), "--rw"],
                 cwd=ctx.root, capture=False)
-            mounted = True
             env = os.environ.copy()
             env["SDLC_IMAGE_LOCK_HELD"] = "1"
             command = [str(ctx.root / "bin/lets"), "sdlc", "verify-package", args.id,
@@ -932,13 +1429,16 @@ def cmd_test_package(ctx: Context, args: argparse.Namespace) -> None:
         except Exception as exc:  # noqa: BLE001 - cleanup and quarantine must still run
             functional_error = exc
         finally:
-            if mounted:
+            if mount_attempted:
                 result = run([str(ctx.root / "bin/lets"), "scr", "image", "umount"], cwd=ctx.root,
                              check=False, capture=False)
-                if result.returncode:
+                if result.returncode or active_state.exists():
                     cleanup_error = SDLCError("failed to unmount disposable test image")
-        if file_sha256(image) != original_hash:
-            cleanup_error = SDLCError("source image changed during disposable package test")
+        try:
+            if file_sha256(image) != original_hash:
+                cleanup_error = SDLCError("source image changed during disposable package test")
+        except Exception as exc:  # noqa: BLE001 - failed restoration read must quarantine image
+            cleanup_error = SDLCError(f"failed to verify source image restoration: {exc}")
         if cleanup_error is not None:
             journal.update({"phase": "quarantined", "finished": now(), "error": str(cleanup_error)})
             atomic_json(scratch / "journal.json", journal)
@@ -949,21 +1449,30 @@ def cmd_test_package(ctx: Context, args: argparse.Namespace) -> None:
             journal.update({"phase": "clean-after-test-failure", "finished": now(),
                             "error": str(functional_error)})
             atomic_json(scratch / "journal.json", journal)
+        else:
+            journal.update({"phase": "clean", "finished": now()})
+            atomic_json(scratch / "journal.json", journal)
+        try:
+            shutil.rmtree(scratch)
+        except Exception as exc:  # noqa: BLE001 - disposable artifacts require proved cleanup
+            journal.update({"phase": "quarantined", "finished": now(),
+                            "error": f"failed to remove test scratch: {exc}"})
+            atomic_json(quarantine, journal)
+            atomic_json(dirty, journal)
+            raise SDLCError(f"image package test scratch cleanup failed and was quarantined: {exc}") from exc
+        if functional_error is not None:
             raise SDLCError(f"package test failed; disposable image was cleaned: {functional_error}")
-        journal.update({"phase": "clean", "finished": now()})
-        atomic_json(scratch / "journal.json", journal)
-        shutil.rmtree(scratch)
     print("package passed disposable-image restoration test; source image unchanged")
 
 
 def cmd_lock_run(ctx: Context, args: argparse.Namespace) -> None:
     identity = hashlib.sha256(str(Path(args.image).resolve()).encode()).hexdigest()[:20]
-    quarantine = ctx.runtime / "quarantine" / f"image-{identity}.json"
-    if quarantine.exists():
-        raise SDLCError(f"image is quarantined: {quarantine}")
+    ctx.assert_image_available(identity)
     if not args.command:
         raise SDLCError("missing command after --")
     with ctx.lock("image"):
+        # Closes image-specific quarantine race after global image flock acquisition
+        ctx.assert_image_available(identity)
         result = subprocess.run(args.command, check=False)
         if result.returncode:
             raise SDLCError(f"locked command failed with exit code {result.returncode}")
@@ -1128,6 +1637,12 @@ def parser() -> argparse.ArgumentParser:
         tp.add_argument(f"--{flag}", action="store_true")
     tp.add_argument("--tests", action="store_true"); tp.set_defaults(func=cmd_trivial_policy)
     im = sub.add_parser("implement"); im.add_argument("id"); im.add_argument("--base"); im.set_defaults(func=cmd_implement)
+    tpl = sub.add_parser("task-plan"); tpl.add_argument("id"); tpl.add_argument("--manifest", required=True); tpl.set_defaults(func=cmd_task_plan)
+    tn = sub.add_parser("task-next"); tn.add_argument("id"); tn.set_defaults(func=cmd_task_next)
+    br = sub.add_parser("brief"); br.add_argument("id"); br.add_argument("task"); br.add_argument("--path", action="store_true"); br.set_defaults(func=cmd_brief)
+    tr = sub.add_parser("task-result"); tr.add_argument("id"); tr.add_argument("task"); tr.add_argument("--report-file", required=True); tr.set_defaults(func=cmd_task_result)
+    tv = sub.add_parser("task-validate"); tv.add_argument("id"); tv.add_argument("task"); tv.add_argument("--result", choices=["pass", "fail"], required=True); tv.add_argument("--report-file", required=True); tv.set_defaults(func=cmd_task_validate)
+    ac = sub.add_parser("acceptance"); ac.add_argument("id"); ac.set_defaults(func=cmd_acceptance)
     va = sub.add_parser("validate"); va.add_argument("id"); va.set_defaults(func=cmd_validate)
     wt = sub.add_parser("worktree"); wt.add_argument("id"); wt.add_argument("--base"); wt.set_defaults(func=cmd_worktree)
     ic = sub.add_parser("implementation-commit"); ic.add_argument("id"); ic.add_argument("--message", required=True); ic.add_argument("--deb", required=True); ic.set_defaults(func=cmd_implementation_commit)

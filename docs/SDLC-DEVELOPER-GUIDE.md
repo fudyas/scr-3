@@ -18,6 +18,8 @@ Stage agents persist authored material with `./bin/lets sdlc section REQ-ID
 --name SECTION --file FILE`. This updates the current round, records an event,
 and commits the ledger without exposing bookkeeping internals.
 
+All SDLC subagent instructions and authored `REQ-*` sections use `$caveman full`. Compression removes filler only. Exact commands, paths, errors, hashes, evidence, requirements, safety rules, and traceability remain intact. Customer source wording stays verbatim.
+
 ## Invocation
 
 Codex skills use `$` invocation. The repository treats the requested `/sdlc-*` spelling as a textual alias through `AGENTS.md`.
@@ -34,6 +36,19 @@ Codex skills use `$` invocation. The repository treats the requested `/sdlc-*` s
 | `$sdlc-list` | `./bin/lets sdlc list` | List all requirements |
 | `$sdlc-show` | `./bin/lets sdlc show` | Display the complete ledger document |
 | `$sdlc-abandon` | `./bin/lets sdlc abandon` | Close without success while retaining history |
+
+Large approved plans use bounded task artifacts:
+
+```text
+./bin/lets sdlc task-plan REQ-ID --manifest task-plan.json
+./bin/lets sdlc task-next REQ-ID
+./bin/lets sdlc brief REQ-ID T01
+./bin/lets sdlc task-result REQ-ID T01 --report-file result.json
+./bin/lets sdlc task-validate REQ-ID T01 --result pass --report-file validation.json
+./bin/lets sdlc acceptance REQ-ID
+```
+
+`task-plan` reads relative `contract`, `interfaces`, `acceptance`, and task-file paths from its JSON manifest. Each task declares earlier `depends_on` task IDs and covered acceptance IDs. Tooling rejects missing coverage, forward dependencies, unbounded task capsules, and plan-hash mismatch.
 
 Use the skill form in clients that reject unknown literal slash commands.
 
@@ -52,7 +67,11 @@ flowchart LR
   Hardware -->|"pass or symptoms"| Coordinator
 ```
 
-The normal `sdlc` branch contains the ledger and bookkeeping. It is materialized at `.codex/worktrees/sdlc`. Each requirement implementation uses `.codex/worktrees/REQ-<ID>-<DESC>` on its own `sdlc/req-…` branch. `sdlc implementation-commit` commits only that dedicated worktree. `sdlc merge` merges it into the clean developer worktree after validation; meaningful conflicts stop at a human gate. Ledger commits continue independently.
+Normal `sdlc` branch contains ledger and bookkeeping. It lives at `.codex/worktrees/sdlc`. Each requirement implementation uses `.codex/worktrees/REQ-<ID>-<DESC>` on own `sdlc/req-…` branch. `sdlc implementation-commit` commits only dedicated worktree.
+
+After independent validation PASS, `sdlc resume` dispatches `sdlc_integration`. Integrator verifies exact validated commit, branch HEAD, DEB SHA-256, clean target, and source/target overlap since merge-base. Same-region semantic overlap or Git conflict stops for developer decision. Integrator runs unit tests, then invokes `sdlc merge`.
+
+`sdlc merge` rechecks evidence and acquires cross-process `main-tree.lock` under Git common directory before ledger or target inspection. Lock key stays same across sessions and linked worktrees. Lock remains held through merge completion, safe abort, and ledger recording. No force merge. Successful merge advances to `awaiting-hardware`; ledger commits remain independent.
 
 ## Requirement identity and ledger
 
@@ -68,10 +87,20 @@ The numeric ID is four digits. The description is one to four uppercase kebab-ca
 docs/requirements/
 ├── .ids/0001
 ├── .state/REQ-0001-COUNT-SYSTEM-RESTARTS-RELIABLY.json
-└── REQ-0001-COUNT-SYSTEM-RESTARTS-RELIABLY.md
+├── REQ-0001-COUNT-SYSTEM-RESTARTS-RELIABLY.md
+└── artifacts/REQ-0001-COUNT-SYSTEM-RESTARTS-RELIABLY/round-1/
+    ├── manifest.json
+    ├── contract.md
+    ├── interfaces.md
+    ├── acceptance.json
+    ├── tasks/T01.md
+    ├── briefs/T01.md
+    └── evidence/T01-result-001.json
 ```
 
 The Markdown document is the complete human history. JSON state makes transitions deterministic and recoverable. The numeric claim prevents accidental ID reuse.
+
+Task definitions may change before implementation starts. Once state becomes `implementing`, manifest definitions become immutable. `task-next` permits one active task and honors dependency order. `task-result` closes implementation work for that attempt; `task-validate` independently passes or fails it. Failed attempts remain as numbered evidence. Next task stays blocked until every dependency passes. Final `implementation-commit` and whole-package validation remain global gates.
 
 `SDLC_SHARED_LOCK_ROOT/locks/registry.lock` serializes minting and ledger commits. Across hosts, configure that root on a shared filesystem with reliable advisory locking and use the same authoritative remote `sdlc` branch. A local file lock cannot coordinate unrelated filesystems.
 
