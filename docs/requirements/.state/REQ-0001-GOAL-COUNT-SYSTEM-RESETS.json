@@ -117,6 +117,12 @@
           "sequence": 17,
           "state": "drafting-plan",
           "time": "2026-09-17T13:13:18+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 2: module sole detection/cause/record/retry/count/filter/reset/serialization/pending-event/boot-guard authority; scr-resets-monitor Bash transport only. Current analysis/Q&A compressed, exact evidence/source/history preserved; prior DRAFT retained as superseded audit. Existing-kernel LKM only; six payload paths, custom reversible lifecycle, original backups across upgrades, generic offline restoration after unload, continuous image lock and quarantine tests defined. Recorded developer answers resolve policy choices; ABI/VFS/durability/tooling gates remain. No implementation.",
+          "sequence": 18,
+          "state": "draft-ready",
+          "time": "2026-09-17T13:13:48+00:00"
         }
       ],
       "number": 1,
@@ -124,8 +130,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 17,
-  "state": "drafting-plan",
+  "sequence": 18,
+  "state": "draft-ready",
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T13:13:18+00:00"
+  "updated": "2026-09-17T13:13:48+00:00"
 }
