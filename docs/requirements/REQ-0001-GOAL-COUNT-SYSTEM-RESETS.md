@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 29
+sequence: 30
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T14:45:37+00:00
+updated: 2026-09-17T14:48:27+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -441,6 +441,34 @@ Test: `./bin/lets sdlc test` => `25 passed in 1.34s`.
 
 No `task-result` or `implementation-commit` run. Pipeline must remain `implementing` until required kernel inputs, toolchain recipe, and remaining proof gaps are resolved.
 
+## Attempt 2 — blocked
+
+Result: BLOCKED. No DEB produced. No image mutation, module load, or reboot.
+
+Mount blocker resolved. Command:
+
+`./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 ./bin/lets scr image parts --image /home/fudya/devel/scr/var/image_8.26.0`
+
+Exit: `0`. Result: `whole /dev/loop2 3.6GB`. Image SHA-256 unchanged: `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`.
+
+Hard blockers remain:
+
+- Exact vendor `3.10.105-imx6` source/build tree absent.
+- Matching build `.config`, generated headers, and `Module.symvers` absent.
+- Matching Ubuntu/Linaro GCC 4.8.4 binary/build recipe absent.
+- `/lib/modules/3.10.105-imx6/{build,source}` absent.
+- `/usr/src` empty.
+- Installed GCC: `4.9.2`.
+- dpkg kernel: `3.10.53`.
+
+Cannot pass compile/modpost/link ABI probe. Building DEB would violate approved plan. SRC exact-target read lifetime and retained-counter absence remain unproved. Restoration fingerprint still omits timestamps, hard links, ACLs, xattrs, capabilities.
+
+Corrected T01 contracts: fallible `PREPARE_REMOVE` before unload because `module_exit` cannot veto; guard I/O retains one unverified pending event; created-unsynced inode retries same inode, never duplicates. Updated owned `contracts/*` and `evidence/feasibility/*` only.
+
+Test: `./bin/lets sdlc test` => `25 passed in 1.34s`.
+
+No `task-result` or `implementation-commit` run. Pipeline must remain `implementing` until required kernel inputs, toolchain recipe, and remaining proof gaps are resolved.
+
 ### Validation
 
 Pending.
@@ -685,3 +713,5 @@ Deterministic policy facts: six payload destinations, defined tests, custom main
 - `2026-09-17T14:45:32+00:00` [implementing] Updated round 1 implementation section
 
 - `2026-09-17T14:45:37+00:00` [implementing] Updated round 1 implementation section
+
+- `2026-09-17T14:48:27+00:00` [implementing] Updated round 1 implementation section
