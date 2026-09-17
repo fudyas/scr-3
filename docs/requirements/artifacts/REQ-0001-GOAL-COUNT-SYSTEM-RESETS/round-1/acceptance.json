@@ -1,0 +1,19 @@
+{
+  "criteria": [
+    {"id":"A01","text":"Exact image/source/ABI/dependencies proven; incompatible module refused."},
+    {"id":"A02","text":"LKM sole authority; Bash has no state/filesystem fallback."},
+    {"id":"A03","text":"One event per supported observable boot; repeat starts/reloads do not duplicate."},
+    {"id":"A04","text":"Exclusive create and empty inode+directory sync precede reason write."},
+    {"id":"A05","text":"Storage faults continue boot with bounded retry and no duplicate."},
+    {"id":"A06","text":"Filename, UTC filter, collision, invalid clock, empty-file semantics exact."},
+    {"id":"A07","text":"Root-only bounded protocol rejects malformed/dead sessions safely."},
+    {"id":"A08","text":"Count/reset preserve unrelated/unsafe files and report partial errors."},
+    {"id":"A09","text":"Single reversible DEB preserves first baseline through lifecycle."},
+    {"id":"A10","text":"Remove/purge restore without reboot; busy unload remains pending."},
+    {"id":"A11","text":"Interrupted lifecycle/upgrade recovers; overlap refused."},
+    {"id":"A12","text":"Continuous image lock and quarantine enforced."},
+    {"id":"A13","text":"Managed paths restored; source image hash unchanged."},
+    {"id":"A14","text":"Physical SRC/durability gaps remain explicit until HW evidence."},
+    {"id":"A15","text":"No kernel/MONIT/cron/USB changes, daemon, or automatic reboot."}
+  ]
+}

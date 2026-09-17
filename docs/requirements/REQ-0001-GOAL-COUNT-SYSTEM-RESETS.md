@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: awaiting-approval
 round: 1
-sequence: 19
+sequence: 20
 approval: none
 implementation_branch: 
 implementation_commit: 
-updated: 2026-09-17T13:13:57+00:00
+updated: 2026-09-17T13:41:05+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -611,3 +611,5 @@ Deterministic policy facts: six payload destinations, defined tests, custom main
 - `2026-09-17T13:13:48+00:00` [draft-ready] Committed DRAFT revision 2: module sole detection/cause/record/retry/count/filter/reset/serialization/pending-event/boot-guard authority; scr-resets-monitor Bash transport only. Current analysis/Q&A compressed, exact evidence/source/history preserved; prior DRAFT retained as superseded audit. Existing-kernel LKM only; six payload paths, custom reversible lifecycle, original backups across upgrades, generic offline restoration after unload, continuous image lock and quarantine tests defined. Recorded developer answers resolve policy choices; ABI/VFS/durability/tooling gates remain. No implementation.
 
 - `2026-09-17T13:13:57+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-17T13:41:05+00:00` [awaiting-approval] Split approved-plan candidate into 8 bounded tasks
