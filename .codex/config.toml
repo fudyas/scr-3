@@ -1,2 +1,13 @@
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
+
+
+[tui]
+  status_line = [
+    "current-dir",
+    "git-branch",
+    "model-with-reasoning",
+    "context-remaining",
+    "five-hour-limit",
+    "weekly-limit",
+  ]
