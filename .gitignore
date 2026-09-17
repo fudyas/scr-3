@@ -27,6 +27,8 @@ docs/devel/v1/plans/
 
 # AI
 .claude/worktrees/
+/.codex/worktrees/
+/.codex/sdlc/
 .claude/agent-memory/
 .claude/agent-notes/
 .claude/agent-scratchpad/

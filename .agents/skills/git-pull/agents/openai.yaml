@@ -1,0 +1,6 @@
+interface:
+  display_name: "Git Pull"
+  short_description: "Safely pull a branch using repository SSH"
+  default_prompt: "Use $git-pull to safely pull the current branch."
+policy:
+  allow_implicit_invocation: false
