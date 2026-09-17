@@ -1,0 +1,30 @@
+{
+  "approval": {
+    "status": "none"
+  },
+  "created": "2026-09-17T08:55:39+00:00",
+  "current_round": 1,
+  "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "implementation": {},
+  "rounds": [
+    {
+      "additional_instructions": "",
+      "customer_requirements": "Goal: Count system resets reliably.\n\nProblem:\nThe SCR system running image v8.26.0 experiences resets and sometimes enters reset loops as docs/MONIT.md describes. First step is a new low-level system reset counter providing a base for future reset-loop detection.\n\nIn scope:\n- System reset detection mechanism.\n\nOut of scope:\n- Reset-loop detection and mitigation.\n\nTasks:\n- Review image contents.\n- Analyze kernel capabilities.\n- Provide system reset counting mechanism relying only on low-level primitives: i.MX6 CPU registers and kernel subsystems.\n- Implement according to notes; ask follow-up questions where needed.\n\nRequired behavior and constraints:\n- Must not rely on user-space services such as monit or any other service; use only i.MX6 CPU registers and kernel subsystems.\n- Log resets using atomic file functions under /var/log/scr/reset-<UTC timestamp in milliseconds>.\n- After each reset, create a new reset-XXXX file under /var/log/scr/ and write reset reason into it.\n- Perform file creation first, then reason write as a distinct second step, so at least reset signal survives if reason write cannot complete.",
+      "events": [
+        {
+          "message": "Round 1 created from customer requirements",
+          "sequence": 1,
+          "state": "requirements-analysis",
+          "time": "2026-09-17T08:55:39+00:00"
+        }
+      ],
+      "number": 1,
+      "status": "active"
+    }
+  ],
+  "schema_version": 1,
+  "sequence": 1,
+  "state": "requirements-analysis",
+  "title": "Count system resets reliably",
+  "updated": "2026-09-17T08:55:39+00:00"
+}
