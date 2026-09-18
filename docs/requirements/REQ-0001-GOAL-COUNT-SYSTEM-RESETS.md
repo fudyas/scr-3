@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 50
+sequence: 51
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:27:26+00:00
+updated: 2026-09-18T11:34:46+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1041,6 +1041,202 @@ After approval: reconstructed-input manifest; minimal probe source/artifact/hash
 
 Policy facts: six persistent payload destinations, custom maintainer scripts, boot activation, kernel privilege/security, persistent storage/runtime namespace, plus live approximate-ABI probe. Nontrivial. Commit DRAFT before display. Only deterministic `trivial-policy` may waive approval; otherwise wait for developer approval/amendment. Never self-approve.
 
+### Solution plan — DRAFT revision 5
+
+### Solution plan — DRAFT revision 5
+
+#### DRAFT revision 5 — LETS-managed compatibility toolchain and one probe retry
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 4 after developer amendment checkpoint sequence 50. Preserves revision 4 probe scope and revision 3 production scope exactly. Earlier drafts, approvals, tasks, failures, artifacts remain audit history; none authorizes removed reset-cause/MMIO/kernel/U-Boot work. Revision 5 adds LETS-native old-toolchain management, rebuilds identical init/exit/log-only probe, then permits one bounded ordinary `insmod`/`rmmod` retry only after all gates pass. No production implementation, package install, boot activation, force load, reboot, or target APT mutation authorized by DRAFT.
+
+Reviewed complete durable REQ, image-analysis evidence, planner answers, revisions 1-4, approvals, implementation checkpoints, `AGENTS.md`, `docs/SDLC-DEVELOPER-GUIDE.md`, `docs/DEVELOPER-GUIDE.md`, `docs/MONIT.md`. All load-bearing developer choices resolved together. New exact requirement: every compatibility-toolchain operation follows LETS philosophy. No unanswered question: authoritative redistributable Linaro release chosen below; implementation must retain license/notices and cryptographic evidence.
+
+#### Evidence and unchanged boundaries
+
+Target: `root@192.168.68.56`, `SCR-7CCC91`, ADLINK LEC-iMX6 Quad/Dual SMARC, Debian 8 Jessie ARMv7, SysV, live `3.10.105-imx6`. `/proc/version`: `gcc version 4.8.4 (Ubuntu/Linaro 4.8.4-2ubuntu1~14.04.1)`, build `developer@scr-dev-Eldad`, `#5 SMP PREEMPT Wed May 16 11:21:53 IDT 2018`. Live config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`; GNU build-id `f7b0840244f238080194bd87ce76c704a67db004`; vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `; `CONFIG_MODVERSIONS=n`, `CONFIG_MODULE_SIG=n`, `CONFIG_VMSPLIT_2G_OPT=y`, `CONFIG_PAGE_OFFSET=0x6C000000`. Exact vendor source/build tree, generated headers, `Module.symvers`, compiler recipe remain absent. NXP `imx_3.10.53_1.1.0_ga_caf` plus stable `v3.10.105`, live config, reconstructed headers remain approximate.
+
+Revision 4 probe artifact SHA-256 `87e10d59c41a47b7af4e48524de728b0d917f223873cbbdfb83c53abbfff7f07`, built by host GCC 12/binutils 2.42, passed ARM attributes/vermagic/exported-symbol/source/disassembly gates, then ordinary `insmod` returned `1`: `insmod: ERROR: could not insert module /root/.scr-req-0001-approx-abi-probe.ko: Invalid module format`; sole dmesg delta: `[27840.175560] scr_approx_abi_probe: unknown relocation: 3`. Module never initialized. Taint stayed `4096`; no anomaly. `rmmod` correctly skipped. Transient file removed; config/uImage/SSH/recovery unchanged; no residue/quarantine/APT/reboot/package/image change. This clean rejection motivates era-compatible toolchain; never proves toolchain alone establishes exact ABI.
+
+Production boundary stays revision 3: exactly one observable boot reaching `scr_reset_monitor` module initialization; supported same-boot unload/reload adds zero; pre-init resets/boots uncounted; empty record only, no reason. No i.MX6 register/MMIO/cause decode/retained counter, VFS use in probe, kernel/U-Boot patch/replacement, physical-reset completeness claim, reset-loop detection/mitigation. Production remains minimal OOT LKM, Bash transport frontend, `RELEASE.md`, one reversible DEB. Probe success permits production investigation only; production live load needs stronger production-specific evidence.
+
+#### LETS compatibility-toolchain contract
+
+All download, installation, verification, environment loading, version inspection, compiler, assembler, linker, archive, object copy/dump, ELF read, strip, and related compatibility-tool execution goes through top-level `./bin/lets`. Implementation/tests must contain no direct `gcc`, `ld`, `as`, `ar`, `nm`, `objcopy`, `objdump`, `readelf`, `strip`, prefixed equivalent, archive download, or hidden subprocess bypass outside wrapper internals. Kernel build receives wrapper-resolved `CROSS_COMPILE` only from managed environment. Mirror existing Python/Node UX, config loading, diagnostics, exit status, stdout/stderr, logging, help, offline behavior, and project-state conventions.
+
+Managed distribution:
+
+- ID: `linaro-arm-linux-gnueabihf-4.8-2014.04`.
+- Archive: `gcc-linaro-arm-linux-gnueabihf-4.8-2014.04_linux.tar.xz`, 51,126,392 bytes.
+- Historical authoritative source: `https://releases.linaro.org/archive/14.04/components/toolchain/binaries/gcc-linaro-arm-linux-gnueabihf-4.8-2014.04_linux.tar.xz`; current redirect is not archive content, so never accept it without hash.
+- Availability fallback: `https://mirror-us-stl1.armbian.airframes.io/dl/_toolchain/gcc-linaro-arm-linux-gnueabihf-4.8-2014.04_linux.tar.xz`, byte-identical required.
+- SHA-256: `2b4b29bcfed26948b654088aabbd7e5357691f66f0ba4864df63b2c00f054152`.
+- Detached signature companion SHA-256: `659cce39a931a4a311e7913c742676f5cebb1ab23095f8636eeb1c8ec6e4e72c`, size 490, exact `.asc` sibling. SHA-256 is mandatory integrity authority; signature verification is additive only after pinned signer-key provenance exists, never substitute for hash.
+- Expected compiler family: `arm-linux-gnueabihf-gcc (crosstool-NG linaro-1.13.1-4.8-2014.04 - Linaro GCC 4.8-2014.04) 4.8.3 20140401 (prerelease)`; binutils versions captured from managed binaries. Difference from live compiler 4.8.4 stays explicit approximate-compatibility limit.
+- Licensing: redistributable Linaro binary release under bundled component licenses. Installer preserves complete archive license/copyright/notices; tests prove presence. Missing/ambiguous bundled notices, changed archive, or redistribution restriction blocks install/use; never silently rehost archive in Git/package.
+
+State root: `${LETS_STATE_DIR}` when set by existing LETS config; otherwise project `.lets`. Final versioned tree lives below `${LETS_STATE_DIR}/toolchains/linaro-arm-linux-gnueabihf-4.8-2014.04/`; downloads/staging/locks/manifests live under same state root. Never write system compiler dirs, user home, `/usr/local`, target image, target device, APT state, or Git-tracked tree. One per-toolchain lock serializes init/use/repair.
+
+`./bin/lets devenv init` includes idempotent compatibility-toolchain provisioning like Python/Node:
+
+1. LOAD effective LETS config and `LETS_STATE_DIR`.
+2. ACQUIRE toolchain lock.
+3. VERIFY existing install manifest, archive SHA-256, required license notices, expected directory boundary, executable allowlist, version banners, and sentinel self-check.
+4. ***if*** existing install verifies ***then***
+   1. LOG concise skip message matching Python/Node conventions.
+   2. RETURN success without network, mtime mutation, re-extraction, or version drift.
+5. ***else if*** install is absent or partial ***then***
+   1. REMOVE only tool-owned staging path after validating it lies beneath toolchain state root.
+   2. RETAIN verified cached archive when present.
+6. ***if*** verified archive is absent ***then***
+   1. DOWNLOAD into unique same-filesystem partial file with redirects bounded to pinned HTTPS hosts, timeouts, and normal LETS logging.
+   2. VERIFY byte length and SHA-256 before extraction.
+   3. ***if*** offline or download fails ***then*** RETURN explicit nonzero error naming expected cache path/hash; leave verified current install untouched; leave no install marked ready.
+7. EXTRACT into unique staging directory with path-traversal, absolute-path, link-escape, special-file, and ownership checks.
+8. VERIFY expected single root, binaries, versions, licenses/notices, and executable self-checks through internal wrapper implementation.
+9. WRITE manifest containing ID/version/source URLs/archive size/SHA-256/signature SHA-256/license inventory/file inventory/tool banners/install schema.
+10. SYNCHRONIZE staged files and containing directory where supported.
+11. RENAME staging atomically to final versioned directory.
+12. WRITE ready sentinel atomically only after full verification.
+13. RELEASE lock.
+
+Interrupted download remains non-ready partial and is resumed only when downloader proves safe; otherwise replaced. Interrupted extraction never becomes final. Invalid cache quarantined within tool-owned state with evidence or deleted only after exact safe-path validation. Upgrade installs new versioned directory beside old, atomically switches configured selection, then retires only unreferenced tool-owned version after verification. Failure preserves previous verified selection. Offline repeat with verified install succeeds; offline first install or corrupted install+no verified cache fails deterministically with recovery command. Concurrent init/run never sees staging.
+
+Top-level UX:
+
+- `./bin/lets toolchain info [--json]`: load managed environment; print configured ID, root, triplet, archive SHA-256, compiler/binutils versions, verification state; no install mutation.
+- `./bin/lets toolchain run <tool> [args...]`: allow exact managed tools `gcc`, `ld`, `as`, `ar`, `nm`, `objcopy`, `objdump`, `readelf`, `strip`, `ranlib`, `size`, `strings`; resolve to pinned triplet binaries; preserve every argument after tool verb exactly, stdout/stderr, signal, exit status, and caller working directory. Reject path separators, unknown tool, empty command, shell evaluation.
+- Explicit aliases such as `./bin/lets toolchain gcc -- ...` may exist only when behavior equals `run gcc`; one documented canonical form required.
+- `./bin/lets toolchain env -- <command> [args...]`: optional narrowly-scoped environment launcher for kernel `make`; exports absolute managed `PATH` prefix and `CROSS_COMPILE=arm-linux-gnueabihf-`, preserves caller working directory/arguments/exit semantics, never invokes shell string evaluation. Only needed because kernel build orchestrates multiple tools; tests prove all resolved binaries remain inside managed root.
+
+Configuration pins ID, URLs, hashes, archive size, root component, triplet, required tools, expected banners. Invalid override fails closed. Logs redact credentials/proxy secrets and record source host/hash/version, cache/install/skip state, and executed managed tool name without rewriting arguments. Help/error wording and quiet/verbose/color behavior mirror `devenv` Python/Node patterns.
+
+#### Phase 0 — identical probe rebuild and one bounded retry
+
+Probe source and behavior stay revision 4: only `module_init`, `module_exit`, fixed identifying `printk`, metadata, return `0`. No VFS/filesystem, MMIO/register, workqueue/thread/timer, endpoint, allocation retained past callback, notifier/hook, persistence, boot activation, counter, parameters with side effects, reboot/shutdown, APT, package, `depmod`, initramfs, `/lib/modules` write, force/version bypass, or unexported-symbol trick.
+
+Rebuild uses same recorded reconstructed kernel inputs, config/generated-header method, source file, module name, logs, metadata, flags except compiler/binutils paths now originate from managed Linaro toolchain. Record toolchain manifest/hash/banners, source refs/commits/patches/config, complete LETS commands, output hash, and reproducibility result. Label `DIAGNOSTIC APPROXIMATE ABI — NOT PRODUCTION`.
+
+Pre-live gates:
+
+1. RUN all compiler/link/binutils inspection through `./bin/lets toolchain ...`.
+2. VERIFY ELF32 little-endian ARM EABI, machine ARM, section sanity, relocations, ARM attributes, exact vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 ` against deployed sample.
+3. VERIFY every relocation is supported by target 3.10 ARM module loader; specifically prove prior relocation type `3` is absent or accepted from source-based loader table evidence. Unknown/unsupported relocation stops before copy.
+4. VERIFY undefined set contains only unavoidable loader/log primitives and every symbol exists in live exports. Reject CRC/version section, constructor, instrumentation, stack protector, tracing, sanitizer, floating-point, or unexpected runtime helper.
+5. VERIFY source/disassembly contains fixed init/exit logs and return only; static scan proves forbidden scope absent.
+6. VERIFY two clean managed rebuilds yield identical artifact SHA-256 or record/resolve every nondeterministic field before live use.
+7. STOP on mismatch. Metadata match permits one probe retry only.
+
+Live sequence:
+
+1. IDENTIFY exact target/kernel/uptime and verify target equals recorded device.
+2. CAPTURE pre-probe `lsmod`, taint, bounded dmesg cursor/timestamp, free space, SSH, recovery readiness, transient destination absence/type/ownership, config/uImage hashes.
+3. REQUIRE usable SSH plus named operator/recovery path; ambiguity stops.
+4. COPY exact hashed artifact to same preflighted root-owned transient path outside activation/package dirs; mode `0600 root:root`; verify remote hash. Refuse pre-existing conflict.
+5. RUN ordinary `insmod <transient-probe-path>` once, no force flag.
+6. INSPECT exact exit/error, new dmesg, presence/refcount, taint, warnings/oops/BUG/panic/hang/lockdep/error.
+7. ***if*** load fails cleanly with compatibility error and no anomaly ***then***
+   1. RECORD exact evidence.
+   2. SKIP `rmmod` because module absent.
+   3. REMOVE transient file.
+   4. VERIFY restoration.
+   5. MARK probe FAIL; no third build/load retry under this plan.
+8. ***if*** load succeeds cleanly ***then***
+   1. RUN ordinary `rmmod <probe-name>` once.
+   2. VERIFY expected exit log, module absence, reference state, taint, dmesg, connectivity.
+9. REMOVE transient file only after confirmed module absence.
+10. VERIFY baseline absence, no activation/package/APT/kernel/U-Boot/image/file residue, unchanged config/uImage, unchanged recovery readiness.
+11. ***if*** warning, oops, BUG, panic, hang, unexpected taint, unload failure, lingering module/ref, unexplained log, connectivity loss, cleanup mismatch, or uncertainty occurs ***then***
+   1. STOP all device testing.
+   2. PRESERVE evidence.
+   3. QUARANTINE device for requirement.
+   4. REQUIRE explicit recovery verification before reuse.
+   5. NEVER reboot as cleanup.
+
+Success means only exact rebuilt diagnostic completed callbacks once on exact running kernel without observed anomaly. Failure/anomaly blocks production live work. No altered retry, force, bypass, reboot, VFS, persistence, or boot activation.
+
+#### Production package: unchanged revision 3 scope
+
+After probe success plus stronger production ABI/integration proof, produce exactly one architecture-specific package `scr-req-0001-goal-count-system-resets`, version above abandoned/unpublished artifacts. Determine `armhf`/`armel` from dpkg evidence. No DKMS, target build, target APT/dependency upgrade, kernel/U-Boot/initramfs/DT/boot-selector/module-index change, `depmod`, monit/cron/watchdog/USB-counter change.
+
+Dpkg owns private payload `/usr/lib/scr-req-0001-goal-count-system-resets/payload`; maintainer scripts publish after first-baseline backup. Managed surfaces:
+
+- `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko`: production OOT module, `0644 root:root`, separately proven; ordinary direct load only.
+- `/usr/sbin/scr-resets-monitor`: Bash `0755 root:root`; validates command shape, transports, displays only.
+- `/etc/init.d/scr-resets-monitor`: one-shot SysV loader `0755 root:root`; checks removal-pending/compatibility; no truth, reboot, install, APT.
+- `/etc/rcS.d/S99scr-resets-monitor`: exact `../init.d/scr-resets-monitor` symlink; no broad `update-rc.d`.
+- `/usr/share/doc/scr-resets-monitor/RELEASE.md`: scope/exclusions, probe/toolchain limits, observable-init/pre-init/same-boot/storage/clock/ABI limits, lifecycle/recovery.
+- `/usr/lib/scr-resets-monitor/package-test`: non-destructive checks; never loads ARM module into unrelated host.
+- `/var/log/scr/reset-<epochMs>-<suffix>`: module-created empty events, signed decimal UTC milliseconds, `[a-z]{4}`, `0600 root:root`, exclusive.
+- `/run/scr-resets-monitor/boot-guard`, `/dev/scr-resets-monitor`: module-owned guard/root-only endpoint.
+- `/var/lib/scr-req-0001-goal-count-system-resets/`: root-only first-baseline backup, manifest, journal, removal-pending.
+- `/var/lib/scr-sdlc/owners` own entry: exact persistent/runtime namespace claim.
+
+Preflight uses `lstat`, dpkg ownership, hashes, no-follow; rejects exact/parent/child/namespace overlap and unexpected ownership. Snapshot absence/content/type/link target/uid/gid/mode/timestamps/hard links/ACLs/xattrs/capabilities/parent metadata. Unsupported preservation blocks mutation. Existing matching records are baseline and restored after `--reset`. No `Replaces`, conffile seizure, broad deletion. One requirement package owns surfaces; another requirement package conflict stops. Disjoint coexistence requires registry and lifecycle proof.
+
+Production behavior unchanged: module alone owns event, guard, selected name, retry, count/filter/reset, serialization, cancellation. Guard states `pending:<filename>`, `complete:<filename>`, `cancelled`; corrupt/unsafe guard fails init. First accepted init persists pending name, worker creates directory safely, exclusively creates empty inode, syncs inode+directory, then atomically completes guard. Collision chooses new suffix only after durable guard update, maximum 64 attempts. Storage failure retains one identity, rate-limited exponential 1-60 second retry, never blocks boot/reboots. Crash before durable inode+directory may lose event; pre-init events uncounted.
+
+CLI: `scr-resets-monitor --count [--since <timestamp>]`, `--reset`, help. Timestamp exact `yyyy-mm-dd[ hh[:mm[:ss]]]` UTC, omitted fields zero, inclusive `eventTime >= sinceTime`; reject `last`, timezone, leap second, invalid/overflow/trailing/conflicting input. Module parses truth. Bash transports bounded versioned request through `/dev/scr-resets-monitor`; no enumeration/delete/date math/retry/fallback/implicit load. Only immediate, non-symlink, single-link, regular empty, complete-name records count/delete. Unsafe matches cause nonzero incomplete-truth result. Reset cancels pending, durably marks `cancelled`, deletes only generated scope, syncs directory, preserves baseline/unrelated files. Lost response never auto-retried. Endpoint `0600 root:root`; kernel rechecks privilege; open descriptors pin module.
+
+#### Maintainer lifecycle and rollback
+
+- `preinst install`: validate arch/live contract/dependencies/conflicts/metadata/space; capture first baseline+journal before mutation; no APT.
+- `postinst configure`: atomically publish and verify; never auto-load during install/chroot/offline image change; first normal boot activation counts; idempotent.
+- Upgrade: retain first baseline/records/guard/removal state; never unload/reload resident module; reject incompatible control/state ABI; next boot selects new payload; failed upgrade restores prior payload.
+- `prerm remove`: durably set removal-pending, disable loader, request fallible `PREPARE_REMOVE`, quiesce/close package control, ordinary unload. No force/reboot/shutdown. Failure nonzero; activation stays disabled; backups/journal stay.
+- `postrm remove/purge`: only after module/endpoint absence, delete generated scoped records, restore every baseline path/record/metadata, remove created empty dirs/runtime artifacts/own claim, verify, then remove backup/journal. Remove and purge both restore.
+- Abort/retry: resume/reverse durable journal idempotently; never reactivate after removal request; never erase last usable baseline.
+
+Busy unload remains pending until unrelated natural reboot. Package never requests reboot. Disabled loader/pending marker prevent activation. Removal retry then completes. Active module/endpoint/pending marker/recreatable worker/restoration mismatch means uninstall incomplete.
+
+#### Tests and acceptance
+
+Toolchain tests: fresh online init; verified reinstall skip with unchanged mtimes/no network; offline verified repeat; offline absent/corrupt failure; hash/size/banner/license mismatch; HTTP redirect/host rejection; traversal/link/special-file archive; interrupted download/extract/rename/sentinel; partial recovery; concurrent init/run; state-root override/project default; upgrade rollback; cache reuse; invalid config. Test `info --json`, all allowlisted tools, unknown/path tool rejection, exact argv including spaces/leading dash, working directory, stdout/stderr/exit/signal, environment containment, kernel make tool resolution. Static scan rejects direct tool invocations outside wrapper internals and direct archive fetch in implementation/tests.
+
+Probe tests: identical source contract; managed rebuild twice; ELF/ARM/vermagic/relocation/undefined/disassembly gates; baseline/recovery/transient-copy proof; one ordinary load attempt; ordinary unload only after success; exact dmesg/taint/ref inspection; restoration. Anomaly quarantines device testing. Success remains limited evidence.
+
+Production tests: static forbidden-scope scan; reproducible OOT build and production-specific ABI proof; guard exact-once/reload/new-boot/pre-init; crash points pending/create/sync/complete; clock/collision/storage/path attacks; CLI parser/protocol/privilege/concurrency/process death/lost response; package fresh/remove/purge/reinstall/upgrade/failure/interrupted journal/baseline/busy unload/overlap/coexistence; controlled live count/unload/reload and separately approved ordinary reboot only after production gates. No physical reset-cause claim.
+
+Acceptance:
+
+- LETS owns every compatibility-toolchain operation. `devenv init` provides pinned, verified, idempotent, atomic, recoverable, offline-repeatable install under `${LETS_STATE_DIR}`/`.lets`; verified install skips like Python/Node.
+- Top-level `./bin/lets toolchain` loads only managed toolchain, mirrors established UX/config/errors/logs, preserves argv/cwd/process results, and prevents direct-tool bypass.
+- Rebuilt probe stays init/exit/log only. All relocation/static gates pass before exactly one ordinary retry. Target baseline fully restored; no anomaly/residue.
+- Package changes only owned surfaces; target APT, boot/kernel/U-Boot/module indexes, monit, cron, watchdog, `/mnt/usb` unchanged.
+- Each supported boot reaching production-module accepted init adds exactly one durable empty record; same-boot reload adds zero; pre-init resets/boots add zero. Module owns truth; Bash transports only.
+- `RELEASE.md` records toolchain provenance/hash/version/license, approximate-ABI and probe limits, production scope/lifecycle/recovery.
+- Removing all produced requirement packages, exactly one DEB, restores every managed path/namespace to exact baseline. No success while active/pending. Probe transient path separately restores to absence. Host LETS toolchain state is development infrastructure, not target-image mutation or DEB payload.
+
+#### Lock-bounded package test and restoration proof
+
+1. ACQUIRE SDLC image lock.
+2. VERIFY no quarantine or conflicting mount.
+3. RECORD source SHA-256 for `var/image_8.26.0`.
+4. CREATE tooling-managed disposable copy.
+5. MOUNT copy while same lock remains held.
+6. CAPTURE baseline hashes, timestamps, hard links, ACLs, xattrs, capabilities, ownership, parent metadata.
+7. INSTALL exact hashed DEB without network/APT mutation.
+8. RUN static/offline/package tests; never load ARM module into host kernel.
+9. UNINSTALL every produced package after pass or failure.
+10. VERIFY baseline records/metadata and absence of generated records, backup, journal, claim, runtime, module, endpoint, pending removal.
+11. UNMOUNT copy.
+12. VERIFY source SHA-256 unchanged.
+13. ***if*** uninstall, restoration, unmount, source verification, or cleanup fails ***then***
+   1. QUARANTINE affected image identity.
+   2. RETAIN journal and evidence.
+   3. STOP reuse.
+   4. REQUIRE tooling-reported recovery verification before unlock/reuse permission; never remove marker manually.
+14. ***else***
+   1. RECORD restoration proof.
+   2. RELEASE lock.
+
+Preferred entry: `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <artifact> --test-command /usr/lib/scr-resets-monitor/package-test`. Custom flow uses one `./bin/lets sdlc lock-run` spanning mount/install/test/uninstall/restoration/unmount. Missing enforcement blocks mutation. Dpkg bookkeeping differences only declared verifier exclusions; no requirement-managed path excluded.
+
+#### Deliverables and approval gate
+
+After approval: LETS toolchain config/installer/wrapper/tests/docs with manifest evidence; reconstructed-input manifest; rebuilt probe source/artifact/hash/static/live/restoration evidence; production OOT source/build evidence; one reversible DEB + SHA-256; ownership/backup manifest; `RELEASE.md`; CLI/lifecycle/fault/locked-image proof; controlled live results; exact limits. Probe/toolchain failure or inability to prove production compatibility becomes evidence-bearing blocker, never scope expansion.
+
+Policy facts: development tooling additions, network download, six persistent target payload destinations, custom maintainer scripts, boot activation, kernel privilege/security, persistent storage/runtime namespace, live approximate-ABI retry. Nontrivial. Commit DRAFT before display. Only deterministic `trivial-policy` may waive approval; otherwise wait for developer approval/amendment. Never self-approve.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -1142,3 +1338,5 @@ Policy facts: six persistent payload destinations, custom maintainer scripts, bo
 - `2026-09-17T16:48:10+00:00` [implementing] Updated round 1 implementation section
 
 - `2026-09-18T11:27:26+00:00` [drafting-plan] Amend revision 4 to permit old-toolchain rebuild and one bounded live probe retry
+
+- `2026-09-18T11:34:46+00:00` [drafting-plan] Updated round 1 solution-plan section
