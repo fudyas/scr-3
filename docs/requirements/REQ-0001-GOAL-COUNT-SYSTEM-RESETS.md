@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 49
-approval: approved
+sequence: 50
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-17T16:48:10+00:00
+updated: 2026-09-18T11:27:26+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1140,3 +1140,5 @@ Policy facts: six persistent payload destinations, custom maintainer scripts, bo
 - `2026-09-17T16:41:02+00:00` [implementing] Updated round 1 implementation section
 
 - `2026-09-17T16:48:10+00:00` [implementing] Updated round 1 implementation section
+
+- `2026-09-18T11:27:26+00:00` [drafting-plan] Amend revision 4 to permit old-toolchain rebuild and one bounded live probe retry

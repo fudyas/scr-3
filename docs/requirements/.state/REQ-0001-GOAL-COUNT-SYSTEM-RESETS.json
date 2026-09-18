@@ -1,11 +1,4 @@
 {
-  "approval": {
-    "plan_revision": 4,
-    "plan_sha256": "2be0f002e9bf51b6d622007bd0643626dc77de6e9841fb46ed7496eac5b7d49a",
-    "reason": "Developer approved DRAFT revision 4 SHA-256 2be0f002e9bf51b6d622007bd0643626dc77de6e9841fb46ed7496eac5b7d49a",
-    "status": "approved",
-    "time": "2026-09-17T16:27:15+00:00"
-  },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
   "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
@@ -318,6 +311,12 @@
           "sequence": 49,
           "state": "implementing",
           "time": "2026-09-17T16:48:10+00:00"
+        },
+        {
+          "message": "Amend revision 4 to permit old-toolchain rebuild and one bounded live probe retry",
+          "sequence": 50,
+          "state": "drafting-plan",
+          "time": "2026-09-18T11:27:26+00:00"
         }
       ],
       "number": 1,
@@ -325,8 +324,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 49,
-  "state": "implementing",
+  "sequence": 50,
+  "state": "drafting-plan",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -376,5 +375,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-17T16:48:10+00:00"
+  "updated": "2026-09-18T11:27:26+00:00"
 }
