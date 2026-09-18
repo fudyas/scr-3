@@ -1,11 +1,4 @@
 {
-  "approval": {
-    "plan_revision": 6,
-    "plan_sha256": "24c4d20a6a296e3a866fe686c8d821302b2ff5e92ef9881dbb99b54e725b9244",
-    "reason": "Developer approved DRAFT revision 6 SHA-256 eaa5b1ea6f36bf64e3c18d9301ffbb90f6581fdbea3c0198907ae814315e4242 via proceed instruction.",
-    "status": "approved",
-    "time": "2026-09-18T12:09:29+00:00"
-  },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
   "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
@@ -414,6 +407,12 @@
           "sequence": 65,
           "state": "implementing",
           "time": "2026-09-18T12:41:34+00:00"
+        },
+        {
+          "message": "Developer confirms legacy vendor artifacts are unavailable and explicitly authorizes completing requirement implementation and real-hardware testing with the validated approximate NXP source and LETS-managed toolchain; retain reversible package, locking, cleanup, restoration, and quarantine safety controls.",
+          "sequence": 66,
+          "state": "drafting-plan",
+          "time": "2026-09-18T13:08:15+00:00"
         }
       ],
       "number": 1,
@@ -421,8 +420,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 65,
-  "state": "implementing",
+  "sequence": 66,
+  "state": "drafting-plan",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -472,5 +471,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T12:41:34+00:00"
+  "updated": "2026-09-18T13:08:15+00:00"
 }

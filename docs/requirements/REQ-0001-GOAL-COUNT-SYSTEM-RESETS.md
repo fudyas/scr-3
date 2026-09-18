@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 65
-approval: approved
+sequence: 66
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T12:41:34+00:00
+updated: 2026-09-18T13:08:15+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1495,3 +1495,5 @@ Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config
 - `2026-09-18T12:29:02+00:00` [implementing] Updated round 1 implementation section
 
 - `2026-09-18T12:41:34+00:00` [implementing] Updated round 1 implementation section
+
+- `2026-09-18T13:08:15+00:00` [drafting-plan] Developer confirms legacy vendor artifacts are unavailable and explicitly authorizes completing requirement implementation and real-hardware testing with the validated approximate NXP source and LETS-managed toolchain; retain reversible package, locking, cleanup, restoration, and quarantine safety controls.
