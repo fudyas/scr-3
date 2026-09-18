@@ -450,6 +450,12 @@
           "sequence": 71,
           "state": "approved",
           "time": "2026-09-18T13:12:57+00:00"
+        },
+        {
+          "message": "Implementation started from the approved plan",
+          "sequence": 72,
+          "state": "implementing",
+          "time": "2026-09-18T13:13:01+00:00"
         }
       ],
       "number": 1,
@@ -457,8 +463,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 71,
-  "state": "approved",
+  "sequence": 72,
+  "state": "implementing",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -508,5 +514,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T13:12:57+00:00"
+  "updated": "2026-09-18T13:13:01+00:00"
 }

@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: approved
+state: implementing
 round: 1
-sequence: 71
+sequence: 72
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T13:12:57+00:00
+updated: 2026-09-18T13:13:01+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1710,3 +1710,5 @@ Nontrivial: kernel-privileged production module, boot activation, persistent sto
 - `2026-09-18T13:12:51+00:00` [approved] Developer approved DRAFT revision 7 SHA-256 3b397ef90c63e6037302d7ca4eab7dd47773017ba26c538e24be60e811300ad6.
 
 - `2026-09-18T13:12:57+00:00` [approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
+
+- `2026-09-18T13:13:01+00:00` [implementing] Implementation started from the approved plan
