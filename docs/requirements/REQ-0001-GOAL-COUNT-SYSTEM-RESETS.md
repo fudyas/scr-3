@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: draft-ready
+state: awaiting-approval
 round: 1
-sequence: 68
+sequence: 69
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T13:11:16+00:00
+updated: 2026-09-18T13:11:20+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1704,3 +1704,5 @@ Nontrivial: kernel-privileged production module, boot activation, persistent sto
 - `2026-09-18T13:11:12+00:00` [drafting-plan] Updated round 1 solution-plan section
 
 - `2026-09-18T13:11:16+00:00` [draft-ready] Committed DRAFT revision 7 after developer confirms legacy vendor artifacts unavailable and explicitly accepts approximate NXP source plus LETS-managed GCC for production and real-HW tests. Preserves observable-init semantics, no MMIO/reason/kernel/U-Boot patching, reversible single-DEB lifecycle, continuous image lock/restoration/quarantine, ordinary module operations, production static gates, one controlled reboot, exact target cleanup. No unanswered load-bearing question.
+
+- `2026-09-18T13:11:20+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
