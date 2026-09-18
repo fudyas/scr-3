@@ -371,6 +371,12 @@
           "sequence": 59,
           "state": "draft-ready",
           "time": "2026-09-18T11:51:25+00:00"
+        },
+        {
+          "message": "Trivial policy failed; developer approval is required",
+          "sequence": 60,
+          "state": "awaiting-approval",
+          "time": "2026-09-18T11:51:41+00:00"
         }
       ],
       "number": 1,
@@ -378,8 +384,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 59,
-  "state": "draft-ready",
+  "sequence": 60,
+  "state": "awaiting-approval",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -429,5 +435,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T11:51:25+00:00"
+  "updated": "2026-09-18T11:51:41+00:00"
 }
