@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 77
+sequence: 78
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T16:14:55+00:00
+updated: 2026-09-18T16:17:30+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1602,6 +1602,206 @@ Deliver exact commits/artifact hashes/test commands/results/dmesg deltas/taint/b
 
 Nontrivial: kernel-privileged production module, boot activation, persistent storage/runtime namespace, custom maintainer scripts, approximate ABI waiver, controlled target reboot. DRAFT must commit before display. Run deterministic `trivial-policy`. Only explicit tooling PASS may waive approval; otherwise await one developer approval of revision 7/hash. Never self-approve. After approval, auto-progress through implementation, validation, integration, and hardware procedure until explicit hardware gate, safety failure, or tooling blocker.
 
+### Solution plan — DRAFT revision 8
+
+#### DRAFT revision 8 — activation and exact-once repair after independent validation
+
+Supersedes approved DRAFT revision 7 after independent validation FAIL sequence 76 and replan checkpoint sequence 77. Preserves revision 7 scope, developer acceptance of approximate NXP source/LETS-managed toolchain, real-HW authorization, observable-module-init semantics, package safety, exclusions, evidence, and truthful limits. Changes only defects required by validation. No load-bearing developer question remains: required behavior, risk acceptance, package removal semantics, one additional bounded reboot, and target `192.168.68.55` already authorized.
+
+#### Binding sources and failure evidence
+
+Reviewed complete REQ through sequence 77, customer source, requirements/image analysis, planner answers, revisions 1–7, approvals, implementation evidence, revision 7 independent validation, event log, `AGENTS.md`, `docs/SDLC-DEVELOPER-GUIDE.md`, `docs/DEVELOPER-GUIDE.md`, and `docs/MONIT.md`.
+
+Revision 7 binding: plan SHA-256 `3b397ef90c63e6037302d7ca4eab7dd47773017ba26c538e24be60e811300ad6`; rejected implementation commit `7610f9249db5640e7db82fbed20d23ff1f3b6c6d`; module SHA-256 `091a20b51f95b1f56110aa89ce1830b0cfb59bec8a9bfa1e17065732e26ce15d`; rejected DEB SHA-256 `119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50`. Never merge/release those rejected artifacts.
+
+Preserved PASS evidence: two reproducible production builds; ELF32 ARM EABI5; exact vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `; relocation type `3` absent; target-exported undefined symbols; manual ordinary load/unload/reload; one first-init event; zero repeated-loader/same-boot reload events; CLI count/filter/reset; taint unchanged `4096`; locked disposable-image restoration; source image SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`; target cleanup; RELEASE limits; `26 passed in 1.44s`.
+
+Mandatory FAIL set:
+
+1. Automatic boot created zero module, guard, device, or event although `/etc/rcS.d/S10scr-resets-monitor` existed. PID 1/runlevel evidence says SysV runlevel `2`; exact Debian 8 target sequencing/cause remains unproved.
+2. Record parent-directory sync failure can leave created inode, then retry new random name and duplicate one boot event.
+3. Guard file/directory sync errors are logged but returned as success, permitting false durable-claim success and later duplicate count.
+4. Remove/purge can retain generated records when module is absent because `prerm` skips `--reset` and `postrm` silently fails to remove nonempty `/var/log/scr`.
+5. ARM `.ko` package incorrectly declares `Architecture: all`; required architecture is `armhf`.
+6. `./bin/lets sdlc acceptance REQ-0001-GOAL-COUNT-SYSTEM-RESETS` fails `task manifest approved-plan hash does not match current approval`.
+
+#### Scope and immutable exclusions
+
+Counter remains exactly one durable empty record per observable boot whose `scr_reset_monitor` module initialization reaches accepted state. Same-boot repeated loader or unload/reload creates zero. Reset/boot ending before module init creates zero. No reset reason, physical-reset completeness claim, i.MX6 SRC/register/MMIO access, retained-counter work, kernel/U-Boot patch/replacement, boot-selector/DT/initramfs change, force load, vermagic editing, target build/APT/network dependency, monit/cron/watchdog/USB-counter truth, or reboot-loop behavior.
+
+Legacy vendor source/generated headers/`Module.symvers`/recipe remain unavailable. Developer accepts approximate NXP commit `e35e57f24ef5851787812a18a38feeb9deb6ea46`, exact live config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`, managed Linaro GCC `4.8.3 20140401 (prerelease)`, binutils `2.24.0.20140311 Linaro 2014.03`, and residual ABI risk. All compiler/binutils operations use `./bin/lets devenv init` and `./bin/lets toolchain`; direct compatibility tools forbidden. Pinned runtime/toolchain stays under `.lets`; healthy install skipped.
+
+#### Implementation defect repairs
+
+Record identity becomes immutable before any record create. Guard `pending:<filename>` is sole pending identity. Worker retries same validated pathname and same extant inode after successful exclusive creation; never generates another suffix unless exclusive create proves selected name collided before ownership. Persist in-memory state distinguishing `name-selected`, `inode-created`, `inode-synced`, `parent-synced`, `guard-complete`. Parent sync retry reopens/verifies exact owned record and syncs same directory; it never calls random-name selection. Unexpected type, link count, owner, size, name, replacement, disappearance after owned creation, or identity mismatch fails closed, logs rate-limited error, preserves evidence, and never creates second record.
+
+Guard claim must propagate every write, inode sync, rename, and parent-directory sync error. Module initialization/worker may continue boot and retry storage, but count/complete status never reports success until exact guard state and directory durability succeed. Retry retains immutable pending filename/state. Existing valid same-boot `pending` resumes same event. Existing `complete` or `cancelled` creates none. Malformed/unsafe guard fails initialization safely. A file-sync or parent-sync failure never becomes success, never discards pending state, and never selects another event.
+
+Required exact-once algorithm:
+
+1. READ validated boot guard into `guardState`
+2. ***if*** `guardState` is `complete` ***or*** `cancelled` ***then***
+   1. RETURN without event creation
+3. ***else if*** `guardState` is valid `pending:<filename>` ***then***
+   1. SET `eventName` to persisted filename
+4. ***else if*** guard is absent ***then***
+   1. SELECT one collision-free candidate into `eventName`
+   2. WRITE `pending:<eventName>` atomically
+   3. SYNCHRONIZE guard inode
+   4. SYNCHRONIZE guard parent directory
+   5. ***if*** any operation fails ***then***
+      1. RETURN nonzero pending result
+      2. RETRY same guard/event identity later
+5. ***else***
+   1. RETURN nonzero unsafe-state result
+6. CREATE `eventName` exclusively only when absent
+7. ***if*** exclusive create reports collision before ownership ***then***
+   1. SELECT another candidate
+   2. PERSIST new pending identity durably before create
+8. ***else if*** record exists from earlier owned attempt ***then***
+   1. VERIFY exact pathname, regular empty file, uid/gid/mode/link count, and owned pending identity
+   2. REUSE same record
+9. SYNCHRONIZE exact record inode
+10. SYNCHRONIZE record parent directory
+11. WRITE `complete:<eventName>` atomically
+12. SYNCHRONIZE guard inode
+13. SYNCHRONIZE guard parent directory
+14. REPORT one completed event only after all prior steps pass
+
+Add deterministic injected failures at each guard-write/inode-sync/parent-sync, record-create/inode-sync/parent-sync, and completion boundary. Every retry sequence must yield zero or one valid event, never two; success requires exactly one. Include replacement, symlink, hard-link, truncation, deletion, collision, read-only, ENOSPC, EIO, interruption, worker cancellation, and unload races.
+
+#### Boot activation investigation and repair
+
+Do not guess link/runlevel. Before package redesign or reboot, inspect target `192.168.68.55` read-only: `runlevel`; `/etc/inittab`; `/etc/init.d/rc`, `/etc/init.d/rcS`; `/etc/rcS.d`, `/etc/rc2.d`, all existing `scr-resets-monitor` links; init-script headers; `update-rc.d` behavior/version/config; boot logs, syslog/dmesg timestamps, and prior package evidence; presence/behavior of systemd compatibility tools without assuming systemd PID 1; dependency order for root rw, `/var`, `/run`, `/dev`, and local filesystems. Record exact cause why rcS link did not run or did not load. Credentials use ignored `admin/hw.credentials`/askpass; secret never enters commands, evidence, REQ, package, or Git.
+
+Select activation only from evidence. Expected candidate is SysV runlevel 2 link because target runs runlevel `2`, but result is not predetermined. Use dependency-correct init headers and deterministic package-owned registration. `update-rc.d` may be used only if exact target behavior, created links, policy, offline-image behavior, baseline capture, and full reversal are proven. Otherwise publish exact required link set through package lifecycle. Support Debian 8 SysV target; systemd compatibility must neither mask failure nor add separate service truth. Loader checks kernel/config/vermagic, pending removal, existing module, and ordinary `insmod`; returns nonzero and logs exact failure. No load during package install, chroot, or disposable-host test.
+
+Activation tests: exact init action manually with captured rc/log; simulated runlevel invocation; offline root/chroot-safe no-load behavior; start twice; stop/remove; failed load; pending removal; missing/wrong kernel; link registration/upgrade/removal restoration; boot log proof. Automatic acceptance requires module, `/run/scr-resets-monitor/boot-guard`, `/dev/scr-resets-monitor`, and exactly one new record after one newly authorized bounded ordinary reboot. Manual load never substitutes.
+
+#### Single reversible Debian package
+
+Produce exactly one canonical package `scr-req-0001-goal-count-system-resets`, new version above rejected `1.0.1`, Debian `Architecture: armhf`, canonical `_armhf.deb` filename. Remove/ignore stale `_all.deb` and alternate artifacts from candidate selection; validation binds one DEB path/SHA-256 only. Package remains architecture-specific even when scripts are shell.
+
+Dpkg owns private payload below `/usr/lib/scr-req-0001-goal-count-system-resets/payload`; maintainer scripts publish managed destinations only after durable baseline capture. No DKMS, `depmod`, module-index edit, `Replaces`, conffile seizure, helper package, target dependency upgrade, or network.
+
+Managed surfaces:
+
+| Surface | Ownership/restoration contract |
+| --- | --- |
+| `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko` | ARM production module, `0644 root:root`; exact hash/vermagic/provenance. |
+| `/usr/sbin/scr-resets-monitor` | Bash argument/transport/display only, `0755 root:root`; no filesystem count/delete fallback. |
+| `/etc/init.d/scr-resets-monitor` | SysV one-shot loader, `0755 root:root`; exact evidence-derived headers/actions. |
+| Evidence-derived `/etc/rc*.d/*scr-resets-monitor` links | Package-managed exact link names/targets; capture and restore every baseline link. Never retain failed rcS design by default. |
+| `/usr/share/doc/scr-resets-monitor/RELEASE.md` | Scope, exclusions, EOL, approximate ABI, observable-init, activation, storage/clock limits, recovery. |
+| `/usr/lib/scr-resets-monitor/package-test` | Non-destructive lifecycle/static test; never loads ARM module into host kernel. |
+| `/var/log/scr/reset-<epochMs>-<four-lowercase-letters>` | Generated empty events; package removal deletes package-generated scoped records and restores every baseline matching record exactly. |
+| `/run/scr-resets-monitor/boot-guard`, `/dev/scr-resets-monitor` | Runtime namespace; absent after unload/removal. |
+| `/var/lib/scr-req-0001-goal-count-system-resets/` | Root-only immutable first baseline, record inventory/copies, journal, ownership manifest, removal-pending; retained until verified restoration. |
+| `/var/lib/scr-sdlc/owners` entry | Exact destinations plus dynamic namespace claim; preserve other owners/claims. |
+
+Preflight uses `lstat`, no-follow, hashes, dpkg ownership, types, link targets, uid/gid/mode/timestamps, hard links, ACLs, xattrs, capabilities, parent metadata, capacity, and exact record inventory. Refuse unsupported metadata restoration, unsafe objects, code/runtime/namespace ownership, and exact/parent/child overlap with another requirement package. Permit disjoint coexistence only with registry and lifecycle proof.
+
+Maintainer lifecycle:
+
+1. `preinst install`: VERIFY `armhf`, kernel contract, dependencies, namespace, metadata support, free space; SAVE first baseline and journal durably before mutation; perform no network/APT/load.
+2. `postinst configure`: PUBLISH payload and evidence-derived activation atomically; VERIFY exact destinations/links; NEVER load module; RETAIN first baseline across reinstall/upgrade.
+3. `upgrade`: PRESERVE first baseline, baseline records, guard, removal state; NEVER reload resident module; REJECT incompatible state/control ABI; RESTORE prior payload on failed upgrade; activate new payload only next boot.
+4. `prerm remove`: MARK removal pending durably; DISABLE every activation path; ***if*** module loaded ***then*** issue fallible `PREPARE_REMOVE`, quiesce, reset scoped generated records under module authority, ordinary unload; NEVER force/reboot.
+5. `prerm remove`: ***if*** module absent ***then*** run package-lifecycle cleanup, not frontend fallback: compare exact baseline inventory/manifest, delete only non-baseline immediate regular empty single-link valid-name records owned by package contract, reject unsafe/mutated candidates, and propagate any failure nonzero.
+6. `postrm remove/purge`: REQUIRE module/endpoint/worker absence; RESTORE baseline records and all managed paths/links/metadata; REMOVE only package-created empty dirs/runtime/claim; VERIFY exact baseline; REMOVE backup/journal only after verification. `remove` and `purge` share full restoration semantics.
+7. `abort/retry`: RESUME or reverse journal idempotently; NEVER reactivate after removal request; NEVER erase last baseline.
+
+Absent-module cleanup is deterministic package lifecycle, not a second counter authority. Module remains sole live count/filter/reset authority. Baseline matching records are never deleted permanently. Unsafe record or restoration error stops removal; never silently `rmdir`. Busy unload retains pending marker, disabled activation, backups, and journal until unrelated natural reboot; package never initiates cleanup reboot.
+
+#### Regression, build, package, and acceptance gates
+
+Regression tests required for all six validation findings:
+
+- Activation: target sequence evidence; chosen registration; manual init action; simulated boot/runlevel; exactly one real boot activation; no rcS/rc2/systemd duplicate activation.
+- Record retry: injected parent-sync failure after inode durability, repeated retries, immutable name/inode, exactly one record.
+- Guard sync: injected file-sync and parent-sync errors return nonzero, retain pending state, retry same identity, no false completed count.
+- Uninstall: loaded and absent module; failed activation; records present; pre-existing matching/unrelated/unsafe entries; install/remove/purge/reinstall/upgrade/failed-upgrade/abort; exact restoration or hard failure.
+- Architecture: control field `armhf`, filename `_armhf.deb`, ARM `.ko`, target dpkg architecture match, one canonical artifact.
+- Task binding: regenerate task manifest only through `./bin/lets sdlc task-plan ...` after revision 8 approval; bind exact revision-8 SHA; run bounded tasks/coverage; require `./bin/lets sdlc acceptance REQ-0001-GOAL-COUNT-SYSTEM-RESETS` PASS before implementation commit/validation. Never edit ledger/artifacts by hand.
+
+Build module twice from clean state with `./bin/lets devenv init` and only `./bin/lets toolchain` compiler/binutils routes. Require byte-identical `.ko`; ELF32 little-endian ARM EABI5; ARMv7 attributes; exact vermagic; relocation type `3` absent; supported relocations; expected target-exported undefined symbols; no CRC/signature assumption, sanitizer, stack protector, FP, MMIO/reset code, force behavior, or unexplained layout dependency. Rebuild canonical DEB twice; require identical package hashes or explain/resolve nondeterminism before use.
+
+Run unit/model/fault/protocol tests plus `./bin/lets sdlc test`. Test CLI parsing, privilege, fragments, NUL/length/version, concurrency, lost response, absent module, no userspace truth fallback. Test collision/backward clock/storage/path faults, cancellation, rate limits, overlap refusal, disjoint coexistence, journals, upgrades, and every maintainer interruption.
+
+#### Continuous-lock disposable-image proof
+
+1. ACQUIRE SDLC image lock for `var/image_8.26.0`
+2. VERIFY no quarantine or conflicting mount
+3. RECORD source SHA-256
+4. CREATE tooling-managed disposable copy
+5. MOUNT copy while same lock remains held
+6. CAPTURE full filesystem/package/managed-surface baseline
+7. INSTALL exact canonical `armhf` DEB without network/APT mutation
+8. TEST install, offline activation registration, upgrade, failed upgrade, module-absent records, remove, purge, abort, reinstall, overlap, and package test without loading ARM module into host kernel
+9. UNINSTALL every produced package after pass or failure
+10. VERIFY exact path, link, record, metadata, package bookkeeping, runtime, claim, backup, journal, pending-removal restoration
+11. UNMOUNT disposable copy
+12. VERIFY source SHA-256 unchanged
+13. ***if*** cleanup, restoration, unmount, or source verification fails ***then***
+    1. QUARANTINE image through tooling
+    2. RETAIN journal/evidence
+    3. STOP reuse
+    4. REQUIRE tooling-reported recovery before unlock/reuse
+14. ***else***
+    1. RECORD restoration proof
+    2. RELEASE lock
+
+Preferred command: `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <canonical-armhf-deb> --test-command /usr/lib/scr-resets-monitor/package-test`. Custom path must use one `./bin/lets sdlc lock-run` spanning mount/install/test/uninstall/restoration/unmount. Requirement-managed paths cannot be verification exclusions.
+
+#### Real-HW sequence and bounded reboot
+
+Use `192.168.68.55` only after automated/static/reproducible/image/task acceptance PASS. One new bounded ordinary reboot is authorized solely to retest corrected activation.
+
+1. VERIFY exact hostname/board/Debian/kernel/config/uImage/architecture, uptime, free space, connectivity, recovery availability, no quarantine, no namespace conflict
+2. INSPECT and RECORD exact SysV/default-runlevel/rcS/rc2/systemd-compat activation facts before selecting registration
+3. CAPTURE package/APT state, protected hashes, activation links, records, `/proc/modules`, taint, bounded dmesg/log cursor, runtime/state/loader baseline
+4. COPY exact canonical DEB transiently
+5. VERIFY remote SHA-256 and mode
+6. INSTALL without network/dependency upgrade
+7. VERIFY install creates no event and loads no module
+8. RUN chosen init action manually once
+9. VERIFY ordinary load, expected logs, module/device/guard, taint unchanged, exactly one event, count baseline plus one
+10. RUN repeated start
+11. VERIFY zero new events
+12. RUN ordinary unload/reload same boot
+13. VERIFY zero new events and unchanged taint
+14. EXERCISE CLI and bounded sync-fault hooks without corrupting baseline
+15. RESTORE test-generated state/records to defined pre-reboot installed baseline
+16. VERIFY activation enabled exactly once and safe recovery available
+17. PERFORM one ordinary controlled reboot
+18. RECONNECT within bounded timeout
+19. VERIFY exact identity/kernel/config/uImage and connectivity
+20. VERIFY automatic activation produced loaded module, guard, device, expected logs, and count delta exactly `+1`
+21. VERIFY no duplicate event, warning, oops, BUG, panic, hang, new unexplained taint, or competing activation
+22. MARK removal pending and disable all activation through package removal
+23. UNLOAD ordinarily without reboot
+24. UNINSTALL and purge package
+25. VERIFY generated records removed even with module absent
+26. VERIFY every baseline record/path/link/metadata/package/APT/protected hash restored; transient DEB, module, endpoint, guard, worker, runtime, state, claim, backup, journal, activation residue absent; connectivity healthy
+27. ***if*** unload is busy ***then***
+    1. RETAIN removal-pending state
+    2. KEEP activation disabled
+    3. RETAIN backups/evidence
+    4. DO NOT reboot for cleanup
+    5. STOP with incomplete uninstall
+28. ***if*** boot, module, taint, warning, cleanup, restoration, or connectivity safety fails ***then***
+    1. STOP further tests
+    2. PRESERVE evidence
+    3. QUARANTINE device for requirement
+    4. REQUIRE explicit recovery verification before reuse
+    5. NEVER force module operation or patch kernel/U-Boot
+
+#### Deliverables and approval gate
+
+Deliver revision-8-bound task manifest, fixed source/tests, two reproducible `.ko` builds, two reproducible canonical `armhf` DEB builds, exact commit/artifact hashes, activation investigation, unit/fault/package/image/HW evidence, dmesg/log/taint/count deltas, full ownership/baseline manifest, `RELEASE.md`, and exact cleanup/restoration proof. Independent validation must PASS full customer requirement, approved revision 8, package reversibility, image restoration, task acceptance, automatic activation, and HW cleanup before merge. No merge on any validation failure.
+
+Nontrivial: kernel-privileged module, boot activation, persistent records/runtime namespace, custom maintainer scripts, approximate ABI waiver, controlled reboot. Commit DRAFT revision 8 before display. Run deterministic `trivial-policy`; only tooling PASS may waive approval. Otherwise wait for explicit approval of exact revision/hash. After approval, auto-progress until hardware gate, safety failure, or tooling blocker.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -1757,3 +1957,5 @@ Nontrivial: kernel-privileged production module, boot activation, persistent sto
 - `2026-09-18T16:14:28+00:00` [implementing] Independent validation fail
 
 - `2026-09-18T16:14:55+00:00` [drafting-plan] Revision 7 independent validation failed: automatic boot activation produced no module/guard/device/record; record parent-sync retry can duplicate random record; guard sync error returns success; uninstall may retain records when module absent; ARM .ko DEB incorrectly Architecture all; task manifest approved-plan hash stale. Replan all defects, inspect exact SysV runlevel sequencing, repeat locked lifecycle tests, and require one bounded reboot retest.
+
+- `2026-09-18T16:17:30+00:00` [drafting-plan] Updated round 1 solution-plan section
