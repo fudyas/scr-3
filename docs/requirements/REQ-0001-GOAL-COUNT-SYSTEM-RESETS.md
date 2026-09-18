@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: approved
 round: 1
-sequence: 80
-approval: none
+sequence: 81
+approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T16:17:54+00:00
+updated: 2026-09-18T16:22:57+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1963,3 +1963,5 @@ Nontrivial: kernel-privileged module, boot activation, persistent records/runtim
 - `2026-09-18T16:17:50+00:00` [draft-ready] Committed DRAFT revision 8 after revision 7 validation FAIL: preserve developer-approved approximate ABI and production scope; require evidence-derived Debian 8 SysV activation, immutable record identity, propagated guard sync failure, deterministic loaded/absent-module uninstall cleanup, one canonical armhf DEB, revision-8-bound task manifest, regression tests for all six defects, two reproducible builds, continuous-lock restoration/quarantine, and one bounded HW reboot retest. No unanswered load-bearing question.
 
 - `2026-09-18T16:17:54+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-18T16:22:57+00:00` [approved] Developer approved DRAFT revision 8 SHA-256 15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5.

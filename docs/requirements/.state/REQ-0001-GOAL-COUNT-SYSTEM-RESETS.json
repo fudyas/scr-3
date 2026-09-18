@@ -1,4 +1,11 @@
 {
+  "approval": {
+    "plan_revision": 8,
+    "plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+    "reason": "Developer approved DRAFT revision 8 SHA-256 15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5.",
+    "status": "approved",
+    "time": "2026-09-18T16:22:57+00:00"
+  },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
   "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
@@ -500,6 +507,12 @@
           "sequence": 80,
           "state": "awaiting-approval",
           "time": "2026-09-18T16:17:54+00:00"
+        },
+        {
+          "message": "Developer approved DRAFT revision 8 SHA-256 15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5.",
+          "sequence": 81,
+          "state": "approved",
+          "time": "2026-09-18T16:22:57+00:00"
         }
       ],
       "number": 1,
@@ -507,8 +520,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 80,
-  "state": "awaiting-approval",
+  "sequence": 81,
+  "state": "approved",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -558,7 +571,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T16:17:54+00:00",
+  "updated": "2026-09-18T16:22:57+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
