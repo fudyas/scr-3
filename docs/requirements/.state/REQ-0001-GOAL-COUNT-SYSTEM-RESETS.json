@@ -656,6 +656,12 @@
           "sequence": 106,
           "state": "drafting-plan",
           "time": "2026-09-18T17:43:08+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 9 after revision-8 T04 automatic-activation FAIL: preserve validated implementation and approximate ABI waiver; replace direct runlevel link with Debian 8 target-native update-rc.d/insserv registration; bind exact LSB header, generated graph/link baseline, upgrade-safe native unregistration, exact restoration, staged/locked/HW graph gates, and one newly bounded reboot. No direct .depend.* content edit, global concurrency change, force, MMIO, reason, kernel/U-Boot patch, target APT, or credential persistence. No unanswered load-bearing question.",
+          "sequence": 107,
+          "state": "draft-ready",
+          "time": "2026-09-18T17:43:12+00:00"
         }
       ],
       "number": 1,
@@ -663,8 +669,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 106,
-  "state": "drafting-plan",
+  "sequence": 107,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -744,7 +750,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T17:43:08+00:00",
+  "updated": "2026-09-18T17:43:12+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",

@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 106
+sequence: 107
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T17:43:08+00:00
+updated: 2026-09-18T17:43:12+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2215,3 +2215,5 @@ Independent validation must PASS complete customer requirement as narrowed by re
 - `2026-09-18T17:39:19+00:00` [drafting-plan] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-18T17:43:08+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-18T17:43:12+00:00` [draft-ready] Committed DRAFT revision 9 after revision-8 T04 automatic-activation FAIL: preserve validated implementation and approximate ABI waiver; replace direct runlevel link with Debian 8 target-native update-rc.d/insserv registration; bind exact LSB header, generated graph/link baseline, upgrade-safe native unregistration, exact restoration, staged/locked/HW graph gates, and one newly bounded reboot. No direct .depend.* content edit, global concurrency change, force, MMIO, reason, kernel/U-Boot patch, target APT, or credential persistence. No unanswered load-bearing question.
