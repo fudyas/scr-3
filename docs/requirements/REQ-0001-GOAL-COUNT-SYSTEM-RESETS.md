@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 78
+sequence: 79
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T16:17:30+00:00
+updated: 2026-09-18T16:17:50+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1959,3 +1959,5 @@ Nontrivial: kernel-privileged module, boot activation, persistent records/runtim
 - `2026-09-18T16:14:55+00:00` [drafting-plan] Revision 7 independent validation failed: automatic boot activation produced no module/guard/device/record; record parent-sync retry can duplicate random record; guard sync error returns success; uninstall may retain records when module absent; ARM .ko DEB incorrectly Architecture all; task manifest approved-plan hash stale. Replan all defects, inspect exact SysV runlevel sequencing, repeat locked lifecycle tests, and require one bounded reboot retest.
 
 - `2026-09-18T16:17:30+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-18T16:17:50+00:00` [draft-ready] Committed DRAFT revision 8 after revision 7 validation FAIL: preserve developer-approved approximate ABI and production scope; require evidence-derived Debian 8 SysV activation, immutable record identity, propagated guard sync failure, deterministic loaded/absent-module uninstall cleanup, one canonical armhf DEB, revision-8-bound task manifest, regression tests for all six defects, two reproducible builds, continuous-lock restoration/quarantine, and one bounded HW reboot retest. No unanswered load-bearing question.

@@ -488,6 +488,12 @@
           "sequence": 78,
           "state": "drafting-plan",
           "time": "2026-09-18T16:17:30+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 8 after revision 7 validation FAIL: preserve developer-approved approximate ABI and production scope; require evidence-derived Debian 8 SysV activation, immutable record identity, propagated guard sync failure, deterministic loaded/absent-module uninstall cleanup, one canonical armhf DEB, revision-8-bound task manifest, regression tests for all six defects, two reproducible builds, continuous-lock restoration/quarantine, and one bounded HW reboot retest. No unanswered load-bearing question.",
+          "sequence": 79,
+          "state": "draft-ready",
+          "time": "2026-09-18T16:17:50+00:00"
         }
       ],
       "number": 1,
@@ -495,8 +501,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 78,
-  "state": "drafting-plan",
+  "sequence": 79,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -546,7 +552,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T16:17:30+00:00",
+  "updated": "2026-09-18T16:17:50+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
