@@ -1,50 +1,43 @@
 {
   "acceptance": "acceptance.json",
-  "acceptance_sha256": "b85290c445df84765188e42e235b7c617cf0aa77fc2ec7ec7eefce530dfda6ac",
-  "approved_plan_sha256": "a5d45639407a0e98c4e2798ffb4d43763b5129ddabdb55070d7b38580bc2e411",
+  "acceptance_sha256": "99a7b6cfdb796a1591c215555ebba29b84b0f42f2e5d1f2cbaef5729316cbc92",
+  "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
   "contract": "contract.md",
-  "contract_sha256": "7e04e3eb74ac722e13c3a2f754480b04502b535a6007b3741f5bce39a99c19e4",
-  "definitions_sha256": "dfb38b4d6bba218ef5aa0b98fa9b36654f6c8365d4076c26e5dd111c4b44e92e",
+  "contract_sha256": "879663040b5913ffa317a7bb62bc10edfd3dc15fdca5421266f80521feb96f5d",
+  "definitions_sha256": "c8ad386eab45c0b72a6fe27fb14de10548df3358a423fae581f245e6da08954a",
   "interfaces": "interfaces.md",
-  "interfaces_sha256": "b35939072cd83615ed84d354253093be53786101d4f5caa273f0b06f028b8ada",
-  "plan_revision": 2,
+  "interfaces_sha256": "66066d1f8ead1243df1a36678da3da4b71b341060e6a9f194e56d847ace4dcbc",
+  "plan_revision": 8,
   "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
   "round": 1,
   "schema_version": 1,
   "tasks": [
     {
       "acceptance": [
-        "A01",
-        "A12",
-        "A14",
-        "A15"
+        "R8-01",
+        "R8-02"
       ],
       "depends_on": [],
       "file": "tasks/T01.md",
       "id": "T01",
-      "sha256": "528d4375b78f43b8b26a9802dbed44a38b87876dab01412fbc6b2b428cd2a914"
+      "sha256": "95843969303758ef194c1627e054b8f1e6d3607e5b4ccd1f3a33b394aa5437b4"
     },
     {
       "acceptance": [
-        "A09",
-        "A10",
-        "A11",
-        "A15"
+        "R8-03",
+        "R8-04"
       ],
       "depends_on": [
         "T01"
       ],
       "file": "tasks/T02.md",
       "id": "T02",
-      "sha256": "46d240b9cae1965ec4ca07b1bb7720a9c1c5bd313a1901f637794db9e5cd396c"
+      "sha256": "fa1508c28b931da7563ac590969cfe00b7c39545e30fbb3a8ae13f18b2182f27"
     },
     {
       "acceptance": [
-        "A02",
-        "A03",
-        "A05",
-        "A10",
-        "A15"
+        "R8-05",
+        "R8-06"
       ],
       "depends_on": [
         "T01",
@@ -52,100 +45,19 @@
       ],
       "file": "tasks/T03.md",
       "id": "T03",
-      "sha256": "78ef008131bb7580215e4bea9405b76302928e173106213bb420d58f8f78a92e"
+      "sha256": "2d6ed5bcab88c14a64a6b15c1c92372658ea1ad9ce56a1a37abe6ec65c32b000"
     },
     {
       "acceptance": [
-        "A04",
-        "A05",
-        "A06",
-        "A08",
-        "A14"
+        "R8-07",
+        "R8-08"
       ],
       "depends_on": [
-        "T01",
-        "T02",
         "T03"
       ],
       "file": "tasks/T04.md",
       "id": "T04",
-      "sha256": "90240abe5d07c5a4976e306257882922a41a29f07c32d78d7a3993991df7dc81"
-    },
-    {
-      "acceptance": [
-        "A02",
-        "A05",
-        "A06",
-        "A07",
-        "A08"
-      ],
-      "depends_on": [
-        "T03",
-        "T04"
-      ],
-      "file": "tasks/T05.md",
-      "id": "T05",
-      "sha256": "4fbf634dfcb182b2a082c6a2461b203c535eddfa806869f5f90731ddad94d3b1"
-    },
-    {
-      "acceptance": [
-        "A02",
-        "A03",
-        "A07",
-        "A10",
-        "A15"
-      ],
-      "depends_on": [
-        "T02",
-        "T03",
-        "T05"
-      ],
-      "file": "tasks/T06.md",
-      "id": "T06",
-      "sha256": "a5d2f81ce044496a7a0391649c2d9934d404904e3130793b81b135826ac9663b"
-    },
-    {
-      "acceptance": [
-        "A01",
-        "A02",
-        "A03",
-        "A04",
-        "A05",
-        "A06",
-        "A07",
-        "A08",
-        "A09",
-        "A10",
-        "A11",
-        "A14",
-        "A15"
-      ],
-      "depends_on": [
-        "T02",
-        "T03",
-        "T04",
-        "T05",
-        "T06"
-      ],
-      "file": "tasks/T07.md",
-      "id": "T07",
-      "sha256": "ff7b2413ac02f7751ed161cb2c093ba22e7481cfcc96480fb42ecff1434c48d9"
-    },
-    {
-      "acceptance": [
-        "A09",
-        "A11",
-        "A12",
-        "A13",
-        "A14",
-        "A15"
-      ],
-      "depends_on": [
-        "T07"
-      ],
-      "file": "tasks/T08.md",
-      "id": "T08",
-      "sha256": "f3fee19d5c4dd8cd7205806669a6f0351059437edbb8a1ccceec727e8a2b7fb2"
+      "sha256": "ab7b47786b0571f765ea7201ca1801476f718dff92fc6a34420a9df7233bb31b"
     }
   ]
 }

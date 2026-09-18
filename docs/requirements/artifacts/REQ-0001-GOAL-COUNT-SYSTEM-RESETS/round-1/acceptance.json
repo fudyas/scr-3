@@ -1,19 +1,10 @@
-{
-  "criteria": [
-    {"id":"A01","text":"Exact image/source/ABI/dependencies proven; incompatible module refused."},
-    {"id":"A02","text":"LKM sole authority; Bash has no state/filesystem fallback."},
-    {"id":"A03","text":"One event per supported observable boot; repeat starts/reloads do not duplicate."},
-    {"id":"A04","text":"Exclusive create and empty inode+directory sync precede reason write."},
-    {"id":"A05","text":"Storage faults continue boot with bounded retry and no duplicate."},
-    {"id":"A06","text":"Filename, UTC filter, collision, invalid clock, empty-file semantics exact."},
-    {"id":"A07","text":"Root-only bounded protocol rejects malformed/dead sessions safely."},
-    {"id":"A08","text":"Count/reset preserve unrelated/unsafe files and report partial errors."},
-    {"id":"A09","text":"Single reversible DEB preserves first baseline through lifecycle."},
-    {"id":"A10","text":"Remove/purge restore without reboot; busy unload remains pending."},
-    {"id":"A11","text":"Interrupted lifecycle/upgrade recovers; overlap refused."},
-    {"id":"A12","text":"Continuous image lock and quarantine enforced."},
-    {"id":"A13","text":"Managed paths restored; source image hash unchanged."},
-    {"id":"A14","text":"Physical SRC/durability gaps remain explicit until HW evidence."},
-    {"id":"A15","text":"No kernel/MONIT/cron/USB changes, daemon, or automatic reboot."}
-  ]
-}
+{"criteria":[
+  {"id":"R8-01","text":"Record parent-sync retry keeps exact pathname/inode and creates no duplicate."},
+  {"id":"R8-02","text":"Guard file/parent sync failure propagates and retries same guard."},
+  {"id":"R8-03","text":"Verified Debian 8 runlevel-2 activation loads exactly once per boot."},
+  {"id":"R8-04","text":"Loaded/absent-module remove and purge delete generated records and restore baseline safely."},
+  {"id":"R8-05","text":"One canonical Architecture armhf DEB and two byte-identical module/DEB builds pass static gates."},
+  {"id":"R8-06","text":"Disposable image install/test/remove restores exactly under continuous lock; failure quarantines."},
+  {"id":"R8-07","text":"Real hardware manual/reload and one bounded reboot prove automatic delta exactly +1 without anomaly."},
+  {"id":"R8-08","text":"Target cleanup/purge restores identity, paths, records, activation, hashes, taint, connectivity."}
+]}
