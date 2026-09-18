@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 66
+sequence: 67
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T13:08:15+00:00
+updated: 2026-09-18T13:11:12+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1364,6 +1364,209 @@ After approval: LETS runtime/toolchain config, safe `.deb` extractor, installer/
 
 Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config/tests, live approximate-ABI retry, six persistent target payload destinations, maintainer scripts, boot activation, kernel privilege, persistent storage/runtime namespace. Commit DRAFT before display. Never self-approve. Only deterministic `trivial-policy` may waive; otherwise await developer approval/amendment.
 
+### Solution plan — DRAFT revision 7
+
+#### DRAFT revision 7 — developer-waived approximate production ABI
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 6 after checkpoint sequence 66. Preserves revision 3 production semantics/package, revision 4 probe safety, revisions 5-6 LETS toolchain/runtime, all evidence, exclusions, rollback, image locking, quarantine. Change: developer confirms legacy vendor artifacts unavailable and explicitly accepts validated approximate NXP source + LETS-managed GCC for production implementation and real-HW testing. This waiver removes exact-vendor-artifact gate only. It never waives static checks, ordinary-load-only rule, restoration, package reversibility, device safety, or truthful limits.
+
+#### Sources, decisions, evidence
+
+Reviewed complete durable REQ through sequence 66: customer source, requirements/image analysis, planner answers, revisions 1-6, approvals, implementation attempts/checkpoints, probe evidence, event log, `AGENTS.md`, `docs/SDLC-DEVELOPER-GUIDE.md`, `docs/DEVELOPER-GUIDE.md`, `docs/MONIT.md`.
+
+Load-bearing decisions resolved:
+
+- Counter means exactly one observable boot reaching accepted `scr_reset_monitor` module initialization. Same-boot supported unload/reload adds zero. Reset/boot ending before module init adds zero. No physical-reset completeness claim.
+- Event = durable empty `/var/log/scr/reset-<epochMs>-<four-lowercase-letters>`. File count = counter. No reset reason/payload.
+- No i.MX6 register/SRC access, direct MMIO, reset decoding, retained-counter work, kernel/U-Boot source patching/replacement, boot-selector/DT/initramfs change. `RELEASE.md` states kernel/U-Boot patching out of scope because EOL/lack of supported artifacts.
+- Module owns event, same-boot guard, filename, retry, count/filter/reset, serialization/cancellation. Bash frontend validates/transports/displays only. No monit/daemon/cron/USB counter truth.
+- Developer states exact vendor source/generated headers/`Module.symvers`/recipe unavailable and authorizes production with approximate artifacts plus real-HW tests. No further provenance question remains.
+- Developer request to avoid repeated approvals is recorded. Pipeline approval policy still applies: DRAFT must commit; tooling alone may auto-approve. Otherwise one approval of exact revision/hash remains mandatory; implementation then auto-progresses until hardware gate, safety failure, or tooling blocker.
+
+Verified target `192.168.68.55`: hostname `SCR-7CCC91`; ADLINK LEC-iMX6; Debian 8 Jessie ARMv7 SysV; root; kernel `3.10.105-imx6 #5 SMP PREEMPT Wed May 16 11:21:53 IDT 2018`; live compiler provenance GCC `4.8.4 (Ubuntu/Linaro 4.8.4-2ubuntu1~14.04.1)`; config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`; build-id `f7b0840244f238080194bd87ce76c704a67db004`; vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `; `CONFIG_MODVERSIONS=n`; `CONFIG_MODULE_SIG=n`; `CONFIG_VMSPLIT_2G_OPT=y`; `PAGE_OFFSET=0x6C000000`; uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`; `/run` tmpfs verified. Credentials remain ignored `admin/hw.credentials`, mode `0600`; never log secret.
+
+Approximate inputs: NXP source commit `e35e57f24ef5851787812a18a38feeb9deb6ea46`, reconstructed release `3.10.105-imx6`, exact live config above, managed Linaro GCC `4.8.3 20140401 (prerelease)` and binutils `2.24.0.20140311 Linaro 2014.03`. Toolchain archive SHA-256 `2b4b29bcfed26948b654088aabbd7e5357691f66f0ba4864df63b2c00f054152`. Seven pinned Trusty i386 runtime packages remain revision-6 exact manifest. All compiler/binutils operations use `./bin/lets devenv init` and `./bin/lets toolchain`; direct tools, host/target APT, `sudo`, global install forbidden.
+
+Diagnostic probe evidence: two byte-identical builds SHA-256 `1377d6cae2339aedf00647a8e78b7aefed54c206a40927fb241cae0e12245334`; ELF/ARM attributes/vermagic/symbol/disassembly/relocation gates passed; relocation `3` absent; ordinary `insmod` rc `0`; ordinary `rmmod` rc `0`; exact expected init/exit logs; taint unchanged `4096`; config/uImage/module-table baselines restored; no residue/anomaly. This proves minimal callbacks load/unload on exact running kernel. It does not prove arbitrary structures/prototypes/VFS behavior. Developer waiver accepts that residual production ABI risk only after production-specific static and bounded live gates below.
+
+#### Implementation scope and production gates
+
+Implement minimal OOT module against existing kernel; never patch kernel tree. Prefer smallest 3.10-compatible exported interface set. No unexported-symbol tricks, KALLSYMS address lookup, `--force`, vermagic editing, version bypass, binary patch, target build, target APT, kernel/U-Boot modification.
+
+Before package/live production use:
+
+1. INITIALIZE pinned runtime/toolchain with `./bin/lets devenv init`.
+2. VERIFY healthy generation, manifests, license evidence, recursive ELF closure, managed loader, banners, offline/idempotent reuse.
+3. RECONSTRUCT kernel tree from pinned NXP commit, exact live config, recorded stable/config adjustments.
+4. BUILD production module twice using only `./bin/lets toolchain` routes.
+5. REQUIRE byte-identical production artifacts or resolve every nondeterministic field.
+6. VERIFY ELF32 little-endian ARM EABI, ARMv7 attributes, exact vermagic, section sanity, no CRC/signature assumption, supported relocations, expected undefined exports, no instrumentation/stack-protector/sanitizer/floating-point/unexpected helper.
+7. COMPARE every used kernel type/prototype/layout with chosen source and isolate code from broad internal structures.
+8. SCAN source/binary for forbidden MMIO/reset-reason/kernel/U-Boot/force/APT behavior.
+9. RUN host-side model/fault/protocol tests for all logic that can be separated from kernel glue.
+10. ***if*** unresolved symbol, unsupported relocation, unexplained layout dependency, static anomaly, nondeterminism, or forbidden behavior exists ***then***
+    1. STOP before target copy/load/package activation.
+    2. RECORD exact blocker.
+
+Production module contract:
+
+1. ACCEPT one current-boot event only after supported module init reaches stable initialized state.
+2. CLAIM `/run/scr-resets-monitor/boot-guard` using no-follow bounded state `pending:<filename>`, `complete:<filename>`, or `cancelled`.
+3. ***if*** guard is `complete` ***or*** `cancelled` ***then***
+   1. CREATE no event.
+4. ***else if*** guard is valid `pending` ***then***
+   1. RESUME same filename/event identity.
+5. ***else if*** guard is absent ***then***
+   1. SELECT `reset-<epochMs>-<suffix>`.
+   2. PERSIST `pending:<filename>` atomically.
+   3. SYNCHRONIZE guard directory.
+6. ***else***
+   1. FAIL initialization safely without event.
+7. QUEUE process-context worker without blocking boot.
+8. RESOLVE `/var/log/scr` without symlink/alternate-object acceptance.
+9. CREATE absent directory `0755 root:root` and synchronize parent.
+10. CREATE empty record exclusively/no-follow as `0600 root:root`.
+11. ***if*** name collides ***then***
+    1. SELECT new four-letter suffix, maximum 64 attempts per invocation.
+    2. PERSIST new pending name before create.
+12. RETAIN same inode/name after successful create across retries.
+13. SYNCHRONIZE empty inode.
+14. SYNCHRONIZE containing directory.
+15. MARK guard `complete` atomically.
+16. SYNCHRONIZE guard directory.
+17. ***if*** storage returns read-only/full/EIO/unavailable ***then***
+    1. RETAIN one pending identity.
+    2. LOG rate-limited error.
+    3. RETRY exponentially from 1 to 60 seconds.
+    4. NEVER block boot or reboot.
+
+Crash before inode + directory durability may lose event. Storage may violate flush guarantees. Invalid/backward wall clock remains filename time; suffix prevents overwrite. No reason write exists.
+
+CLI remains `/usr/sbin/scr-resets-monitor --count [--since <timestamp>]`, `--reset`, help. `--since` exact `yyyy-mm-dd[ hh[:mm[:ss]]]` UTC; missing time components zero; inclusive filename-time comparison. Reject `last`, timezone suffix, leap second, invalid Gregorian/range/overflow/trailing/conflicting input. Module parses/owns truth over root-only `/dev/scr-resets-monitor`; Bash sends bounded versioned literal request and displays result only. Count/delete scope: immediate, non-symlink, single-link, regular empty files with complete valid name. Unsafe matching entries make truthful operation fail nonzero and remain untouched. Reset cancels pending, durably marks guard `cancelled`, deletes generated scoped records, synchronizes directory, preserves baseline/unrelated data. No auto-retry after lost response.
+
+#### Reversible Debian package
+
+Produce exactly one architecture-specific package `scr-req-0001-goal-count-system-resets`, version above every unpublished artifact. Confirm dpkg architecture from image/target. Dpkg owns private `/usr/lib/scr-req-0001-goal-count-system-resets/payload`; scripts publish after baseline capture. No DKMS, `depmod`, `/lib/modules` index update, target dependency upgrade, or hidden helper package.
+
+Managed ownership:
+
+| Surface | Contract |
+| --- | --- |
+| `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko` | Production OOT module, `0644 root:root`; exact artifact hash/vermagic/provenance. |
+| `/usr/sbin/scr-resets-monitor` | Bash transport/help only, `0755 root:root`. |
+| `/etc/init.d/scr-resets-monitor` | One-shot SysV loader, `0755 root:root`; checks pending removal/compatibility; ordinary `insmod` only; no truth/reboot/APT. |
+| `/etc/rcS.d/S99scr-resets-monitor` | Exact symlink `../init.d/scr-resets-monitor`; no broad `update-rc.d`. |
+| `/usr/share/doc/scr-resets-monitor/RELEASE.md` | `0644 root:root`; scope, exclusions, EOL/artifact waiver, approximate ABI/probe limits, observable-init/pre-init/same-boot/storage/clock limits, lifecycle/test/recovery. |
+| `/usr/lib/scr-resets-monitor/package-test` | `0755 root:root`; non-destructive; never loads ARM module into host kernel. |
+| `/var/log/scr/reset-<epochMs>-<suffix>` | Module-created empty events; baseline matching records preserved/restored. |
+| `/run/scr-resets-monitor/boot-guard`, `/dev/scr-resets-monitor` | Module runtime namespace; removal only after confirmed module absence. |
+| `/var/lib/scr-req-0001-goal-count-system-resets/` | Root-only first baseline, manifest, journal, removal-pending; retained until verified restoration. |
+| `/var/lib/scr-sdlc/owners` entry | Exact destinations + dynamic namespace claim; preserve registry/other claims. |
+
+Preflight uses `lstat`, no-follow, hashes, dpkg ownership, metadata support, capacity. Refuse unexpected code/loader/control/guard ownership and exact/parent/child/namespace conflict with another requirement package. Disjoint coexistence requires registry + lifecycle proof. No `Replaces` or conffile seizure. Snapshot original absence/content/type/link target/uid/gid/mode/timestamps/hard links/ACLs/xattrs/capabilities/parent metadata. Unsupported restoration capability blocks mutation. Preserve unrelated `/var/log/scr` entries and all original matching records.
+
+Maintainer lifecycle:
+
+| Phase | Required behavior |
+| --- | --- |
+| `preinst install` | Validate architecture/kernel contract/dependencies/conflicts/metadata/space; durably capture first baseline + journal before mutation. No network/APT. |
+| `postinst configure` | Atomically publish/verify payload and loader link. Never load in install/chroot/offline image mutation. Idempotent. |
+| upgrade | Retain first baseline, records, guard, removal state. Never reload resident module. Reject incompatible control/state ABI before replacement. Failed upgrade restores prior payload. New payload activates next boot. |
+| `prerm remove` | Durably mark removal pending; disable loader; issue fallible `PREPARE_REMOVE`; quiesce worker/control; ordinary unload only. No force/reboot/shutdown. Failure returns nonzero; keep backup/journal and activation disabled. |
+| `postrm remove/purge` | Proceed only after module/endpoint absence. Delete generated scoped records; restore all baseline paths/records/metadata; remove created empty dirs/runtime/own claim; verify; then remove backup/journal. Both remove/purge restore. |
+| abort/retry | Resume or reverse journal idempotently. Never reactivate after removal request. Never erase last baseline. |
+
+Busy unload stays pending until unrelated natural reboot; package never triggers reboot. Pending marker + disabled loader suppress activation. Ordinary removal retry completes after natural reboot. Active module/endpoint/pending worker/residue/mismatch means uninstall incomplete.
+
+#### Automated, image, and real-HW tests
+
+Automated gates:
+
+- LETS runtime/toolchain revision-6 suites: package/hash/license/extractor safety, ELF closure, hostile environment, fresh/skip/offline/repair/concurrency/alternate state root, forwarding, make integration, direct-tool bypass scan.
+- Production build reproducibility/static ABI gates above.
+- Guard exact-once model: first init one, repeated loader zero, unload/reload same boot zero, new boot one, pre-init boot zero; interruption at every guard/create/inode-sync/dir-sync/complete boundary resumes one identity.
+- Storage/name/path faults: collisions, equal/backward clock, read-only/full/EIO, symlink/hard-link/replacement, bounded retry and rate limit.
+- Protocol/CLI: parsing/bounds/NUL/fragment/unsupported version/privilege/concurrency/process death/lost response; absent module explicit failure/no fallback.
+- Package lifecycle: install/remove/purge/reinstall, upgrade/failed upgrade, interruption every journal phase, pre-existing directory/records, busy unload/deferred retry, overlap refusal/disjoint coexistence, preserved unrelated paths.
+
+Lock-bounded disposable-image proof:
+
+1. ACQUIRE SDLC image lock.
+2. VERIFY no quarantine or conflicting mount.
+3. RECORD source `var/image_8.26.0` SHA-256.
+4. CREATE tooling-managed disposable copy.
+5. MOUNT copy while same lock remains held.
+6. CAPTURE full baseline: hashes, types, links, ownership, modes, timestamps, hard links, ACLs, xattrs, capabilities, parent metadata, package bookkeeping.
+7. INSTALL exact hashed DEB without network/host/target APT mutation.
+8. RUN static/offline/package lifecycle tests; never load ARM module into host kernel.
+9. UNINSTALL every produced package after pass or failure.
+10. VERIFY exact managed-surface restoration and absence of generated records, backup, journal, claim, runtime, module, endpoint, pending removal.
+11. UNMOUNT disposable copy.
+12. VERIFY source SHA-256 unchanged.
+13. ***if*** uninstall, restoration, unmount, source verification, or cleanup fails ***then***
+    1. QUARANTINE affected image identity.
+    2. RETAIN journal/evidence.
+    3. STOP reuse.
+    4. REQUIRE tooling-reported recovery before unlock/reuse.
+    5. NEVER remove quarantine marker manually.
+14. ***else***
+    1. RECORD restoration proof.
+    2. RELEASE lock.
+
+Preferred command: `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <artifact> --test-command /usr/lib/scr-resets-monitor/package-test`. Custom flow must use one `./bin/lets sdlc lock-run` spanning mount/install/test/uninstall/restoration/unmount. Missing enforcement blocks mutation. Dpkg bookkeeping exclusions may not hide any managed path.
+
+Controlled target sequence uses `192.168.68.55` only after automated/image PASS and exact DEB hash:
+
+1. VERIFY endpoint identity, kernel/config/uImage hashes, architecture, free space, uptime, connectivity, console/reflash/operator recovery, no quarantine, no namespace conflict.
+2. CAPTURE baseline package/APT state, protected-path hashes, `/proc/modules`, taint, bounded dmesg cursor, `/var/log/scr`, runtime/state paths, loader paths.
+3. COPY exact hashed DEB transiently; verify remote hash/mode.
+4. INSTALL DEB using existing package manager without network or dependency upgrade; confirm install does not load module/create event.
+5. RUN ordinary one-time loader/`insmod`; inspect rc, exact dmesg delta, module/refcount, endpoint/guard, taint, connectivity.
+6. VERIFY first accepted init produces exactly one durable empty event and `--count` returns baseline plus one.
+7. RUN repeated loader; verify zero new events.
+8. RUN ordinary remove/load same boot; verify zero new events, expected logs, unchanged taint.
+9. EXERCISE count/filter/reset semantics and bounded safe faults without corrupting baseline records; preserve evidence.
+10. RESTORE test-generated records/state before reboot acceptance.
+11. VERIFY safe recovery remains available.
+12. PERFORM one controlled ordinary reboot because boot-count acceptance requires it and developer authorized real-HW completion.
+13. RECONNECT with bounded timeout.
+14. VERIFY exact identity/kernel/config/uImage, loader activation, expected single new event, count delta `+1`, no duplicate, no warning/oops/BUG/panic/hang/new unexplained taint.
+15. DISABLE loader and mark removal pending through package removal path.
+16. UNLOAD ordinarily without reboot.
+17. UNINSTALL package.
+18. VERIFY all managed paths/records/metadata restore to target baseline; transient DEB removed; no module/endpoint/worker/runtime/state/claim/loader residue; package/APT/protected paths restored; connectivity healthy.
+19. ***if*** ordinary unload is busy ***then***
+    1. KEEP removal pending and loader disabled.
+    2. RETAIN backups/evidence.
+    3. DO NOT reboot for cleanup.
+    4. STOP with explicit incomplete-uninstall state.
+20. ***if*** warning, oops, BUG, panic, hang, unexpected taint, connectivity loss, boot failure, unload failure, cleanup mismatch, or restoration uncertainty occurs ***then***
+    1. STOP further tests.
+    2. PRESERVE evidence.
+    3. QUARANTINE device for requirement.
+    4. REQUIRE explicit recovery verification before reuse.
+    5. NEVER force module operations or patch kernel/U-Boot.
+
+Credentials stay secret: use ignored credential file/askpass, redact commands/logs, never persist password in REQ/evidence/package/Git.
+
+#### Acceptance and deliverables
+
+Acceptance requires:
+
+- One reproducible production `.ko` built solely through LETS-managed toolchain from recorded approximate inputs; static production gates PASS.
+- One reversible DEB + SHA-256, ownership/baseline manifest, source/license/toolchain provenance, `RELEASE.md`, package tests.
+- Package/image lock proof shows install/test/uninstall/restoration and unchanged source image; cleanup failure quarantines.
+- On exact HW, ordinary production load/unload/reload and one controlled reboot pass with no new anomaly/taint; exactly one event first accepted init, zero same-boot reload, exactly one next boot init.
+- CLI/module authority, storage retry, filename safety, lifecycle, overlap, upgrade, rollback tests pass.
+- Target cleanup restores baseline exactly; no target APT changes, force, kernel/U-Boot/boot artifact/module-index/monit/cron/watchdog/USB-counter changes.
+- `RELEASE.md` clearly says counter counts observable module initializations, not physical reset reasons; pre-init events uncounted; no MMIO; kernel/U-Boot patching out of scope due EOL/lack support; approximate source/toolchain accepted by developer; probe/production evidence cannot guarantee unknown vendor ABI internals; storage/clock limits remain.
+
+Deliver exact commits/artifact hashes/test commands/results/dmesg deltas/taint/baseline-restoration evidence. Independent validation verifies complete requirement, approved plan, DEB reversibility, image restoration, and HW evidence before merge. Hardware success still needs developer follow-up to close requirement.
+
+#### Approval gate
+
+Nontrivial: kernel-privileged production module, boot activation, persistent storage/runtime namespace, custom maintainer scripts, approximate ABI waiver, controlled target reboot. DRAFT must commit before display. Run deterministic `trivial-policy`. Only explicit tooling PASS may waive approval; otherwise await one developer approval of revision 7/hash. Never self-approve. After approval, auto-progress through implementation, validation, integration, and hardware procedure until explicit hardware gate, safety failure, or tooling blocker.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -1497,3 +1700,5 @@ Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config
 - `2026-09-18T12:41:34+00:00` [implementing] Updated round 1 implementation section
 
 - `2026-09-18T13:08:15+00:00` [drafting-plan] Developer confirms legacy vendor artifacts are unavailable and explicitly authorizes completing requirement implementation and real-hardware testing with the validated approximate NXP source and LETS-managed toolchain; retain reversible package, locking, cleanup, restoration, and quarantine safety controls.
+
+- `2026-09-18T13:11:12+00:00` [drafting-plan] Updated round 1 solution-plan section
