@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: approved
 round: 1
-sequence: 60
-approval: none
+sequence: 61
+approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:51:41+00:00
+updated: 2026-09-18T12:09:29+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1450,3 +1450,5 @@ Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config
 - `2026-09-18T11:51:25+00:00` [draft-ready] Committed DRAFT revision 6 after verified revision-5 blocker: pinned Linaro archive is i386-host and requires /lib/ld-linux.so.2. Added hermetic Ubuntu Trusty i386 runtime entirely under LETS state using seven exact authoritative archive packages with pinned sizes/SHA-256, safe no-script .deb extraction, recursive ELF dependency proof, managed loader/library invocation, atomic idempotent repair/offline/concurrency tests. Preserved revision 3 production, revision 4 probe, revision 5 LETS scope; one gated ordinary retry only. No host/target APT, sudo, global install, force, VFS/MMIO probe, persistence, boot, or reboot. No unanswered developer question; nontrivial approval required unless deterministic policy says otherwise.
 
 - `2026-09-18T11:51:41+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-18T12:09:29+00:00` [approved] Developer approved DRAFT revision 6 SHA-256 eaa5b1ea6f36bf64e3c18d9301ffbb90f6581fdbea3c0198907ae814315e4242 via proceed instruction.
