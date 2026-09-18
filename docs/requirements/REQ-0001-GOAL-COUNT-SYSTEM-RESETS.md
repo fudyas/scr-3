@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 64
+sequence: 65
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T12:29:02+00:00
+updated: 2026-09-18T12:41:34+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -387,31 +387,38 @@ Pending.
 
 #### Revision 6 implementation checkpoint
 
-Approved DRAFT revision 6 SHA-256 `eaa5b1ea6f36bf64e3c18d9301ffbb90f6581fdbea3c0198907ae814315e4242` implemented in designated worktree `/home/fudya/devel/scr/.codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS` through runtime/toolchain gate. No production release, DEB, image mutation, target mutation, module load, boot, or reboot.
+Approved DRAFT revision 6 SHA-256 `eaa5b1ea6f36bf64e3c18d9301ffbb90f6581fdbea3c0198907ae814315e4242` implemented through bounded diagnostic probe in designated worktree. No production release, DEB, image mutation, boot, or reboot.
 
-Implemented LETS-owned compatibility environment:
+LETS environment:
 
 - `./bin/lets devenv init` owns pinned Linaro archive plus seven pinned Ubuntu Trusty i386 packages under `.lets/toolchains`.
-- Exact URLs/versions/architectures/sizes/SHA-256 values match revision 6. Safe ar/tar inspection rejects unexpected members, absolute/parent traversal, special files, escaped links, wrong control metadata, missing license evidence. No `apt`, `apt-get`, `dpkg`, `dpkg-deb`, maintainer script, trigger, `ldconfig`, `sudo`, global install.
-- Managed loader/library path runs allowlisted ELF32 i386 compiler/binutils and GCC subprograms. Environment strips loader/compiler overrides; locale fixed to `C`. `./bin/lets toolchain info|run|env` owns compiler/binutils calls. Unknown/path tools rejected.
-- Atomic staging/publish, one runtime/toolchain lock, verified cache, ready manifests, corrupt/partial stage cleanup, prior-generation restore path, healthy idempotent skip implemented.
-
-Exact verified evidence:
-
+- Exact URLs/versions/architectures/sizes/SHA-256 values match revision 6. Safe ar/tar inspection rejects unexpected members, traversal, special files, escaped links, wrong metadata, missing license evidence. No APT/dpkg/scripts/triggers/`ldconfig`/`sudo`/global install.
+- Managed loader/library path runs allowlisted ELF32 i386 tools and GCC subprograms. Environment strips overrides; locale `C`. All compiler/binutils calls use `./bin/lets toolchain`.
+- Functional suite passes all 13 allowlisted tools plus ELF32 ARM smoke compile. Idempotent second init skips verified generation; sentinel mtime `1789733939` unchanged.
 - Toolchain archive size `51126392`; SHA-256 `2b4b29bcfed26948b654088aabbd7e5357691f66f0ba4864df63b2c00f054152`.
-- GCC: `arm-linux-gnueabihf-gcc (crosstool-NG linaro-1.13.1-4.8-2014.04 - Linaro GCC 4.8-2014.04) 4.8.3 20140401 (prerelease)`.
-- ld: `GNU ld (crosstool-NG linaro-1.13.1-4.8-2014.04 - Linaro GCC 4.8-2014.04) 2.24.0.20140311 Linaro 2014.03`.
-- Smoke compiler output: ELF32 ARM relocatable. Managed `readelf`, `nm`, `objdump` passed. All 13 allowlisted tools ran through wrapper.
-- `./tests/toolchain/run.sh`: `toolchain functional tests passed`.
-- `bash -n` and `git diff --check`: pass.
-- Second `./bin/lets devenv init`: `toolchain linaro-arm-linux-gnueabihf-4.8-2014.04 and runtime ubuntu-trusty-i386-2019 already installed and verified; skipping`; toolchain `.lets-manifest` mtime unchanged at `1789733939`.
-- NXP source checkout exact commit `e35e57f24ef5851787812a18a38feeb9deb6ea46` under `.lets/kernel-sources/linux-imx`.
+- GCC `4.8.3 20140401 (prerelease)`; binutils `2.24.0.20140311 Linaro 2014.03`.
 
-Current blocker: target `192.168.68.56` unavailable during exact config reacquisition. One `scp` returned `Connection closed`; SSH `ConnectTimeout=10`, three SSH `ConnectTimeout=5`, later SSH `ConnectTimeout=10` returned `ssh: connect to host 192.168.68.56 port 22: Connection timed out`. Empty partial SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` rejected; never used. Required config SHA remains `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`.
+Old endpoint `192.168.68.56` failed config reacquisition: one `scp` close; SSH `ConnectTimeout=10`, three `ConnectTimeout=5`, later `ConnectTimeout=10` timed out. Empty partial SHA `e3b0c44298fc1c149afbf4e8996fb92427ae41e4649b934ca495991b7852b855` rejected. Developer changed endpoint to `192.168.68.55`; ignored credential host updated, secret preserved, mode `0600`.
 
-Gate stops before kernel prepare, two probe builds, relocation/static comparison, target copy, sole ordinary `insmod`, possible ordinary `rmmod`, production source/package, image lock/test. No target command succeeded; no transient target file exists from revision 6. No cleanup/restoration/quarantine failure. Resume only after target/config becomes available; keep one live retry authorization unused.
+New endpoint gates:
 
-Safety preserved: no host/target APT, direct compatibility compiler/binutils, force load/removal, VFS/MMIO probe behavior, persistence, activation, boot/reboot, kernel/U-Boot patch, image mount/install, package action. Full file evidence: `evidence/revision-6/toolchain-runtime.md`; release boundary: `RELEASE.md`.
+- Identity `SCR-7CCC91`; kernel `3.10.105-imx6 #5 SMP PREEMPT Wed May 16 11:21:53 IDT 2018 armv7l`; root.
+- Config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`; uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`.
+- NXP source commit `e35e57f24ef5851787812a18a38feeb9deb6ea46`; reconstructed release `3.10.105-imx6`.
+- Two builds matched SHA-256 `1377d6cae2339aedf00647a8e78b7aefed54c206a40927fb241cae0e12245334`.
+- ELF/attributes/vermagic/symbol/disassembly gate passed. Relocation `3` absent; emitted `R_ARM_NONE`, `R_ARM_ABS32`, `R_ARM_CALL`, `R_ARM_JUMP24`, `R_ARM_PREL31` supported by reconstructed loader.
+
+Sole live retry consumed:
+
+- Baseline taint `4096`; probe/path absent; `/proc/modules` SHA-256 `4ad4f5e875ed244ec909d71af3857132e1b663aef98c6c0a11bfcaaf350e9b2c`.
+- Transient root-owned mode `0600`; remote SHA exact.
+- Ordinary `insmod` rc `0`; exact init log only; live refcount `0`; taint `4096`.
+- Ordinary `rmmod` rc `0`; exact exit log only; module absent; taint `4096`.
+- Transient removed. Final module-table/config/uImage hashes exactly baseline; connectivity healthy. No anomaly or quarantine condition.
+
+Current blocker: diagnostic success proves callbacks only. Approximate source, Linaro GCC 4.8.3 prerelease versus live GCC 4.8.4, missing exact vendor tree/build recipe/generated headers/`Module.symvers` prevent stronger production-specific ABI/integration proof. Stop before production source/package/DEB/image test. Live retry exhausted.
+
+Safety preserved: no host/target APT, direct compatibility tools, force, VFS/MMIO probe behavior, persistence, activation, boot/reboot, kernel/U-Boot patch, image mount/install, package action. Evidence: `evidence/revision-6/toolchain-runtime.md`, `evidence/revision-6/probe-live.md`; boundary: `RELEASE.md`.
 
 ## Revision 4 approximate ABI probe — live result
 
@@ -1486,3 +1493,5 @@ Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config
 - `2026-09-18T12:09:43+00:00` [implementing] Implementation started from the approved plan
 
 - `2026-09-18T12:29:02+00:00` [implementing] Updated round 1 implementation section
+
+- `2026-09-18T12:41:34+00:00` [implementing] Updated round 1 implementation section
