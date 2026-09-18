@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 105
+sequence: 106
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T17:39:19+00:00
+updated: 2026-09-18T17:43:08+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1802,6 +1802,206 @@ Deliver revision-8-bound task manifest, fixed source/tests, two reproducible `.k
 
 Nontrivial: kernel-privileged module, boot activation, persistent records/runtime namespace, custom maintainer scripts, approximate ABI waiver, controlled reboot. Commit DRAFT revision 8 before display. Run deterministic `trivial-policy`; only tooling PASS may waive approval. Otherwise wait for explicit approval of exact revision/hash. After approval, auto-progress until hardware gate, safety failure, or tooling blocker.
 
+### Solution plan — DRAFT revision 9
+
+#### DRAFT revision 9 — target-native SysV dependency registration
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 8 after T04 validation FAIL and checkpoint sequence 104. Preserves every revision-8 validated repair, canonical `sdlc/requirements/REQ-0001-GOAL-COUNT-SYSTEM-RESETS/` layout, repository Bash/Python comments, kernel-standard C comments/style, developer-approved approximate ABI waiver, observable-module-init count semantics, LETS-only toolchain, reversible package, lock/restoration/quarantine rules, exclusions, and evidence. Sole functional amendment: replace hand-published runlevel link with Debian 8 target-native `insserv` dependency registration, then prove generated graph membership before one newly bounded reboot.
+
+#### Sources, evidence, decisions
+
+Reviewed complete durable REQ through sequence 104: customer source; requirements/image analysis; all planner answers; DRAFT revisions 1-8; approvals; implementation, task, validation, and hardware evidence; event log; `AGENTS.md`; `docs/SDLC-DEVELOPER-GUIDE.md`; `docs/DEVELOPER-GUIDE.md`; `docs/MONIT.md`; canonical revision-8 source/package/evidence tree. No load-bearing developer question remains. Developer said target is online and asked retry. New reboot is needed only because corrected boot activation cannot be accepted without boot.
+
+Revision-8 PASS evidence remains binding:
+
+- Exact target `192.168.68.55`, hostname `SCR-7CCC91`, root, ARMv7, Debian 8 Jessie SysV runlevel `2`, kernel `3.10.105-imx6 #5 SMP PREEMPT`, config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`, uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`, baseline taint `4096`.
+- Exact tested DEB SHA-256 `1cd9d8e4000f9502c05b169e1e2ecedbd276206cb07fdc0f464be1cbc435de7c`; module SHA-256 `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc`. These are revision-8 evidence, not revision-9 release artifacts.
+- Guard sync and record-parent-sync injected failures retained same guard/record inode, then completed. Manual first init count `1`; repeated start and same-boot unload/reload added `0`; ordinary operations; taint stayed `4096`.
+- One revision-8 reboot changed boot ID but automatic increment was `0`. Cleanup/purge restored package, payload, state, dpkg info, module, device, guard, generated record, `/var/log/scr`, transient DEB absent; config/uImage/taint/runlevel/connectivity exact.
+
+Exact sole remaining root cause:
+
+- `/etc/init.d/rc` line 72 selects `CONCURRENCY=makefile`; nonempty `/etc/init.d/.depend.boot`, `.depend.start`, `.depend.stop` keep that mode; `/lib/startpar/startpar` consumes generated dependency makefiles.
+- Revision-8 package created `/etc/rc2.d/S04scr-resets-monitor -> ../init.d/scr-resets-monitor`, but `/etc/init.d/.depend.start` SHA-256 `0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742` omitted `scr-resets-monitor`. Startpar skipped service. Module, guard, device absent after boot; record delta `+0`.
+- Read-only target recheck confirms `insserv 1.14.0-5`, `startpar 0.59-3`, `sysv-rc 2.88dsf-59`; `/sbin/insserv` exists; `/usr/sbin/update-rc.d` delegates `defaults/start/stop/remove/enable/disable` to `/sbin/insserv`; no native systemd PID 1 assumption.
+- Baseline generated graph: `.depend.start` regular `0644 0:0`, 401 bytes, SHA above; `.depend.stop` regular `0644 0:0`, 1637 bytes, SHA-256 `71cc8cdaea1f740a3b14dfa8faae9a9c5816b48b7e9b5b896274b2f802027797`; `.depend.boot` regular `0644 0:0`, 1259 bytes, SHA-256 `21d1f1b0ab0f641d8e9b0b9d45a59b239f7cb4d197b78547343f6eabbe55827b`. All recorded mtime epoch `1753620164`. No matching runlevel link remains after revision-8 cleanup.
+- `/etc/insserv.conf` maps `$local_fs` to `+mountall +mountall-bootclean +mountoverflowtmp +umountfs`; target `/usr`, `/var`, `/run`, `/dev` availability and prior manual start prove loader prerequisites. Invalid wall time is allowed, so `$time` must not delay event creation. Network, syslog, monit, watchdog, remote filesystems remain unnecessary and forbidden as counter truth.
+
+#### Scope and immutable exclusions
+
+Counter = exactly one durable empty `/var/log/scr/reset-<epochMs>-<four-lowercase-letters>` per boot whose supported `scr_reset_monitor` initialization reaches accepted state. Same-boot repeated start or unload/reload = `+0`. Reset/boot ending before module init = uncounted. File count = counter. No reason payload.
+
+No i.MX6 SRC/register/MMIO access, reset reason, retained-counter claim, physical-reset completeness claim, kernel/U-Boot patch/replacement, boot-selector/DT/initramfs change, force load/unload, vermagic edit, unexported-symbol trick, target build/APT/network dependency, monit/cron/watchdog/USB-counter truth, reboot-loop detection/mitigation. Kernel/U-Boot source patching remains out of scope because platform is EOL and supported legacy vendor artifacts are unavailable. `RELEASE.md` keeps these limits.
+
+Developer accepts approximate production ABI inputs: NXP commit `e35e57f24ef5851787812a18a38feeb9deb6ea46`, exact live config above, LETS-managed Linaro GCC `4.8.3 20140401 (prerelease)`, binutils `2.24.0.20140311 Linaro 2014.03`; exact vendor source/generated headers/`Module.symvers`/recipe unavailable. Every compiler/binutils action uses `./bin/lets devenv init` and `./bin/lets toolchain`; install stays under `.lets`; healthy install skipped; direct compatibility tool invocation forbidden.
+
+#### Init script and native dependency contract
+
+Keep one init script `/etc/init.d/scr-resets-monitor`, mode `0755 root:root`, with exact LSB contract:
+
+```text
+### BEGIN INIT INFO
+# Provides:          scr-resets-monitor
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2
+# Default-Stop:      0 1 6
+# Short-Description: Load SCR observable-boot counter
+### END INIT INFO
+```
+
+`$local_fs` is sole required start facility: target module, `/run`, `/dev`, and `/var/log` are local; counter does not need network, remote filesystems, syslog, valid time, monit, or watchdog. `Default-Start: 2` matches target default runlevel. Stop runlevels `0 1 6` provide ordinary quiesce/unload when invoked, without package-triggered reboot. Script remains idempotent: verify exact kernel, refuse removal-pending state, start via ordinary `insmod` only when absent, stop through fallible `PREPARE_REMOVE` then ordinary `rmmod`, report nonzero failures. Never create/count/delete records or guard in shell.
+
+Registration rules:
+
+1. PUBLISH validated init script only after first baseline is durably saved.
+2. RUN `/usr/sbin/update-rc.d scr-resets-monitor defaults`; target `sysv-rc 2.88dsf-59` delegates to `/sbin/insserv`.
+3. NEVER create runlevel links directly. NEVER write, patch, copy over, rename over, or parse-and-reemit `/etc/init.d/.depend.start`, `.depend.stop`, or `.depend.boot`. NEVER disable/change global `CONCURRENCY=makefile`.
+4. REQUIRE native command rc `0`; exact one runlevel-2 start link; no rcS or competing systemd/upstart activation; `insserv -s` exact service membership; `.depend.start` `TARGETS` contains `scr-resets-monitor`; dependency rule places it after required `$local_fs` providers. Require expected stop membership/link set from header.
+5. RECORD generated link targets and graph hashes/metadata. Installation succeeds only when service is executable through startpar graph. Symlink alone never passes.
+6. UNREGISTER through `/usr/sbin/update-rc.d -f scr-resets-monitor remove` while script still exists; this invokes `/sbin/insserv -r`. No direct generated-graph content edit.
+7. REQUIRE service absent from `insserv -s`, all runlevel links, `.depend.start`, `.depend.stop`, and `.depend.boot` as applicable before removing init script.
+8. REQUIRE native unregistration to regenerate graph content exactly to captured first baseline. Restore only ownership/mode/timestamps through no-follow metadata operations after content hashes/types match baseline; never restore graph content from backup over native output. If native regeneration cannot reproduce baseline content/existence or metadata restoration fails, stop removal, retain baseline/journal, quarantine affected image/device, and never claim restoration.
+
+Before implementation, run non-mutating target evidence checks: `insserv -n -v` against staged equivalent root/tree or disposable image; `insserv -s`; exact installed versions/hashes; graph/link inventory. Never use `insserv -f`. Dry-run output is evidence, not acceptance substitute for disposable lifecycle.
+
+#### One reversible Debian package
+
+Produce one canonical `scr-req-0001-goal-count-system-resets` package, version above revision-8 candidate, `Architecture: armhf`, one `_armhf.deb` path/SHA-256. Remove stale `_all.deb` and alternate candidates from artifact selection. Dpkg owns private payload under `/usr/lib/scr-req-0001-goal-count-system-resets/payload`; maintainer scripts publish managed destinations after baseline capture. No DKMS, `depmod`, module-index change, `Replaces`, conffile seizure, helper package, network, or target dependency upgrade.
+
+Managed surfaces:
+
+| Surface | Package/restoration contract |
+| --- | --- |
+| `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko` | ARM OOT module, `0644 root:root`; exact hash/vermagic/provenance. |
+| `/usr/sbin/scr-resets-monitor` | Bash request validation/transport/display only, `0755 root:root`; no userspace truth/count/delete fallback. |
+| `/etc/init.d/scr-resets-monitor` | SysV one-shot loader above, `0755 root:root`. |
+| `/etc/rc[0-6S].d/*scr-resets-monitor` | Native-insserv-generated exact links only; first absence/content/type/target/uid/gid/mode/timestamps/ACL/xattr baseline captured. |
+| `/etc/init.d/.depend.start`, `.depend.stop`, `.depend.boot` | Native-generated shared graphs; first existence/content SHA/full bytes/type/uid/gid/mode/timestamps/hard links/ACLs/xattrs/capabilities captured once and retained across upgrades. Content changed/restored only by native `update-rc.d`/`insserv`; exact baseline required after purge. |
+| `/usr/share/doc/scr-resets-monitor/RELEASE.md` | Scope, observable-init meaning, exclusions, EOL/approximate ABI, native activation, storage/clock/recovery limits. |
+| `/usr/lib/scr-resets-monitor/package-test` | Non-destructive static/lifecycle checks; never loads ARM module into host kernel. |
+| `/var/log/scr/reset-*` | Module-created scoped empty events; generated records deleted and baseline records restored exactly on remove/purge. |
+| `/run/scr-resets-monitor/boot-guard`, `/dev/scr-resets-monitor` | Module runtime namespace; absent after ordinary unload/removal. |
+| `/var/lib/scr-req-0001-goal-count-system-resets/` | Root-only immutable first baseline, graph/link inventory, journal, ownership manifest, removal-pending; retained until exact restoration. |
+| `/var/lib/scr-sdlc/owners` | Exact destinations/dynamic namespace/shared-graph participation claim; preserve other claims. |
+
+Preflight uses `lstat`, no-follow, hashes, dpkg ownership, link targets, uid/gid/mode/timestamps, hard links, ACLs, xattrs, capabilities, capacity, command/package versions, graph parse, and full reset-record inventory. Refuse unexpected managed code/runtime ownership, unsafe objects, unsupported metadata restoration, missing/incompatible native tools, and exact/parent/child conflict with another requirement package. Generated graphs are shared surfaces: serialize registration/removal under package manager lock; detect another SDLC package graph participant; permit coexistence only when native regeneration plus synthetic add/remove-order tests prove both packages survive and final baseline returns exactly. Never overwrite another requirement’s link/header/graph contribution.
+
+Maintainer lifecycle:
+
+1. `preinst install`: VERIFY `armhf`, exact kernel contract, native tool/version behavior, namespace, metadata support, space, graph safety; CAPTURE one immutable first baseline for every managed path/link, all three graph existence/content/metadata, package/APT state, and record inventory; FSYNC baseline/journal before mutation; no load/network/APT.
+2. `postinst configure`: PUBLISH payload/init script atomically; RUN target-native registration; VERIFY graph membership, exact one activation, dependencies, links, graph safety; NEVER load module. On failure, unregister natively, restore prior payload and exact graph/link baseline, propagate nonzero.
+3. Upgrade: RETAIN first baseline unchanged; snapshot immediate pre-upgrade state for transaction rollback; never reload resident module; reject incompatible control/state ABI; register new header natively; prove no duplicate activation; failed upgrade restores preceding package payload/registration while preserving original baseline. New code activates next boot.
+4. `prerm remove`: DURABLY mark removal pending; UNREGISTER natively first so future boot cannot reactivate; verify graph/link absence; ***if*** module loaded ***then*** issue fallible `PREPARE_REMOVE`, quiesce control/worker, reset generated scoped records under module authority, ordinary unload. Never force/reboot.
+5. `prerm remove`: ***if*** module absent ***then*** use bounded package-lifecycle cleanup against exact baseline inventory: delete only nonbaseline immediate regular empty single-link valid-name records; reject unsafe/mutated candidates; propagate failure.
+6. `postrm remove|purge`: REQUIRE module/endpoint/worker absence and native activation absence; RESTORE baseline payload paths, reset records, links, graph metadata, ownership registry, and parents; REQUIRE graph content hashes/existence produced by native unregistration equal baseline before metadata restoration; remove only package-created empty dirs/runtime/state after proof. `remove` and `purge` both restore fully.
+7. Abort/retry: RESUME or reverse journal idempotently. Never reactivate after removal request. Never erase last baseline. If unload busy, retain removal pending, activation disabled, baseline/journal; wait for unrelated natural reboot; package never reboots for cleanup.
+
+Uninstalling all requirement-produced packages must restore every managed path, generated link, shared dependency graph byte content and metadata, baseline record, package state, protected kernel/boot artifact, and ownership claim to preinstall state. Active module, endpoint, generated event, link/graph mismatch, journal, backup, claim, or pending worker means restoration FAIL.
+
+#### Regression, build, and task acceptance
+
+Preserve every revision-8 PASS test. Add native activation regressions:
+
+- Parse exact LSB header; require `$local_fs`, start `2`, stop `0 1 6`; reject rcS, missing header, extra activation path, direct link/graph write, `insserv -f`, global concurrency change.
+- Mock/staged Debian 8 `update-rc.d`/`insserv`: installation produces service in `insserv -s`, exact runlevel link, `.depend.start TARGETS` and dependency rule; startpar makefile fixture schedules service. Removal removes service/link/rules and recreates exact graph/link baseline.
+- Test install, reinstall, upgrade, failed upgrade, remove, purge, abort-install, abort-upgrade, interrupted registration/unregistration, missing/corrupt graph, native-tool nonzero, stale links, synthetic preexisting matching links, shared-graph peer package installed before/after. Exact restore or hard failure only.
+- Ensure no package script directly writes `.depend.*`; no registration during offline host package test executes ARM code; no module load during install.
+- Retain revision-8 record/guard sync fault, immutable inode/name, CLI/protocol, storage/path/collision, architecture, reproducible module/DEB, package, overlap, journal, and restoration tests.
+
+Build `.ko` twice from clean state through `./bin/lets devenv init` and `./bin/lets toolchain` only. Require byte-identical ELF32 little-endian ARM EABI5 module, ARMv7 attributes, exact vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `, relocation type `3` absent, supported relocations, target-exported undefined symbols, no CRC/signature assumption, sanitizer, stack protector, FP, MMIO/reset code, force behavior, or unexplained layout dependency. Build canonical `armhf` DEB twice; require identical hashes.
+
+After revision-9 approval, regenerate task manifest only through `./bin/lets sdlc task-plan` and bind exact revision-9 SHA. Suggested bounded tasks:
+
+- T01: init header/native registration implementation + static/mock/staged graph tests; acceptance `R9-01`, `R9-02`.
+- T02: upgrade/remove/abort/shared-graph restoration + comments/docs/reproducible builds; acceptance `R9-03`, `R9-04`.
+- T03: continuous-lock disposable image lifecycle and exact graph/link/source restoration; acceptance `R9-05`, `R9-06`.
+- T04: exact-target graph preflight, one bounded reboot, automatic `+1`, cleanup/restoration; acceptance `R9-07`, `R9-08`.
+
+`./bin/lets sdlc acceptance REQ-0001-GOAL-COUNT-SYSTEM-RESETS` must PASS revision-9 binding and every task before implementation commit/independent validation. Never hand-edit ledger/task artifacts.
+
+Acceptance IDs:
+
+- `R9-01`: native registration implementation uses exact LSB header and no direct graph/link/global-concurrency manipulation.
+- `R9-02`: staged/mock graph proves startpar-visible start target, dependencies, one activation, and absence after unregister.
+- `R9-03`: package lifecycle preserves immutable first baseline across upgrade/abort and fails closed on unsafe/native-tool errors.
+- `R9-04`: two `.ko` and two canonical `armhf` DEB builds reproducible; comments, `RELEASE.md`, approximate ABI/exclusions intact.
+- `R9-05`: one lock spans disposable mount/install/registration/test/unregister/uninstall/restoration/unmount; source image unchanged.
+- `R9-06`: all package-generated paths/links/records/state/claims absent and graph/link content plus metadata exactly baseline; cleanup failure quarantines.
+- `R9-07`: exact HW graph contains service before reboot; one newly bounded reboot yields module/guard/device and count delta exactly `+1`, with no duplicate/anomaly/taint change.
+- `R9-08`: ordinary stop/remove/purge restores exact target baseline, links/graphs/config/uImage/taint/package state/connectivity; no residue or second reboot.
+
+#### Continuous-lock disposable-image proof
+
+1. ACQUIRE SDLC image lock for `var/image_8.26.0`
+2. VERIFY no quarantine or conflicting mount
+3. RECORD source SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`
+4. CREATE tooling-managed disposable copy
+5. MOUNT copy while same lock remains held
+6. CAPTURE full filesystem/package/record/link/graph/metadata baseline
+7. INSTALL exact canonical revision-9 `armhf` DEB without network/APT mutation
+8. VERIFY native registration, startpar graph membership, one activation path, and no module load
+9. TEST reinstall, upgrade, failed upgrade, native-tool failure, absent-module records, remove, purge, abort, peer graph participant, package test; never execute ARM module in host kernel
+10. UNREGISTER natively and UNINSTALL every produced package after pass or failure
+11. VERIFY exact payload/path/link/graph/content/metadata/package/runtime/claim/baseline restoration
+12. UNMOUNT disposable copy
+13. VERIFY source SHA-256 unchanged
+14. ***if*** unregister, uninstall, graph restoration, unmount, source verification, or cleanup fails ***then***
+    1. QUARANTINE image through tooling
+    2. RETAIN journal/evidence
+    3. STOP reuse
+    4. REQUIRE tooling-reported recovery before unlock/reuse
+    5. NEVER remove quarantine marker manually
+15. ***else***
+    1. RECORD restoration proof
+    2. RELEASE lock
+
+Preferred command: `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <canonical-armhf-deb> --test-command /usr/lib/scr-resets-monitor/package-test`. Custom flow must use one `./bin/lets sdlc lock-run` spanning mount, install, native registration, test, unregister, uninstall, restoration verification, unmount. Requirement-managed links/graphs cannot be exclusions.
+
+#### Real-HW sequence and newly bounded reboot
+
+Use `192.168.68.55` only after task/static/reproducible/disposable-image acceptance PASS. Credentials remain in ignored mode-`0600` `admin/hw.credentials` with askpass; secret never enters commands, evidence, REQ, package, process listing, or Git. One new ordinary reboot is authorized solely for corrected automatic activation.
+
+1. VERIFY hostname/board/Debian/kernel/config/uImage/architecture/runlevel, uptime, free space, route/connectivity, recovery access, no quarantine/namespace conflict
+2. CAPTURE once before mutation: package/APT state; protected hashes; `/proc/modules`; taint; bounded dmesg/syslog cursor; records/runtime/state; all matching runlevel links; `.depend.start`, `.depend.stop`, `.depend.boot` existence/full content/hashes/types/uid/gid/mode/timestamps/hard links/ACLs/xattrs/capabilities; installed native-tool versions/hashes
+3. COPY exact canonical DEB transiently and verify remote hash/mode
+4. INSTALL without network/dependency upgrade
+5. VERIFY install loads no module and creates no event
+6. VERIFY exact one runlevel-2 start link, no rcS/systemd/upstart duplicate, `insserv -s` membership, `.depend.start TARGETS` + dependency rule, unchanged global concurrency, native tools rc `0`
+7. RUN init `start` manually once
+8. VERIFY ordinary load, expected bounded logs, module/device/guard, taint unchanged, count baseline `+1`
+9. RUN repeated start and ordinary unload/reload; VERIFY count remains `+1`, no anomaly/taint change
+10. EXERCISE bounded revision-8 sync-fault/CLI gates without corrupting baseline; restore defined pre-reboot installed state
+11. VERIFY graph still contains service exactly once and safe recovery available
+12. PERFORM one ordinary controlled reboot
+13. RECONNECT within bounded timeout; verify boot ID changed and exact identity/kernel/config/uImage/connectivity
+14. VERIFY automatic start produced loaded module, guard, device, expected logs, and durable count delta exactly `+1` from pre-reboot installed baseline
+15. VERIFY no duplicate activation/event, warning, oops, BUG, panic, hang, new unexplained taint, or competing service path
+16. MARK removal pending and unregister natively through package removal; verify service absent from graph/links before ordinary unload
+17. UNLOAD ordinarily; never force or reboot for cleanup
+18. REMOVE and PURGE package; remove transient DEB
+19. VERIFY generated records absent and every baseline record/path/link/graph content+metadata/package/APT/protected hash restored; module/endpoint/guard/worker/runtime/state/claim/backup/journal/activation residue absent; config SHA and uImage MD5 exact; taint exact; connectivity healthy
+20. ***if*** graph membership is absent/ambiguous before reboot ***then***
+    1. DO NOT reboot
+    2. UNINSTALL and restore
+    3. RECORD blocker
+21. ***if*** unload is busy ***then***
+    1. RETAIN removal-pending state, activation disabled, baseline/journal
+    2. DO NOT reboot for cleanup
+    3. STOP incomplete
+22. ***if*** boot, module, graph, taint, warning, cleanup, restoration, or connectivity safety fails ***then***
+    1. STOP further tests
+    2. PRESERVE evidence
+    3. QUARANTINE device for requirement
+    4. REQUIRE explicit recovery verification before reuse
+    5. NEVER force module operation, edit generated graph directly, disable global concurrency, or patch kernel/U-Boot
+
+#### Deliverables and approval gate
+
+Deliver revision-9-bound task manifest; updated init/package code with repository/kernel comment conventions; staged/native registration tests; exact target read-only and mutation evidence; two reproducible production `.ko`; two reproducible canonical `armhf` DEB builds; commit/artifact hashes; ownership/first-baseline manifest; graph/link before/install/remove inventories; `RELEASE.md`; lock-bounded disposable proof; HW logs/taint/count delta; complete cleanup/restoration proof.
+
+Independent validation must PASS complete customer requirement as narrowed by recorded developer amendments, revision 9, package reversibility, native dependency registration, automatic boot `+1`, exact image/device restoration, task acceptance, comments/layout, and credential secrecy. No merge until independent PASS. Nontrivial: kernel-privileged module, boot activation, shared generated SysV graphs, persistent records/runtime namespace, custom maintainer scripts, approximate ABI waiver, controlled reboot. Commit DRAFT before display. Run deterministic `trivial-policy`; only tooling PASS may waive approval. Otherwise wait for explicit approval of exact revision/hash. After approval, auto-progress until hardware gate, safety failure, or tooling blocker.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -2013,3 +2213,5 @@ Nontrivial: kernel-privileged module, boot activation, persistent records/runtim
 - `2026-09-18T17:38:08+00:00` [drafting-plan] Revision 8 T04 validation failed automatic activation only: Debian 8 SysV startpar CONCURRENCY=makefile uses /etc/init.d/.depend.start, whose exact graph omitted scr-resets-monitor and skipped the S04 link. Manual/fault semantics and complete cleanup/restoration passed. Replan target-native insserv/update-rc.d dependency registration, dependency-graph/link baseline and restoration, locked lifecycle regression, and one newly bounded reboot; never hand-edit graph or disable global concurrency.
 
 - `2026-09-18T17:39:19+00:00` [drafting-plan] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
+
+- `2026-09-18T17:43:08+00:00` [drafting-plan] Updated round 1 solution-plan section
