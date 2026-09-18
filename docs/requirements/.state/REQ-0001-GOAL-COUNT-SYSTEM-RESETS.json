@@ -365,6 +365,12 @@
           "sequence": 58,
           "state": "drafting-plan",
           "time": "2026-09-18T11:51:20+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 6 after verified revision-5 blocker: pinned Linaro archive is i386-host and requires /lib/ld-linux.so.2. Added hermetic Ubuntu Trusty i386 runtime entirely under LETS state using seven exact authoritative archive packages with pinned sizes/SHA-256, safe no-script .deb extraction, recursive ELF dependency proof, managed loader/library invocation, atomic idempotent repair/offline/concurrency tests. Preserved revision 3 production, revision 4 probe, revision 5 LETS scope; one gated ordinary retry only. No host/target APT, sudo, global install, force, VFS/MMIO probe, persistence, boot, or reboot. No unanswered developer question; nontrivial approval required unless deterministic policy says otherwise.",
+          "sequence": 59,
+          "state": "draft-ready",
+          "time": "2026-09-18T11:51:25+00:00"
         }
       ],
       "number": 1,
@@ -372,8 +378,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 58,
-  "state": "drafting-plan",
+  "sequence": 59,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -423,5 +429,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T11:51:20+00:00"
+  "updated": "2026-09-18T11:51:25+00:00"
 }

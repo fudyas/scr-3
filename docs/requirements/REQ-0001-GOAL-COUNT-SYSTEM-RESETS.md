@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 58
+sequence: 59
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:51:20+00:00
+updated: 2026-09-18T11:51:25+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1446,3 +1446,5 @@ Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config
 - `2026-09-18T11:46:47+00:00` [drafting-plan] Replan toolchain runtime after verified i386-host archive incompatibility
 
 - `2026-09-18T11:51:20+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-18T11:51:25+00:00` [draft-ready] Committed DRAFT revision 6 after verified revision-5 blocker: pinned Linaro archive is i386-host and requires /lib/ld-linux.so.2. Added hermetic Ubuntu Trusty i386 runtime entirely under LETS state using seven exact authoritative archive packages with pinned sizes/SHA-256, safe no-script .deb extraction, recursive ELF dependency proof, managed loader/library invocation, atomic idempotent repair/offline/concurrency tests. Preserved revision 3 production, revision 4 probe, revision 5 LETS scope; one gated ordinary retry only. No host/target APT, sudo, global install, force, VFS/MMIO probe, persistence, boot, or reboot. No unanswered developer question; nontrivial approval required unless deterministic policy says otherwise.
