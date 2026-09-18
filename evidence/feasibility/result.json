@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "task": "T01",
+  "status": "blocked",
+  "commit": null,
+  "input_hashes": {
+    "approved_plan_sha256": "a5d45639407a0e98c4e2798ffb4d43763b5129ddabdb55070d7b38580bc2e411",
+    "definitions_sha256": "dfb38b4d6bba218ef5aa0b98fa9b36654f6c8365d4076c26e5dd111c4b44e92e",
+    "brief_sha256": "f4c5b1f86cd7e4f5eae91c8f51d9dc40cf9ce2a16bdd3cf80d77785c6e3b73be",
+    "image_sha256": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6"
+  },
+  "changed_paths": [
+    "contracts/platform.json",
+    "contracts/module-internal.md",
+    "contracts/record-namespace.json",
+    "evidence/feasibility/report.md",
+    "evidence/feasibility/commands.json",
+    "evidence/feasibility/result.json"
+  ],
+  "output_hashes": {
+    "contracts/platform.json": "b28f1bf3c9ed91e83971996797ff507747bd270ffa3b781d3e7acc1fb4e6d07f",
+    "contracts/module-internal.md": "144fd4d1b91859b30dd33f21cc8017a60f54af8f54c912a35b9b55dd1980b4dd",
+    "contracts/record-namespace.json": "44f994ca60e8ed8cf75b22eed88dde423b0ef0a30bd24f347e90143e478decd1",
+    "evidence/feasibility/report.md": "6e2223acd16891bbeab86d0e8358b8d73112f820c3cbaba48283c1caf8ab009d",
+    "evidence/feasibility/commands.json": "5fafbaab67a24336a5f3b07e69bf4aa65c5648c3b68cfd075770e8bb53399440"
+  },
+  "commands": {
+    "evidence_path": "evidence/feasibility/commands.json",
+    "evidence_sha256": "5fafbaab67a24336a5f3b07e69bf4aa65c5648c3b68cfd075770e8bb53399440",
+    "sdlc_test": "./bin/lets sdlc test",
+    "sdlc_test_exit_code": 0,
+    "sdlc_test_result": "attempt 2: 25 passed in 1.34s"
+  },
+  "acceptance_ids": [
+    "T01-DoD-interface-proof-or-blocker",
+    "T01-DoD-architecture-known",
+    "T01-DoD-external-module-build-probe",
+    "T01-DoD-SRC-read-lifetime",
+    "T01-DoD-retained-counter",
+    "T01-DoD-run-guard",
+    "T01-Test-read-only-image-identity",
+    "T01-Test-ABI-compile-link-probe",
+    "T01-Test-wrong-ABI-rejection",
+    "T01-Test-exported-interface-source-trace",
+    "T01-Test-SRC-lifecycle-trace",
+    "T01-Test-lock-quarantine-capability"
+  ],
+  "acceptance": {
+    "T01-DoD-interface-proof-or-blocker": "pass: each requested interface has evidence or exact blocker",
+    "T01-DoD-architecture-known": "pass: armhf; sampled module ELF32 little-endian ARM EABI5",
+    "T01-DoD-external-module-build-probe": "blocked: exact vendor source/headers/generated headers/Module.symvers/matching GCC absent",
+    "T01-DoD-SRC-read-lifetime": "blocked: exact vendor and U-Boot source plus real hardware absent",
+    "T01-DoD-retained-counter": "blocked: no counter identified; exact-target absence not proven",
+    "T01-DoD-run-guard": "partial: /run tmpfs and SysV order prove structural feasibility; compile/runtime blocked",
+    "T01-Test-read-only-image-identity": "pass: same SHA-256 before/after; scratch removed before unlock",
+    "T01-Test-ABI-compile-link-probe": "blocked: prerequisites absent; never invented pass",
+    "T01-Test-wrong-ABI-rejection": "partial: 3.10.101 versus 3.10.105 vermagic mismatch proven; prohibited dynamic load not run",
+    "T01-Test-exported-interface-source-trace": "partial: System.map __ksymtab exports proven; exact prototypes/source blocked",
+    "T01-Test-SRC-lifecycle-trace": "partial: DT and authoritative reference mapping traced; target lifetime/HW deferred",
+    "T01-Test-lock-quarantine-capability": "partial: supported loop attach now passes under lock and attempt-1 code path/unit tests pass; restoration fingerprint misses required metadata"
+  },
+  "proven_claims": [
+    "image identity cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6 unchanged",
+    "MBR has ext2 boot, ext4 root, swap partitions matching fstab",
+    "target dpkg architecture armhf; sampled module ELF32 little-endian ARM EABI5",
+    "/boot/uImage selects uImage-3.10.105-imx6; real running release not proven",
+    "active boot artifact has no matching installed kernel package; installed kernel package names 3.10.53",
+    "3.10.105 module vermagic/config/System.map/uImage/compiler comment hashes recorded",
+    "required VFS/misc/workqueue/time/random parser symbols listed have __ksymtab entries; sys_sync lacks export",
+    "/run is 10 MiB tmpfs and mountall precedes valid one-shot activation point",
+    "DT identifies src@020d8000 with fsl,imx6q-src and fsl,imx51-src",
+    "/var/log/scr absent in inspected image",
+    "SDLC lock/package/quarantine code paths exist and SDLC unit suite passes"
+  ],
+  "limits": [
+    "no real hardware; no uname, physical reset, SRC value, durability, bootloader-retention claim",
+    "no module compile/link/modpost/load; symbol export is not ABI build proof",
+    "upstream Linux v3.10.105 source is reference only, not exact vendor-source proof",
+    "supported loop attach now passes; full package lifecycle not run because ABI-safe DEB cannot be built",
+    "result.json self-hash intentionally excluded to avoid circular hash"
+  ],
+  "blockers": [
+    {
+      "id": "T01-B01",
+      "evidence": "/lib/modules/3.10.105-imx6/build and source absent; /usr/src empty; Module.symvers/generated headers/exact vendor source absent",
+      "impact": "external-module build/link probe and exact VFS prototype compatibility cannot pass"
+    },
+    {
+      "id": "T01-B02",
+      "evidence": "kernel module .comment uses Ubuntu/Linaro GCC 4.8.4; image installs Debian GCC 4.9.2; matching compiler binary/hash absent",
+      "impact": "exact compiler compatibility cannot pass"
+    },
+    {
+      "id": "T01-B03",
+      "evidence": "dpkg kernel package is linux-image-3.10.53-lec-imx6 version 7; active boot symlink selects 3.10.105-imx6",
+      "impact": "package metadata cannot supply exact active-kernel source/headers"
+    },
+    {
+      "id": "T01-B04",
+      "evidence": "exact vendor/U-Boot sources and real-HW SRC observation absent",
+      "impact": "safe one-time SRC read lifetime, retained-counter absence, deployed SoC, and cause behavior unproven"
+    },
+    {
+      "id": "T01-B05",
+      "evidence": "fingerprint_tree omits timestamps, hard links, ACLs, xattrs, capabilities",
+      "impact": "SDLC package restoration tooling cannot prove approved restoration contract"
+    },
+    {
+      "id": "T01-B06-RESOLVED-PARTIAL",
+      "evidence": "2026-09-17T14:41:44Z supported parts probe under ./bin/lets sdlc lock-run exited 0 and exposed /dev/loop2",
+      "impact": "loop attach blocker resolved; package lifecycle remains gated by absent ABI-safe DEB and incomplete restoration fingerprint"
+    },
+    {
+      "id": "T01-B07",
+      "evidence": "implementation-worktree LETS venv absent",
+      "impact": "SDLC commands must use main repository LETS runtime with absolute paths until tooling provisions worktree runtime"
+    }
+  ],
+  "deviations_for_coordinator": [
+    "used main repository ./bin/lets because implementation-worktree LETS venv absent",
+    "attempt 1 used raw read-only partition extraction after loop permission failure; attempt 2 supported loop attach passes under SDLC lock; image never mutated",
+    "did not run external module build or wrong-ABI load; prerequisites absent and load forbidden",
+    "did not advance task or call task-result; coordinator must record blocked result and amendment"
+  ],
+  "next_gate": "Coordinator records T01 attempt-2 blockers/deviations and supplies exact vendor source/header/generated-header/Module.symvers/GCC 4.8.4 inputs, real-HW SRC evidence, and restoration fingerprint support for timestamps/hard links/ACLs/xattrs/capabilities. Supported loop attach is no longer blocker. T02/T03/T04 remain blocked."
+}

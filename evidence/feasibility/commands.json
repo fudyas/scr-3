@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "task": "T01",
+  "commands": [
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 -- ./bin/lets scr image parts --image /home/fudya/devel/scr/var/image_8.26.0",
+      "cwd": "/home/fudya/devel/scr/.codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+      "exit_code": 1,
+      "evidence": "worktree LETS runtime missing: .lets/pyenv/versions/venv/bin/python: No such file or directory"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 -- ./bin/lets scr image parts --image /home/fudya/devel/scr/var/image_8.26.0",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 1,
+      "evidence": "lock-run help advertises -- separator, parser treated literal -- as command: error: [Errno 2] No such file or directory: '--'"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 ./bin/lets scr image parts --image /home/fudya/devel/scr/var/image_8.26.0",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 1,
+      "evidence": "losetup: /home/fudya/devel/scr/var/image_8.26.0: failed to set up loop device: Operation not permitted"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 sha256sum /home/fudya/devel/scr/var/image_8.26.0",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 bash -c '<stat; od first 512 bytes>'",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "size 3850371072; MBR partition entries and 55aa signature captured"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 bash",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "one lock covered dd read-only p1/p2 scratch extraction; dumpe2fs/debugfs/readelf/strings/grep/stat/hash inspection; scratch rm/rmdir; final source SHA-256 unchanged; exit released lock"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 bash -c '<read-only p2 extraction; debugfs /var/log and /var/log/scr; source hash; cleanup>'",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "/var/log/scr: File not found by ext2_lookup; source SHA-256 unchanged"
+    },
+    {
+      "command": "curl -fsSL https://raw.githubusercontent.com/gregkh/linux/v3.10.105/arch/arm/mach-imx/src.c | sha256sum",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "f6b1f65f36568a7a73fdcc7f80b9b3673c7ed15d0dfda5753e3c5f37bed34803"
+    },
+    {
+      "command": "curl -fsSL https://www.nxp.com/docs/en/reference-manual/IMX6DQRM.pdf | sha256sum",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 22,
+      "evidence": "curl: (22) The requested URL returned error: 404"
+    },
+    {
+      "command": "curl -A 'Mozilla/5.0' -fsSL 'https://www.nxp.com/webapp/Download?colCode=IMX6DQRM' | sha256sum",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 22,
+      "evidence": "curl: (22) The requested URL returned error: 404"
+    },
+    {
+      "command": "curl -A 'Mozilla/5.0' -fsSL 'https://www.nxp.com/webapp/Download?colCode=IMX6SDLRM' | sha256sum",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 22,
+      "evidence": "curl: (22) The requested URL returned error: 404"
+    },
+    {
+      "command": "./bin/lets sdlc test",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "12 passed in 1.87s"
+    },
+    {
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 ./bin/lets scr image parts --image /home/fudya/devel/scr/var/image_8.26.0",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "2026-09-17T14:41:44Z; using raw image directly (not gzipped); whole /dev/loop2 3.6GB"
+    },
+    {
+      "command": "find /home/fudya /opt /usr/src -type f \\( -name Module.symvers -o -name 'uImage-3.10.105-imx6' -o -name 'gcc-4.8*' -o -name '.config' \\) ...",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "no matching local files returned"
+    },
+    {
+      "command": "sha256sum var/image_8.26.0 tools/sdlc/src/sdlc.py tools/sdlc/lock-run.sh tools/sdlc/test-package.sh tools/sdlc/verify-package.sh",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "image cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6; sdlc.py ec152b5fac7e7fafbd6b01086a5d0798260cb2439e5ddc71b5c48d967f8f939b; lock-run.sh 290e4e0f8007a390958cb3541acfa8c8d2a8386b4a32b26e808c71cd3db26b87; test-package.sh eeddd5ea58a819f1244787b76bbc118884055e298d5b118c734e987c9ba415f4; verify-package.sh 91d399abc21a663f9ccdeb881fcbfefd1eff2f4633caa2667f6d0bb008d9d887"
+    },
+    {
+      "command": "./bin/lets sdlc test",
+      "cwd": "/home/fudya/devel/scr",
+      "exit_code": 0,
+      "evidence": "2026-09-17T14:44:04Z; 25 passed in 1.34s"
+    }
+  ],
+  "safety": {
+    "image_mutated": false,
+    "module_loaded": false,
+    "rebooted": false,
+    "hardware_mutated": false,
+    "scratch_removed_before_unlock": true,
+    "image_sha256_unchanged": true,
+    "supported_loop_attach_recheck": true
+  }
+}

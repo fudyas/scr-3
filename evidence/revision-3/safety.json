@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "approved_plan_revision": 3,
+  "approved_plan_sha256": "42a33ec51bfd585df1d382afc984fb5ee1eddc418eae51dea0e99368ca0e8d7c",
+  "result": "blocked-before-build",
+  "target": {
+    "endpoint": "root@192.168.68.56",
+    "hostname": "SCR-7CCC91",
+    "kernel_release": "3.10.105-imx6",
+    "config_sha256": "956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26",
+    "gnu_build_id": "f7b0840244f238080194bd87ce76c704a67db004",
+    "vermagic": "3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 ",
+    "compiler": "gcc version 4.8.4 (Ubuntu/Linaro 4.8.4-2ubuntu1~14.04.1)",
+    "config_modversions": false,
+    "config_module_sig": false
+  },
+  "mutations": {
+    "image": false,
+    "target": false,
+    "apt": false,
+    "module_load": false,
+    "module_unload": false,
+    "reboot": false,
+    "kernel_or_uboot": false,
+    "boot_artifact": false,
+    "monit_cron_watchdog": false
+  },
+  "artifact": null,
+  "artifact_sha256": null,
+  "blocker": "Exact deployed-kernel source/generated headers/build tree/Module.symvers/toolchain provenance unavailable; approximate NXP/ADLINK inputs cannot satisfy approved pre-load ABI gate."
+}

@@ -49,6 +49,9 @@ function main() {
 
 	info "initializing development environment..."
 
+	# Install pinned ARM compatibility toolchain.
+	toolchain_install
+
 	# Install Python with lets-python tool
 	lets_tool devenv python install
 

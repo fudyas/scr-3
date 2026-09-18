@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "task": "T01",
+  "directory": "/var/log/scr",
+  "directory_metadata_when_created": {"type": "directory", "mode_octal": "0755", "uid": 0, "gid": 0},
+  "filename": {
+    "grammar_regex_ascii": "^reset-(-?(0|[1-9][0-9]*))-([a-z]{4})$",
+    "canonical_form": "reset-<signed-epoch-ms>-<four-lowercase-letters>",
+    "negative_example": "reset--1-abcd",
+    "zero_example": "reset-0-abcd",
+    "positive_example": "reset-1700000000123-abcd",
+    "forbidden": ["leading plus", "noncanonical leading zero", "uppercase suffix", "suffix not exactly four letters", "slash", "NUL", "extra prefix/suffix"],
+    "epoch_source": "current kernel UTC captured immediately at first create attempt; no validity, monotonicity, or RTC correction gate",
+    "target_32bit_time_t_epoch_ms_range": {"minimum": -2147483648000, "maximum": 2147483647999},
+    "range_status": "derived from 32-bit signed time_t plus truncated nonnegative nanoseconds; compile-time assertion required after exact headers acquired"
+  },
+  "record": {
+    "type": "regular file only",
+    "mode_octal": "0600",
+    "uid": 0,
+    "gid": 0,
+    "creation": "exclusive empty inode; never overwrite",
+    "durability_boundary": "sync empty inode, then parent directory; reason write/sync occurs separately and best-effort on same inode",
+    "count_rule": "safe matching regular inode counts regardless of zero length, partial reason, reason syntax, mtime, ownership, or mode",
+    "reason_rule": "bounded one-line diagnostic; raw SRC availability/value and cumulative decoded bits only; unknown stays unknown; contents never authority",
+    "same_inode": true
+  },
+  "scope": {
+    "enumeration": "immediate children only; no recursion",
+    "count": "canonical matching names whose lstat target is regular file; never follow symlink",
+    "reset": "delete only same canonical safe regular files; parent-directory sync after deletion",
+    "unsafe_refusal": ["/var, /var/log, or /var/log/scr symlink", "non-directory path component", "matching-name symlink", "matching-name directory/device/fifo/socket", "component or inode replacement race", "parent ownership/mode conflict"],
+    "unrelated_paths": "preserve unchanged"
+  },
+  "baseline": {
+    "image_observation": "/var/log/scr absent in cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6",
+    "first_install_selection": "before any mutation, T02 captures directory absence/presence, every immediate entry, file bytes, symlink target, uid/gid/mode/timestamps, hard-link identity, ACLs, xattrs, capabilities; unsafe ambiguity rejects install",
+    "upgrade_rule": "first baseline immutable across upgrade/reinstall/failure; later package versions consume same baseline, never replace it with mutated state",
+    "uninstall_rule": "T02 lifecycle contract must restore exact first baseline and remove package-created namespace objects only after module absence; preserve unrelated paths; any mismatch quarantines image"
+  },
+  "selection": {
+    "all": "all safe matching records",
+    "since": "parsed signed epoch-ms >= request lower bound; inclusive UTC",
+    "content_ignored": true,
+    "mtime_ignored": true
+  },
+  "limits": {
+    "suffix_attempts_per_worker_invocation": 64,
+    "suffix_space": 456976,
+    "pending_events": 1,
+    "request_bytes_including_newline": 256
+  },
+  "status": "semantic contract frozen; kernel implementation blocked by platform.json gates"
+}

@@ -115,3 +115,7 @@ Key paths: `LETS_HOME=<repo>/lets`, `LETS_STATE_DIR=<repo>/.lets`, `LETS_PROJ_TO
 **`lets/lib/devenv/python.sh`**: `python_pyenv_install`, `python_pyenv_load`, `python_pyenv_activate`, `python_install`, `python_venv_install`, `python_pip_install`, `python_pip_run <args>`.
 
 **`lets/lib/devenv/node.sh`**: `nvm_source`, `is_nvm_installed`, `nvm_version`, `node_version`, `npm_version`, `node_path`, `node_home_path`, `node_modules_path`, `node_run`, `npm_run`, `npx_run`.
+
+# Managed ARM compatibility toolchain
+
+`./bin/lets devenv init` installs and verifies pinned Linaro GCC 4.8-2014.04 below project `.lets/toolchains`. Verified installs and cached archives work offline. Run compiler/binutils only through `./bin/lets toolchain run <tool> ...`; use `./bin/lets toolchain env -- make ...` for kernel builds. `./bin/lets toolchain info --json` reports provenance and versions. Never copy this development toolchain into target image or Debian payload.

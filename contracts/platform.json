@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "task": "T01",
+  "approved_plan_sha256": "a5d45639407a0e98c4e2798ffb4d43763b5129ddabdb55070d7b38580bc2e411",
+  "definitions_sha256": "dfb38b4d6bba218ef5aa0b98fa9b36654f6c8365d4076c26e5dd111c4b44e92e",
+  "status": "blocked",
+  "image": {
+    "path": "/home/fudya/devel/scr/var/image_8.26.0",
+    "sha256_before": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6",
+    "sha256_after": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6",
+    "size_bytes": 3850371072,
+    "mtime_utc": "2026-08-26 06:04:50.675677639 +0000",
+    "inspection": "initial read-only raw extraction under one ./bin/lets sdlc lock-run lock; scratch removed before unlock; supported parts probe rerun successfully 2026-09-17T14:41:44Z",
+    "supported_parts_probe": {
+      "exit_code": 0,
+      "command": "./bin/lets sdlc lock-run --image /home/fudya/devel/scr/var/image_8.26.0 ./bin/lets scr image parts --image /home/fudya/devel/scr/var/image_8.26.0",
+      "evidence": "using raw image directly (not gzipped); whole /dev/loop2 3.6GB; lock released after command",
+      "limit": "parts output exposed whole loop device only; no package lifecycle or restoration test occurred"
+    },
+    "partition_table": {
+      "type": "MBR",
+      "signature": "55aa",
+      "partitions": [
+        {"number": 1, "bootable": true, "type_hex": "83", "start_sector": 2048, "sectors": 96256, "bytes": 49283072, "filesystem": "ext2", "uuid": "d5ec6935-78f1-41f4-8a63-c35245820884", "mountpoint": "/boot"},
+        {"number": 2, "bootable": false, "type_hex": "83", "start_sector": 98304, "sectors": 7096320, "bytes": 3633315840, "filesystem": "ext4", "uuid": "68127b6e-5ecf-46fb-be20-fd933af307cf", "mountpoint": "/"},
+        {"number": 3, "bootable": false, "type_hex": "82", "start_sector": 7194624, "sectors": 192512, "bytes": 98566144, "filesystem": "swap", "uuid": "4e12b21d-b01a-4854-88cd-62463479c49a"}
+      ]
+    }
+  },
+  "target": {
+    "distribution": "Debian 8.7",
+    "dpkg_architecture": "armhf",
+    "architecture_evidence": "installed dpkg status: 279 armhf packages, 104 all packages; sampled target module is ELF32 little-endian ARM EABI5",
+    "kernel_release_candidate": "3.10.105-imx6",
+    "running_kernel_release": null,
+    "running_kernel_limit": "image proves active /boot/uImage symlink only; uname -r requires real hardware",
+    "boot_selection": {
+      "/boot/uImage": "uImage-3.10.105-imx6",
+      "uImage_sha256": "4c3c021da689302805aee3773dfe41824007366313dc5f231391b2d25cf2a721",
+      "config_sha256": "956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26",
+      "System.map_sha256": "e0976623283ba514b4de73177a52e6a3c219350c4b6d3f3b67f899a32a238b5b",
+      "lec_imx6q_dtb_sha256": "51ab3751df6e3a3d237355b2dcc09ef79450418c55b580dac0892f469407b759",
+      "lec_imx6s_dtb_sha256": "740a528605e2e93407293e3e50d5a287a3557bfccbf559131f53f14ea1ebfd68"
+    },
+    "package_metadata_reconciliation": {
+      "installed_kernel_package": "linux-image-3.10.53-lec-imx6 7 armhf",
+      "active_boot_artifact": "uImage-3.10.105-imx6",
+      "result": "mismatch: dpkg does not identify source/build package for active kernel"
+    }
+  },
+  "kernel_abi": {
+    "sample_module": "/lib/modules/3.10.105-imx6/kernel/fs/binfmt_misc.ko",
+    "sample_module_sha256": "dc25fd21bfd30e792ebd86c3ea84105168a91e89f4cb60866c88e792ef49668f",
+    "vermagic": "3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 ",
+    "compiler_comment": "GCC: (Ubuntu/Linaro 4.8.4-2ubuntu1~14.04.1) 4.8.4",
+    "compiler_binary_sha256": null,
+    "compiler_blocker": "matching Ubuntu/Linaro GCC 4.8.4 binary absent; image installs Debian GCC 4.9.2-10",
+    "config": {
+      "CONFIG_AEABI": "y",
+      "CONFIG_ARCH_MXC": "y",
+      "CONFIG_ARM_THUMB": "y",
+      "CONFIG_CPU_V7": "y",
+      "CONFIG_DEVTMPFS": "y",
+      "CONFIG_EXT4_FS": "y",
+      "CONFIG_IKCONFIG": "y",
+      "CONFIG_IKCONFIG_PROC": "y",
+      "CONFIG_IMX2_WDT": "y",
+      "CONFIG_KALLSYMS": "y",
+      "CONFIG_LOCALVERSION": "-imx6",
+      "CONFIG_MODULES": "y",
+      "CONFIG_MODULE_UNLOAD": "y",
+      "CONFIG_PREEMPT": "y",
+      "CONFIG_PROC_FS": "y",
+      "CONFIG_RTC_HCTOSYS": "y",
+      "CONFIG_SMP": "y",
+      "CONFIG_SOC_IMX6": "y",
+      "CONFIG_SYSFS": "y",
+      "CONFIG_TMPFS": "y",
+      "CONFIG_WATCHDOG": "y",
+      "CONFIG_LOCALVERSION_AUTO": "not set",
+      "CONFIG_KALLSYMS_ALL": "not set",
+      "CONFIG_MODVERSIONS": "not set",
+      "CONFIG_DEBUG_INFO": "not set"
+    },
+    "exported_symbols_proven_by_System.map___ksymtab": [
+      "__alloc_workqueue_key", "destroy_workqueue", "queue_delayed_work_on", "mod_delayed_work_on", "cancel_delayed_work_sync", "flush_workqueue",
+      "filp_open", "filp_close", "vfs_write", "vfs_unlink", "vfs_readdir", "vfs_fsync", "vfs_fsync_range", "kernel_write", "sync_filesystem",
+      "misc_register", "misc_deregister", "capable", "current_kernel_time", "do_gettimeofday", "rtc_time_to_tm", "mktime",
+      "kern_path", "kern_path_create", "done_path_create", "vfs_mkdir", "vfs_create", "notify_change", "inode_permission", "lookup_one_len", "dentry_open",
+      "get_random_bytes", "get_random_bytes_arch", "kstrtoll", "kstrtoull"
+    ],
+    "present_not_exported": ["sys_sync"],
+    "wrong_abi_sample": {
+      "release": "3.10.101-imx6",
+      "vermagic": "3.10.101-imx6 SMP preempt mod_unload ARMv7 p2v8 ",
+      "dynamic_rejection_test": "not run: module loading forbidden during T01"
+    },
+    "source_tree": null,
+    "headers": null,
+    "build_link": null,
+    "source_link": null,
+    "external_module_build_probe": "blocked",
+    "blocker": "no exact vendor source/header tree, generated headers, matching compiler binary, Module.symvers, build link, or source link; symbol presence alone does not prove prototypes or successful modpost/link/load"
+  },
+  "src": {
+    "device_tree_node": "src@020d8000",
+    "device_tree_compatible": ["fsl,imx6q-src", "fsl,imx51-src"],
+    "physical_base": "0x020d8000",
+    "status_offset": "0x8",
+    "status_address": "0x020d8008",
+    "status_semantics_reference": "NXP i.MX6 reference-manual section cited by NXP community: SRC_SRSR bits 0 POR, 2 CSU, 3 IPP USER, 4 WDOG, 5 JTAG HIGH-Z, 6 JTAG SW, 7 WDOG3, 8 TEMPSENSE, 16 WARM BOOT; combinations possible",
+    "retained_counter": "not identified; cited register is status bits, not numeric reset counter",
+    "upstream_linux_3_10_105_src_c_sha256": "f6b1f65f36568a7a73fdcc7f80b9b3673c7ed15d0dfda5753e3c5f37bed34803",
+    "upstream_limit": "upstream v3.10.105 src.c maps fsl,imx51-src and does not expose or consume SRC_SRSR; upstream is not proven identical to vendor kernel",
+    "safe_read_lifetime": "blocked: exact vendor source and U-Boot consumption/clear behavior unavailable; real-hardware single early read required",
+    "capture_contract": "when prerequisite resolves, read SRC_SRSR once during module init before any module write; preserve full raw u32; decode set bits cumulatively; unknown/reserved bits remain raw and cause unknown; never clear status unless authoritative target source/manual proves required and safe",
+    "hardware_only": ["actual SoC q/solo selection", "running kernel", "SRC value", "bootloader preservation", "physical reset cause", "record durability"]
+  },
+  "storage_and_boot": {
+    "root": "ext4 UUID=68127b6e-5ecf-46fb-be20-fd933af307cf, errors=remount-ro,noatime",
+    "boot": "ext2 UUID=d5ec6935-78f1-41f4-8a63-c35245820884",
+    "run": "tmpfs /run rw,nodev,nosuid,size=10M",
+    "run_directory_image_metadata": "0755 root:root",
+    "sysv": {
+      "implementation": "sysvinit-core 2.88dsf-59",
+      "default_runlevel": 2,
+      "mount_order": ["S01mountkernfs.sh", "S02udev", "S03mountdevsubfs.sh", "S05checkroot.sh", "S06checkfs.sh", "S08mountall.sh", "S09mountall-bootclean.sh"],
+      "module_activation_rule": "one-shot init script must start after mountall and /run tmpfs availability; no /etc/modules entry; no persistent daemon"
+    },
+    "existing_record_directory": "/var/log/scr absent"
+  },
+  "tooling": {
+    "lock": "./bin/lets sdlc lock-run serializes on .codex/sdlc/locks/image.lock and refuses global image-dirty quarantine",
+    "package_test": "./bin/lets sdlc test-package holds image lock across copy, supported mount, verify-package install/test/remove/tree comparison, supported unmount, source hash check, and unlock",
+    "quarantine": "verify mismatch writes per-image quarantine plus image-dirty.json; cleanup/unmount/source-hash failure writes quarantine before error",
+    "unit_test": "./bin/lets sdlc test: 12 passed in attempt-1 evidence",
+    "provenance_recheck": {
+      "main_worktree_commit": "a3c163ab102c3a7f7a271e6f1456973401d2ac71",
+      "sdlc_ledger_commit": "c1ac51c52432e90d1a895337ecb9f72c5d22c4f2",
+      "tools/sdlc/src/sdlc.py_sha256": "ec152b5fac7e7fafbd6b01086a5d0798260cb2439e5ddc71b5c48d967f8f939b",
+      "tools/sdlc/lock-run.sh_sha256": "290e4e0f8007a390958cb3541acfa8c8d2a8386b4a32b26e808c71cd3db26b87",
+      "tools/sdlc/test-package.sh_sha256": "eeddd5ea58a819f1244787b76bbc118884055e298d5b118c734e987c9ba415f4",
+      "tools/sdlc/verify-package.sh_sha256": "91d399abc21a663f9ccdeb881fcbfefd1eff2f4633caa2667f6d0bb008d9d887",
+      "working_tree_state": "dirty; coordinator-owned SDLC tooling edits present, so commit IDs alone do not identify executable tooling"
+    },
+    "restoration_gap": "fingerprint_tree compares type, mode, uid, gid, size, symlink target, and regular-file SHA-256; it omits timestamps, inode/hard-link topology, ACLs, xattrs, and capabilities required by approved contract",
+    "worktree_runtime_gap": "worktree ./bin/lets sdlc lock-run fails because .lets/pyenv/versions/venv/bin/python is absent; main repository LETS runtime works",
+    "mount_recheck": "loop permission blocker resolved for supported parts probe; full test-package mount/install/uninstall/restoration remains unexecuted because no DEB may be built before ABI gates pass"
+  },
+  "dependencies": {
+    "target_present": ["bash", "kmod 18-3", "sysvinit-core 2.88dsf-59", "initscripts 2.88dsf-59", "dpkg 1.17.27"],
+    "prohibited": ["kernel rebuild/replacement", "DKMS", "forced module loading", "unexported-symbol tricks", "DT change", "initramfs change", "boot-selector change"]
+  },
+  "gates": {
+    "architecture_known": true,
+    "read_only_image_identity_proven": true,
+    "external_module_build_probe_passed": false,
+    "wrong_abi_rejection_dynamically_proven": false,
+    "exact_vendor_source_config_compiler_abi_proven": false,
+    "src_read_lifetime_proven": false,
+    "retained_counter_absence_exact_target_proven": false,
+    "module_owned_run_guard_structurally_feasible": true,
+    "restoration_tool_covers_required_metadata": false,
+    "supported_loop_attach_probe_passed": true,
+    "ready_for_downstream_implementation": false,
+    "next_gate": "coordinator amendment or prerequisite acquisition; do not implement/load/package module optimistically"
+  }
+}
