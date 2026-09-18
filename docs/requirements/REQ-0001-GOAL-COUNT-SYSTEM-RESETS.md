@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 57
+sequence: 58
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:46:47+00:00
+updated: 2026-09-18T11:51:20+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1237,6 +1237,98 @@ After approval: LETS toolchain config/installer/wrapper/tests/docs with manifest
 
 Policy facts: development tooling additions, network download, six persistent target payload destinations, custom maintainer scripts, boot activation, kernel privilege/security, persistent storage/runtime namespace, live approximate-ABI retry. Nontrivial. Commit DRAFT before display. Only deterministic `trivial-policy` may waive approval; otherwise wait for developer approval/amendment. Never self-approve.
 
+### Solution plan — DRAFT revision 6
+
+#### DRAFT revision 6 — hermetic i386 runtime for pinned Linaro toolchain
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 5 after verified runtime blocker at checkpoint sequence 57. Preserves revision 3 production scope, revision 4 diagnostic-probe scope, revision 5 LETS ownership/philosophy, all earlier evidence, exclusions, package lifecycle, tests, restoration rules. Revision 6 changes only host-side compatibility-toolchain runtime design, then permits same one bounded probe rebuild/retry. No production implementation, image/package install, boot activation, force load, reboot, target APT, host APT, `sudo`, container-global install authorized by DRAFT.
+
+Reviewed complete durable REQ through sequence 57: customer source, requirements analysis, image analysis, planner answers, revisions 1-5, approvals, implementation evidence/checkpoints, project guides, `AGENTS.md`, `docs/SDLC-DEVELOPER-GUIDE.md`, `docs/DEVELOPER-GUIDE.md`, `docs/MONIT.md`. Load-bearing choices already answered. Runtime source/version safely resolved from authoritative Ubuntu archive metadata and exact bytes; no developer question outstanding.
+
+#### Verified blocker and source traceability
+
+- Pinned archive unchanged: `gcc-linaro-arm-linux-gnueabihf-4.8-2014.04_linux.tar.xz`; size `51126392`; SHA-256 `2b4b29bcfed26948b654088aabbd7e5357691f66f0ba4864df63b2c00f054152`; expected GCC banner remains Linaro GCC `4.8.3 20140401 (prerelease)`.
+- Verified archive host executables are ELF32 i386 and request `/lib/ld-linux.so.2`. Current x86_64 host lacks compatible i386 loader/runtime; direct compiler launch fails. Partial staged extraction is non-ready evidence, not healthy install.
+- Archive-wide ELF inspection finds runtime names needed by allowed compiler/binutils paths: `libc.so.6`, `libm.so.6`, `libpthread.so.0`, `libdl.so.2`, `libstdc++.so.6`, `libgcc_s.so.1`, `libz.so.1`; `/lib/ld-linux.so.2` interpreter. `gdb` additionally needs `libncurses.so.5`, but `gdb` stays outside revision-5 allowlist and is never provisioned/invoked. Implementation must rescan every allowlisted executable and recursively verify closure; unexpected `DT_NEEDED`, interpreter, ABI, symbol-version failure blocks readiness.
+- Choose Ubuntu Trusty Updates i386 runtime because live kernel compiler provenance names Ubuntu/Linaro Trusty-era GCC and packages remain on authoritative `https://archive.ubuntu.com/ubuntu/`. No reliance on host multiarch state.
+
+Pinned package manifest, exact HTTPS URL = `https://archive.ubuntu.com/ubuntu/<Filename>`:
+
+- `libc6` `2.19-0ubuntu6.15`, i386; `pool/main/e/eglibc/libc6_2.19-0ubuntu6.15_i386.deb`; size `3999084`; SHA-256 `8f429c90bb3da42bc34f5a92fc02f808e6097468799a11a12d6ffa771062ecf5`; supplies loader, libc, libm, libpthread, libdl.
+- `libgcc1` `1:4.9.3-0ubuntu4`, i386; `pool/main/g/gccgo-4.9/libgcc1_4.9.3-0ubuntu4_i386.deb`; size `48008`; SHA-256 `e8701c791da3fea219f17305ae80838f58d9158706a4858b563004b93131d3ce`; supplies `libgcc_s.so.1`.
+- `libstdc++6` `4.8.4-2ubuntu1~14.04.4`, i386; `pool/main/g/gcc-4.8/libstdc++6_4.8.4-2ubuntu1~14.04.4_i386.deb`; size `269602`; SHA-256 `62b417f55b2ef83aa25424338d8d8e4956d712ce22a2b4882441f425459ee500`; supplies `libstdc++.so.6`.
+- `zlib1g` `1:1.2.8.dfsg-1ubuntu1.1`, i386; `pool/main/z/zlib/zlib1g_1.2.8.dfsg-1ubuntu1.1_i386.deb`; size `50564`; SHA-256 `5ef3e7a194da9055b5247a1f6e8df60b537e6a0af8e8c4f3081386deb7eb71bc`; supplies `libz.so.1`.
+- Metadata-closure packages retained for provenance/license/dependency proof though no maintainer script runs: `gcc-4.8-base` `4.8.4-2ubuntu1~14.04.4`, i386, `pool/main/g/gcc-4.8/gcc-4.8-base_4.8.4-2ubuntu1~14.04.4_i386.deb`, size `16636`, SHA-256 `69ea774b9202940e3bc50158d0743a5a9e9a5cbeb44ab48090b8f01833529c0b`; `gcc-4.9-base` `4.9.3-0ubuntu4`, i386, `pool/main/g/gccgo-4.9/gcc-4.9-base_4.9.3-0ubuntu4_i386.deb`, size `15090`, SHA-256 `0c20ea350db1ed077f2b275bd82d4ba382ff074309ad981aaa6690cba1a25a83`; `multiarch-support` `2.19-0ubuntu6.15`, i386, `pool/main/e/eglibc/multiarch-support_2.19-0ubuntu6.15_i386.deb`, size `4484`, SHA-256 `e123a324ac939c09f764a1a6e9f87ed0e91c3b37002c363b95a21d5ff88f0763`.
+- Ubuntu `Packages.gz` declares exact versions/dependencies: `libc6 -> libgcc1`; `libgcc1 -> gcc-4.9-base, libc6`, pre-depends `multiarch-support`; `libstdc++6 -> gcc-4.8-base, libc6, libgcc1`, pre-depends `multiarch-support`; `zlib1g -> libc6`, pre-depends `multiarch-support`; `multiarch-support -> libc6`. Streamed package sizes/SHA-256 matched metadata. Preserve each package control/copyright/license plus Linaro bundled notices in manifest. Missing license, changed metadata/bytes, or redistribution uncertainty blocks use.
+
+#### LETS-managed runtime design
+
+Revision-5 state/config/UX remain. Runtime lives only below `${LETS_STATE_DIR}/toolchains/runtime/ubuntu-trusty-i386-2019/`; default state root project `.lets`. Toolchain tree remains `${LETS_STATE_DIR}/toolchains/linaro-arm-linux-gnueabihf-4.8-2014.04/`. Cache, unique staging, locks, manifests, ready sentinels stay below same root. Never write `/lib`, `/usr`, `/usr/local`, user home, dpkg database, APT database, container image/global filesystem, target image/device, Git tree.
+
+`./bin/lets devenv init` owns runtime + toolchain transaction:
+
+1. LOAD effective LETS config/state root; reject unsafe root/override.
+2. ACQUIRE one ordered toolchain/runtime lock covering verify, cache, extract, publish; concurrent `init`/`toolchain` waits or reads only prior verified generation.
+3. VERIFY current generation: exact archive/package manifests, sizes/hashes, license inventory, file inventory, no escaped paths/links/special files, ELF class/machine/interpreter/recursive `DT_NEEDED`, expected GNU symbol versions, tool banners, sentinel schema, executable smoke test.
+4. ***if*** healthy generation exists ***then*** SKIP network and mutation; preserve mtimes; return success. Offline healthy reuse mandatory.
+5. ***if*** partial/corrupt generation exists ***then*** preserve healthy current generation; clean only validated tool-owned staging; never follow links; use verified cache or fail offline with expected paths/hashes.
+6. DOWNLOAD missing artifacts to unique same-filesystem partials only from pinned HTTPS hosts/paths with bounded redirects/timeouts; verify size/SHA-256 before acceptance. No host/target APT.
+7. INSPECT each `.deb` as ar container; accept expected `debian-binary`, one control archive, one data archive only. Reject duplicate members, absolute/`..` paths, traversal, hard/symlink escape, devices/FIFOs/sockets, unexpected ownership/mode, decompression bombs, unsupported compression. Never call `dpkg`, `dpkg-deb`, package maintainer scripts, triggers, ldconfig.
+8. EXTRACT allowlisted runtime files and required license/control evidence into unique runtime staging root. Preserve internal relative symlinks only after canonical containment proof. Package file collisions must be byte-identical and declared; otherwise fail.
+9. EXTRACT Linaro archive into separate staging root under same safety rules from revision 5.
+10. VERIFY every allowlisted i386 executable against runtime root. Invoke exact managed loader `${runtime}/lib/ld-linux.so.2 --library-path <ordered-runtime-lib-dirs> <absolute-managed-tool> <args...>`; never depend on host `/lib/ld-linux.so.2`, host `LD_LIBRARY_PATH`, host i386 libraries, shell evaluation, or binary patching.
+11. WRITE generation manifest: every URL/version/arch/size/hash/license/control dependency, extracted-file hash/mode/link, loader/library paths, ELF/`DT_NEEDED`/symbol-version closure, tool banners, schema.
+12. FSYNC staged files/directories where supported; atomically publish immutable versioned runtime and toolchain trees, then atomic ready/current sentinel. Failure keeps previous healthy generation selected; incomplete generation never ready.
+13. RELEASE lock.
+
+`./bin/lets toolchain info [--json]`, `run <tool>`, optional exact aliases, and narrowly scoped `env -- <command>` remain revision 5. Wrapper always selects verified generation and invokes managed i386 loader/library path. Preserve exact argv including spaces/leading dash, cwd, stdin/stdout/stderr, exit code, signal. Reject path separators, unknown tool, missing/corrupt generation, unverified runtime, host fallback. Kernel make gets wrapper-controlled tool commands; every compiler/binutils execution remains owned by `./bin/lets toolchain`. Environment removes/overrides loader-influencing vars (`LD_PRELOAD`, `LD_LIBRARY_PATH`, audit/profile/tunables) and compiler search overrides unless explicit validated contract permits them. Never expose runtime as general command shell.
+
+Upgrade installs new immutable generation beside current; validates before atomic switch; failure leaves prior current. Cache may retain only exact verified artifacts. Repair never destroys sole healthy generation. Runtime/toolchain state is development infrastructure, not target-image mutation or DEB payload.
+
+#### Tests and gates added by revision 6
+
+Keep every revision-5 toolchain, probe, production, package, failure, rollback, and acceptance test. Add:
+
+- Architecture: assert host x86_64, all managed host tools ELF32 i386, interpreter exactly `/lib/ld-linux.so.2`, loader itself ELF32 i386, ARM outputs unchanged. Reject mixed/unexpected ELF.
+- Closure: enumerate every allowlisted executable plus compiler subprogram reached by smoke/build; recursively resolve all `DT_NEEDED` only inside managed runtime/toolchain; assert no host library resolution using loader diagnostics/map evidence. Test missing/wrong library, incompatible GNU symbol version, stray host i386 install, hostile `LD_*` vars.
+- Packages: verify all seven exact URLs/versions/arches/sizes/SHA-256/control dependencies/licenses; corrupt/truncated/redirect/wrong-arch/wrong-version/duplicate member/traversal/link escape/special file/collision/decompression-limit cases fail closed. Assert no dpkg/APT database or host path changes and no maintainer script execution.
+- Lifecycle: fresh online init; healthy skip without network/mtime change; healthy offline reuse; offline absent/corrupt explicit failure; interrupted downloads and each extraction/publish/sentinel crash point; atomic repair; previous-generation rollback; concurrent init/init and init/run; alternate `LETS_STATE_DIR`; cache reuse.
+- Forwarding: every allowlisted tool, compiler subprogram, `info --json`, unknown/path rejection, exact argv/cwd/stdin/stdout/stderr/exit/signal, make integration. Static scan rejects direct compatibility-tool calls/downloads and host loader/library fallback outside wrapper internals.
+
+Only after all runtime/toolchain gates pass: rebuild identical revision-4 init/exit/fixed-log-only probe twice through managed wrapper. Preserve exact reconstructed source/config contract. Run ELF/ARM attributes/vermagic/undefined-symbol/disassembly and relocation gates. Compare relocations with target 3.10 ARM loader source; prior relocation `3` must be absent or proven supported. Unsupported/unknown relocation stops offline: no copy, load, altered retry, force, VFS, MMIO, persistence, activation, package, boot, reboot.
+
+If gates pass, permit exactly one ordinary live retry from revision 5: target identity/baseline/recovery preflight; copy exact hashed transient probe; remote hash/mode; one ordinary `insmod`; inspect rc/dmesg/module/refcount/taint/connectivity; ordinary `rmmod` only after success; remove transient only after confirmed absence; verify config/uImage/baseline/no residue. Clean compatibility rejection = probe FAIL and no further retry. Warning/oops/BUG/panic/hang/unload failure/lingering module/unexplained log/connectivity or restoration uncertainty = preserve evidence, quarantine device, stop; never reboot for cleanup. Success proves diagnostic callbacks only, not production ABI or reset correctness.
+
+#### Production package, ownership, rollback, acceptance
+
+Revision-3 production scope remains exact. After probe success and stronger production-specific ABI/integration proof, build exactly one reversible architecture-specific Debian package `scr-req-0001-goal-count-system-resets`. Package owns private payload plus published module, Bash transport frontend, SysV loader/link, `RELEASE.md`, package test, exact event/runtime/state/ownership namespaces previously specified. No DKMS, target build/APT, `depmod`, initramfs, kernel/U-Boot/DT/boot-selector, monit/cron/watchdog/USB-counter change. Another requirement package with exact/parent/child namespace overlap conflicts and blocks install; disjoint package coexistence requires registry/lifecycle proof. No `Replaces` or conffile seizure.
+
+`preinst` validates architecture/kernel contract, conflicts, metadata, space; captures first baseline and durable journal before mutation. `postinst` atomically publishes/verifies; never loads during install/chroot/offline image mutation. Upgrade retains first baseline, records/guard/removal state; never reloads resident module; rejects incompatible ABI; failed upgrade restores prior payload. `prerm` durably marks removal pending, disables loader, requests fallible `PREPARE_REMOVE`, quiesces control, ordinary unload only; no force/reboot/shutdown. Busy unload returns nonzero, keeps backup/journal, prevents reactivation until unrelated natural reboot and later retry. `postrm remove/purge` proceeds only after module/endpoint absence; deletes generated scoped records, restores every baseline path/content/type/link/uid/gid/mode/timestamps/hard links/ACLs/xattrs/capabilities/parent metadata, removes created empty dirs/runtime/state/claim, verifies, then removes backup/journal. Abort/retry is durable/idempotent; never erase last baseline. Active/pending/residue/mismatch means uninstall incomplete.
+
+Production behavior/acceptance stays revision 3/5: module alone owns accepted-init event, guard, name, exclusive empty-file create, inode+directory sync, retry, count/filter/reset, serialization/cancel. Bash validates/transports/displays only. Exactly one supported boot reaching accepted module init creates one durable empty `/var/log/scr/reset-<epochMs>-<four-lowercase-letters>`; same-boot reload zero; pre-init resets/boots uncounted. No reset reason/MMIO claim. Storage failure retries without blocking/reboot. CLI grammar/filter/deletion safety unchanged. `RELEASE.md` records runtime/toolchain provenance and hashes, approximate-ABI/probe limits, production limits/lifecycle/recovery.
+
+#### Lock-bounded package proof
+
+1. ACQUIRE SDLC image lock.
+2. VERIFY no quarantine/conflicting mount; RECORD source `var/image_8.26.0` SHA-256.
+3. CREATE tooling-managed disposable copy; MOUNT while same lock stays held.
+4. CAPTURE full baseline: hashes, contents/types/links, ownership/modes/timestamps, hard links, ACLs, xattrs, capabilities, parent metadata, package bookkeeping.
+5. INSTALL exact hashed DEB without network/host or target APT mutation.
+6. TEST static/offline/package lifecycle; never load ARM module into host kernel.
+7. UNINSTALL every produced package after pass or failure.
+8. VERIFY exact baseline restoration and absence of generated records, backup, journal, claim, runtime, module, endpoint, pending removal.
+9. UNMOUNT copy; VERIFY source SHA-256 unchanged.
+10. ***if*** uninstall, restoration, unmount, source verification, or cleanup fails ***then*** QUARANTINE affected image identity; RETAIN journal/evidence; STOP reuse; REQUIRE tooling-reported recovery before unlock/reuse; never remove marker manually.
+11. ***else*** RECORD restoration proof; RELEASE lock.
+
+Preferred command remains `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <artifact> --test-command /usr/lib/scr-resets-monitor/package-test`. Custom flow uses one `./bin/lets sdlc lock-run` spanning mount, install, test, uninstall, restoration verification, unmount. Missing enforcement blocks mutation. Removing all produced requirement packages—exactly one DEB—must restore original image managed surfaces exactly. Host `.lets` runtime/toolchain state excluded only because development infrastructure never enters image/package.
+
+#### Deliverables and approval gate
+
+After approval: LETS runtime/toolchain config, safe `.deb` extractor, installer/wrapper/tests/docs/manifests/licenses; reconstructed-kernel input manifest; reproducible rebuilt probe/source/artifact/hash/static/live/restoration evidence; production OOT source/build proof; one reversible DEB + SHA-256; ownership/baseline manifest; `RELEASE.md`; CLI/lifecycle/fault/locked-image proof; controlled live results; exact limits. Runtime/toolchain/probe/production compatibility failure becomes evidence-bearing blocker, never scope expansion.
+
+Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config/tests, live approximate-ABI retry, six persistent target payload destinations, maintainer scripts, boot activation, kernel privilege, persistent storage/runtime namespace. Commit DRAFT before display. Never self-approve. Only deterministic `trivial-policy` may waive; otherwise await developer approval/amendment.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -1352,3 +1444,5 @@ Policy facts: development tooling additions, network download, six persistent ta
 - `2026-09-18T11:36:52+00:00` [implementing] Implementation started from the approved plan
 
 - `2026-09-18T11:46:47+00:00` [drafting-plan] Replan toolchain runtime after verified i386-host archive incompatibility
+
+- `2026-09-18T11:51:20+00:00` [drafting-plan] Updated round 1 solution-plan section
