@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 84
+sequence: 85
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T16:37:40+00:00
+updated: 2026-09-18T16:38:00+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1971,3 +1971,5 @@ Nontrivial: kernel-privileged module, boot activation, persistent records/runtim
 - `2026-09-18T16:23:04+00:00` [implementing] Implementation started from the approved plan
 
 - `2026-09-18T16:37:40+00:00` [implementing] Split approved-plan candidate into 4 bounded tasks
+
+- `2026-09-18T16:38:00+00:00` [implementing] Activated task T01 attempt 1
