@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 51
+sequence: 52
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:34:46+00:00
+updated: 2026-09-18T11:34:55+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1340,3 +1340,5 @@ Policy facts: development tooling additions, network download, six persistent ta
 - `2026-09-18T11:27:26+00:00` [drafting-plan] Amend revision 4 to permit old-toolchain rebuild and one bounded live probe retry
 
 - `2026-09-18T11:34:46+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-18T11:34:55+00:00` [draft-ready] Committed DRAFT revision 5: preserved revision 4 init/exit/log-only probe and revision 3 production scope; added pinned LETS-managed Linaro GCC 4.8-2014.04 toolchain install under LETS state, idempotent devenv init, top-level toolchain wrapper, atomic verification/recovery/offline tests, and one gated ordinary probe retry. No direct compatibility tools, target APT, force load, VFS/MMIO probe behavior, persistence, boot activation, or reboot. Nontrivial; approval policy next.

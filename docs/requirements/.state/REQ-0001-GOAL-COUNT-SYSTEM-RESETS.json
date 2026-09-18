@@ -323,6 +323,12 @@
           "sequence": 51,
           "state": "drafting-plan",
           "time": "2026-09-18T11:34:46+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 5: preserved revision 4 init/exit/log-only probe and revision 3 production scope; added pinned LETS-managed Linaro GCC 4.8-2014.04 toolchain install under LETS state, idempotent devenv init, top-level toolchain wrapper, atomic verification/recovery/offline tests, and one gated ordinary probe retry. No direct compatibility tools, target APT, force load, VFS/MMIO probe behavior, persistence, boot activation, or reboot. Nontrivial; approval policy next.",
+          "sequence": 52,
+          "state": "draft-ready",
+          "time": "2026-09-18T11:34:55+00:00"
         }
       ],
       "number": 1,
@@ -330,8 +336,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 51,
-  "state": "drafting-plan",
+  "sequence": 52,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -381,5 +387,5 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-18T11:34:46+00:00"
+  "updated": "2026-09-18T11:34:55+00:00"
 }
