@@ -1,0 +1,85 @@
+{
+  "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+    "artifacts": {
+      "deb_sha256": "1cd9d8e4000f9502c05b169e1e2ecedbd276206cb07fdc0f464be1cbc435de7c",
+      "module_sha256": "f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc"
+    },
+    "failure": {
+      "concurrency": "makefile",
+      "depend_start_entry": "absent",
+      "depend_start_path": "/etc/init.d/.depend.start",
+      "depend_start_sha256": "0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742",
+      "reason": "SysV startpar makefile dependency graph omitted scr-resets-monitor; S04 symlink alone was skipped"
+    },
+    "identity": {
+      "architecture": "armv7l",
+      "config_sha256": "956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26",
+      "default_runlevel": 2,
+      "hostname": "SCR-7CCC91",
+      "kernel": "3.10.105-imx6 #5 SMP PREEMPT Wed May 16 11:21:53 IDT 2018",
+      "taint_before": 4096,
+      "uid_gid": "0:0",
+      "uimage_md5": "9ab15ca7cf8f336c519d5b51f14c4c3c"
+    },
+    "manual_lifecycle": {
+      "durable_count": 1,
+      "guard_failures": [
+        "file sync -5",
+        "parent sync -5"
+      ],
+      "guard_inode": 401387,
+      "install_did_not_load": true,
+      "pending_prepare_remove_result": "ERROR -16",
+      "rc2_link": "/etc/rc2.d/S04scr-resets-monitor -> ../init.d/scr-resets-monitor",
+      "rcs_link_absent": true,
+      "record": "reset-1789752650503-ihhi",
+      "record_inode": 2496,
+      "record_parent_sync_result": -5,
+      "repeated_start_count": 1,
+      "same_boot_reload_count": 1,
+      "taint_after_manual": 4096
+    },
+    "reboot": {
+      "approved_reboots_consumed": 1,
+      "automatic_device": "absent",
+      "automatic_guard": "absent",
+      "automatic_increment": 0,
+      "automatic_module": "absent",
+      "boot_id_after": "aa1a343a-0b3b-4df4-9a63-88ca1e78ec65",
+      "boot_id_before": "d0c89d07-29f5-4d43-8f25-509cae26f53a",
+      "expected_count": 2,
+      "observed_durable_records": 1,
+      "reachable_utc": "2026-09-18T17:34:15Z",
+      "requested_utc": "2026-09-18T17:31:25Z"
+    },
+    "restoration": {
+      "config_sha256": "956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26",
+      "connectivity_after": "healthy",
+      "module_device_guard": "absent",
+      "package_payload_state_dpkg_info": "absent",
+      "records_and_log_directory": "baseline absent",
+      "remove_and_purge": "pass",
+      "runlevel_after": "N 2",
+      "taint_after": 4096,
+      "transient_deb": "absent",
+      "uimage_md5": "9ab15ca7cf8f336c519d5b51f14c4c3c"
+    },
+    "result": "fail",
+    "safety": {
+      "forced_module_operations": false,
+      "kernel_or_uboot_patch": false,
+      "mmio": false,
+      "reset_reason": false,
+      "second_reboot": false
+    },
+    "target": "root@192.168.68.55"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T04",
+  "time": "2026-09-18T17:36:21+00:00"
+}
