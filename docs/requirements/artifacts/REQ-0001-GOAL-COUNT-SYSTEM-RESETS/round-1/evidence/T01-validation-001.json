@@ -1,0 +1,46 @@
+{
+  "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+    "blocking_findings": [
+      {
+        "finding": "scr_claim_guard and scr_create_record close created files and retry by reopening pathname; pathname persists but exact inode is neither retained nor verified, so unlink/replacement can make retry sync another inode; R8-01 and T01 immutable identity contract fail",
+        "id": "immutable-inode"
+      },
+      {
+        "finding": "writable int module parameters permit arbitrary counts and runtime rearming; retry_delay_seconds is writable uint and accepts zero, allowing immediate persistent-error retry loops; controls are not bounded one-shot",
+        "id": "unbounded-fault-controls"
+      },
+      {
+        "finding": "T01-result.json contains assertions only; no commands, logs, file/inode identities, fault counts, or deterministic test output prove each fault fires once, same identity retries, exactly one record results, and pending clears only after both syncs",
+        "id": "fault-proof-missing"
+      },
+      {
+        "finding": "equal hash claims lack two retained clean-build artifacts/transcripts/output paths and commands proving both compiler/binutils runs used ./bin/lets toolchain; current three ko files are copies",
+        "id": "reproducibility-proof-missing"
+      },
+      {
+        "finding": "suffix generation uses two statements on each source line; violates Linux kernel one-statement-per-line style; old-tree checkpatch.pl cannot run on host Perl and fails with Unescaped left brace in regex is illegal here",
+        "id": "kernel-style"
+      }
+    ],
+    "passed": [
+      "artifact SHA-256 0d89bd8d0a83fb4f0550162fa80e8440cf1baaa0350fc591f9dbce1d66127f67",
+      "LETS-managed readelf proves ELF32 little-endian ARM EABI5",
+      "exact vermagic 3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8",
+      "relocation type 3 absent",
+      "no i.MX6 MMIO/register/reset-reason logic",
+      "guard sync errors propagate",
+      "record pathname persists across ordinary retry"
+    ],
+    "required_next_attempt": "Retain open file/inode identity through durability completion; use validated load-time one-shot fault controls and bounded nonzero retry delay; add deterministic fault evidence and two clean LETS-only build transcripts/artifacts; fix kernel C statement layout; rerun static gates without image or hardware mutation.",
+    "result": "fail"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "fail",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-18T16:40:55+00:00"
+}
