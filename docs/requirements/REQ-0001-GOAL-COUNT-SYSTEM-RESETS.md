@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 103
-approval: approved
+sequence: 104
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T17:37:50+00:00
+updated: 2026-09-18T17:38:08+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2009,3 +2009,5 @@ Nontrivial: kernel-privileged module, boot activation, persistent records/runtim
 - `2026-09-18T17:36:21+00:00` [implementing] Recorded task T04 attempt 1 result
 
 - `2026-09-18T17:37:50+00:00` [implementing] Task T04 attempt 1 validation fail
+
+- `2026-09-18T17:38:08+00:00` [drafting-plan] Revision 8 T04 validation failed automatic activation only: Debian 8 SysV startpar CONCURRENCY=makefile uses /etc/init.d/.depend.start, whose exact graph omitted scr-resets-monitor and skipped the S04 link. Manual/fault semantics and complete cleanup/restoration passed. Replan target-native insserv/update-rc.d dependency registration, dependency-graph/link baseline and restoration, locked lifecycle regression, and one newly bounded reboot; never hand-edit graph or disable global concurrency.
