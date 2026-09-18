@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: implementing
 round: 1
-sequence: 63
+sequence: 64
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T12:09:43+00:00
+updated: 2026-09-18T12:29:02+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -384,6 +384,34 @@ The deterministic policy input is six payload destinations, tests defined, custo
 Pending.
 
 ### Implementation
+
+#### Revision 6 implementation checkpoint
+
+Approved DRAFT revision 6 SHA-256 `eaa5b1ea6f36bf64e3c18d9301ffbb90f6581fdbea3c0198907ae814315e4242` implemented in designated worktree `/home/fudya/devel/scr/.codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS` through runtime/toolchain gate. No production release, DEB, image mutation, target mutation, module load, boot, or reboot.
+
+Implemented LETS-owned compatibility environment:
+
+- `./bin/lets devenv init` owns pinned Linaro archive plus seven pinned Ubuntu Trusty i386 packages under `.lets/toolchains`.
+- Exact URLs/versions/architectures/sizes/SHA-256 values match revision 6. Safe ar/tar inspection rejects unexpected members, absolute/parent traversal, special files, escaped links, wrong control metadata, missing license evidence. No `apt`, `apt-get`, `dpkg`, `dpkg-deb`, maintainer script, trigger, `ldconfig`, `sudo`, global install.
+- Managed loader/library path runs allowlisted ELF32 i386 compiler/binutils and GCC subprograms. Environment strips loader/compiler overrides; locale fixed to `C`. `./bin/lets toolchain info|run|env` owns compiler/binutils calls. Unknown/path tools rejected.
+- Atomic staging/publish, one runtime/toolchain lock, verified cache, ready manifests, corrupt/partial stage cleanup, prior-generation restore path, healthy idempotent skip implemented.
+
+Exact verified evidence:
+
+- Toolchain archive size `51126392`; SHA-256 `2b4b29bcfed26948b654088aabbd7e5357691f66f0ba4864df63b2c00f054152`.
+- GCC: `arm-linux-gnueabihf-gcc (crosstool-NG linaro-1.13.1-4.8-2014.04 - Linaro GCC 4.8-2014.04) 4.8.3 20140401 (prerelease)`.
+- ld: `GNU ld (crosstool-NG linaro-1.13.1-4.8-2014.04 - Linaro GCC 4.8-2014.04) 2.24.0.20140311 Linaro 2014.03`.
+- Smoke compiler output: ELF32 ARM relocatable. Managed `readelf`, `nm`, `objdump` passed. All 13 allowlisted tools ran through wrapper.
+- `./tests/toolchain/run.sh`: `toolchain functional tests passed`.
+- `bash -n` and `git diff --check`: pass.
+- Second `./bin/lets devenv init`: `toolchain linaro-arm-linux-gnueabihf-4.8-2014.04 and runtime ubuntu-trusty-i386-2019 already installed and verified; skipping`; toolchain `.lets-manifest` mtime unchanged at `1789733939`.
+- NXP source checkout exact commit `e35e57f24ef5851787812a18a38feeb9deb6ea46` under `.lets/kernel-sources/linux-imx`.
+
+Current blocker: target `192.168.68.56` unavailable during exact config reacquisition. One `scp` returned `Connection closed`; SSH `ConnectTimeout=10`, three SSH `ConnectTimeout=5`, later SSH `ConnectTimeout=10` returned `ssh: connect to host 192.168.68.56 port 22: Connection timed out`. Empty partial SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` rejected; never used. Required config SHA remains `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`.
+
+Gate stops before kernel prepare, two probe builds, relocation/static comparison, target copy, sole ordinary `insmod`, possible ordinary `rmmod`, production source/package, image lock/test. No target command succeeded; no transient target file exists from revision 6. No cleanup/restoration/quarantine failure. Resume only after target/config becomes available; keep one live retry authorization unused.
+
+Safety preserved: no host/target APT, direct compatibility compiler/binutils, force load/removal, VFS/MMIO probe behavior, persistence, activation, boot/reboot, kernel/U-Boot patch, image mount/install, package action. Full file evidence: `evidence/revision-6/toolchain-runtime.md`; release boundary: `RELEASE.md`.
 
 ## Revision 4 approximate ABI probe — live result
 
@@ -1456,3 +1484,5 @@ Nontrivial: seven network artifacts, executable legacy runtime, LETS code/config
 - `2026-09-18T12:09:39+00:00` [approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-18T12:09:43+00:00` [implementing] Implementation started from the approved plan
+
+- `2026-09-18T12:29:02+00:00` [implementing] Updated round 1 implementation section
