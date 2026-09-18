@@ -73,6 +73,31 @@ def test_state_machine_rejects_skipped_stage(repo: Path) -> None:
     assert sdlc.load_state(ctx, req_id)["state"] == "image-analysis"
 
 
+def test_implementation_amendment_archives_workflow_and_invalidates_approval(repo: Path) -> None:
+    """Returns active implementation to planning without losing task audit state."""
+    ctx = sdlc.Context(repo)
+    sdlc.cmd_new(ctx, argparse.Namespace(
+        description="Amend active implementation", title=None, instructions=None))
+    req_id = "REQ-0001-AMEND-ACTIVE-IMPLEMENTATION"
+    state = sdlc.load_state(ctx, req_id)
+    state["state"] = "implementing"
+    state["plan"] = {"revision": 2, "sha256": "plan-two", "status": "approved"}
+    state["approval"] = {"plan_revision": 2, "plan_sha256": "plan-two"}
+    state["task_workflow"] = {"active": "T01", "tasks": {"T01": {"status": "active"}}}
+    sdlc.atomic_json(sdlc.state_path(ctx, req_id), state)
+
+    sdlc.transition(ctx, req_id, "drafting-plan", "Developer amended implementation scope")
+
+    amended = sdlc.load_state(ctx, req_id)
+    assert amended["state"] == "drafting-plan"
+    assert "approval" not in amended
+    assert "task_workflow" not in amended
+    assert amended["superseded_task_workflows"] == [{
+        "plan": {"revision": 2, "sha256": "plan-two", "status": "approved"},
+        "workflow": {"active": "T01", "tasks": {"T01": {"status": "active"}}},
+    }]
+
+
 def test_models_and_resume_dispatch_validated_work_to_integration(
         repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Routes passed validation to dedicated integration agent."""

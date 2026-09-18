@@ -41,7 +41,7 @@ ALLOWED_TRANSITIONS = {
     "awaiting-approval": {"approved", "drafting-plan", "abandoned"},
     "auto-approved": {"implementing", "abandoned"},
     "approved": {"implementing", "abandoned"},
-    "implementing": {"implementation-ready", "recovery-required", "abandoned"},
+    "implementing": {"drafting-plan", "implementation-ready", "recovery-required", "abandoned"},
     "implementation-ready": {"validating", "implementing", "abandoned"},
     "validating": {"awaiting-hardware", "implementing", "recovery-required", "abandoned"},
     "awaiting-hardware": {"passed", "requirements-analysis", "abandoned"},
@@ -580,6 +580,12 @@ def transition(ctx: Context, req_id_value: str, target: str, message: str) -> No
             raise SDLCError(f"closed requirement cannot transition: {state['state']}")
         if target not in ALLOWED_TRANSITIONS.get(source, set()):
             raise SDLCError(f"invalid transition: {source} -> {target}")
+        if source == "implementing" and target == "drafting-plan":
+            history = state.setdefault("superseded_task_workflows", [])
+            workflow = state.pop("task_workflow", None)
+            if workflow is not None:
+                history.append({"plan": state.get("plan", {}).copy(), "workflow": workflow})
+            state.pop("approval", None)
         state["state"] = target
         save_state(ctx, state, message)
         commit_ledger(ctx, state["id"], f"Updated {state['id']} to {target}")
