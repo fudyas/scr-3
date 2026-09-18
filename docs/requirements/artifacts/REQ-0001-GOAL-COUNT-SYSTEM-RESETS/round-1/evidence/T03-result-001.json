@@ -1,0 +1,35 @@
+{
+  "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+    "canonical_deb_count": 1,
+    "checks": [
+      "fresh armhf package install and offline payload/activation test",
+      "upgrade preinst replay with full baseline file-content digest equality",
+      "absent-module ordinary removal and shared remove/purge restoration branch",
+      "exact before/after mounted-root fingerprint equality",
+      "source image SHA-256 equality and clean unmount under one SDLC image lock",
+      "module and DEB byte-identical two-build evidence",
+      "static package, shell syntax, canonical layout, and comment audits"
+    ],
+    "deb_sha256_build_a": "1cd9d8e4000f9502c05b169e1e2ecedbd276206cb07fdc0f464be1cbc435de7c",
+    "deb_sha256_build_b": "1cd9d8e4000f9502c05b169e1e2ecedbd276206cb07fdc0f464be1cbc435de7c",
+    "deferred_to_t04": [
+      "loaded ARM module removal and purge on matching real hardware"
+    ],
+    "image_source_sha256_after": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6",
+    "image_source_sha256_before": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6",
+    "module_sha256_build_a": "f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc",
+    "module_sha256_build_b": "f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc",
+    "quarantine_after": false,
+    "result": "pass",
+    "verification_phase": "clean",
+    "verification_run": "75c7f7cb-6ac6-49a8-ae3a-084958f58aa6"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T03",
+  "time": "2026-09-18T17:10:20+00:00"
+}
