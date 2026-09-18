@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: validating
+state: implementing
 round: 1
-sequence: 75
+sequence: 76
 approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T16:12:20+00:00
+updated: 2026-09-18T16:14:28+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -594,7 +594,42 @@ No `task-result` or `implementation-commit` run. Pipeline must remain `implement
 
 ### Validation
 
-Pending.
+Result: fail
+
+# Revision 7 independent validation
+
+Result: FAIL. Do not merge commit `7610f9249db5640e7db82fbed20d23ff1f3b6c6d`. Do not release DEB SHA-256 `119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50`.
+
+Validated binding: approved plan revision 7 SHA-256 `3b397ef90c63e6037302d7ca4eab7dd47773017ba26c538e24be60e811300ad6`; implementation commit `7610f9249db5640e7db82fbed20d23ff1f3b6c6d`; module SHA-256 `091a20b51f95b1f56110aa89ce1830b0cfb59bec8a9bfa1e17065732e26ce15d`; final DEB SHA-256 `119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50`.
+
+## Evidence mapping
+
+- Reproducible/static build: PASS in implementation evidence. Two production builds matched. Module is ELF32 little-endian ARM EABI5. Vermagic exactly `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `. Relocation type `3` absent. Undefined symbols mapped to target `System.map` exports. No MMIO/register/reset-reason code. LETS-managed approximate NXP source/toolchain boundary documented.
+- Manual HW lifecycle: PASS for exercised path on `192.168.68.55`. Ordinary load/unload/reload passed. First init made one empty mode `0600` record; repeated loader and same-boot reload made zero. Count, timestamp filter, reset passed. Taint stayed `4096`; expected logs only.
+- Disposable-image lifecycle: PASS in recorded evidence. Continuous `lock-run`, install/test/remove, full managed-surface fingerprint restoration, unmount, unchanged source SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`. Quarantine recovered through tooling `--recover`; no manual marker removal.
+- Target cleanup: PASS for exercised failed-boot test state. Package removed/purged. Module, device, guard, records, transient DEB, payload, package status/info absent. Config SHA-256 and uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c` unchanged. Taint `4096`; connectivity healthy.
+- RELEASE boundary: PASS. States observable module-init count only; pre-init events, reasons, MMIO, kernel/U-Boot patching, exact-vendor ABI certainty, storage/clock limits excluded.
+- SDLC tests: PASS, `26 passed in 1.44s`.
+
+## Blocking findings
+
+1. Automatic boot acceptance FAIL. After sole authorized ordinary reboot, target returned healthy, but module, `/run/scr-resets-monitor.boot-guard`, `/dev/scr-resets-monitor`, and boot record were absent. `/etc/rcS.d/S10scr-resets-monitor` existed. Requirement needs exactly one event on next boot reaching module initialization; observed delta was zero. Manual load success cannot substitute.
+
+2. Exact activation cause unproved. Current init metadata says `Default-Start: S`; package installs only `/etc/rcS.d/S10scr-resets-monitor`. Evidence proves this path ineffective on target, not why. Do not blindly rename link. Revision 8 must inspect exact target SysV sequence/runlevel/logs read-only, then choose dependency-correct registration. Target PID 1 previously reported SysV runlevel `2`; `/etc/rc2.d` activation is likely, but must be proven. Use package-managed `update-rc.d` only if target behavior and reversible baseline handling are proven. Another bounded reboot is required because boot acceptance cannot be established otherwise.
+
+3. Retry can duplicate one boot event. `scr_create_record()` creates/closes new random record, then syncs parent. If record fsync succeeds but parent sync fails, function returns error while first inode remains. Worker retries `scr_create_record()` with new random path. Result: two or more countable files for one module init. This violates one-event-per-observable-boot and earlier created-unsynced-inode retry contract. Persist pending pathname/state and retry same inode/parent sync; add injected parent-sync-failure test proving no duplicate.
+
+4. Guard sync errors discarded. `scr_claim_guard()` logs fsync/parent-sync error then returns `0`. Module treats guard as durable and stops guard retry. Crash can lose guard and allow same-boot recount. Return real error; retain/retry exact guard claim state without converting existing same-boot guard into completed event loss. Add file-sync and parent-sync fault tests.
+
+5. Uninstall restoration incomplete when module absent. `prerm` runs `--reset` only when `scr_reset_monitor` is loaded. If records exist but module is absent, remove/purge leaves records; `postrm` only attempts `rmdir /var/log/scr`, which fails silently when nonempty. Violates uninstall-generated-record deletion and universal restoration invariant. Add safe package-owned record cleanup for absent-module path, bounded exact-name/type checks, baseline preservation, failure-stop behavior, and lifecycle tests for module-loaded, module-absent, failed-activation, upgrade, remove, purge, abort.
+
+6. Package metadata wrong for architecture-specific payload. Final artifact is `_all.deb` and declares `Architecture: all`, but contains ARM kernel module. Set `Architecture: armhf`; eliminate stale alternate DEB ambiguity; reproduce one canonical artifact/hash.
+
+7. Acceptance tooling FAIL: `./bin/lets sdlc acceptance REQ-0001-GOAL-COUNT-SYSTEM-RESETS` reports `task manifest approved-plan hash does not match current approval`. Rebind/regenerate task manifest through SDLC tooling before next validation; never edit ledger manually.
+
+## Safest next round
+
+Revision 8: fix record/guard retry state; fix absent-module uninstall cleanup; emit one `armhf` DEB; inspect target SysV boot path; install dependency-correct reversible activation; rerun static/reproducibility tests, full locked disposable-image install/upgrade/remove/purge/abort restoration, then exact-HW manual lifecycle. Authorize one bounded ordinary reboot only after preflight. Require module + guard + device + exactly one new record after reconnect; then disable activation, unload, uninstall all produced packages, remove transient artifact, and prove exact baseline restoration. Any cleanup/restoration failure quarantines image/device; no force, target APT, kernel/U-Boot/boot-artifact mutation, or credential persistence.
 
 ### Hardware follow-up
 
@@ -1718,3 +1753,5 @@ Nontrivial: kernel-privileged production module, boot activation, persistent sto
 - `2026-09-18T16:11:40+00:00` [validating] Independent validation started
 
 - `2026-09-18T16:12:20+00:00` [validating] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
+
+- `2026-09-18T16:14:28+00:00` [implementing] Independent validation fail
