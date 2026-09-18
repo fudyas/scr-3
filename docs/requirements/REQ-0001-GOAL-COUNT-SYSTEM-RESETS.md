@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: approved
 round: 1
-sequence: 53
-approval: none
+sequence: 54
+approval: approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:35:06+00:00
+updated: 2026-09-18T11:36:39+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1344,3 +1344,5 @@ Policy facts: development tooling additions, network download, six persistent ta
 - `2026-09-18T11:34:55+00:00` [draft-ready] Committed DRAFT revision 5: preserved revision 4 init/exit/log-only probe and revision 3 production scope; added pinned LETS-managed Linaro GCC 4.8-2014.04 toolchain install under LETS state, idempotent devenv init, top-level toolchain wrapper, atomic verification/recovery/offline tests, and one gated ordinary probe retry. No direct compatibility tools, target APT, force load, VFS/MMIO probe behavior, persistence, boot activation, or reboot. Nontrivial; approval policy next.
 
 - `2026-09-18T11:35:06+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-18T11:36:39+00:00` [approved] Developer approved DRAFT revision 5 SHA-256 6d2f45c30c3a4eaf77070ac64c5fe5549c18016f9889655566d2ddb86c887600
