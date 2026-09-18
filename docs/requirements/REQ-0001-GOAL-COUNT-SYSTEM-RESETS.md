@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 76
-approval: approved
+sequence: 77
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-18T16:14:28+00:00
+updated: 2026-09-18T16:14:55+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1755,3 +1755,5 @@ Nontrivial: kernel-privileged production module, boot activation, persistent sto
 - `2026-09-18T16:12:20+00:00` [validating] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-18T16:14:28+00:00` [implementing] Independent validation fail
+
+- `2026-09-18T16:14:55+00:00` [drafting-plan] Revision 7 independent validation failed: automatic boot activation produced no module/guard/device/record; record parent-sync retry can duplicate random record; guard sync error returns success; uninstall may retain records when module absent; ARM .ko DEB incorrectly Architecture all; task manifest approved-plan hash stale. Replan all defects, inspect exact SysV runlevel sequencing, repeat locked lifecycle tests, and require one bounded reboot retest.
