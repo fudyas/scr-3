@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 56
-approval: approved
+sequence: 57
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 
-updated: 2026-09-18T11:36:52+00:00
+updated: 2026-09-18T11:46:47+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -1350,3 +1350,5 @@ Policy facts: development tooling additions, network download, six persistent ta
 - `2026-09-18T11:36:46+00:00` [approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-18T11:36:52+00:00` [implementing] Implementation started from the approved plan
+
+- `2026-09-18T11:46:47+00:00` [drafting-plan] Replan toolchain runtime after verified i386-host archive incompatibility
