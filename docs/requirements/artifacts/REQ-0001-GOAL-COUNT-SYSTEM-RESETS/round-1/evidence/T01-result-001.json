@@ -1,0 +1,40 @@
+{
+  "approved_plan_sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
+    "artifact": {
+      "deb": "scr-req-0001-goal-count-system-resets_1.0.2_armhf.deb",
+      "deb_sha256": "e9715c081bccc9778b18fa0eafbc3981e7f94dd37d33f2c27df3bb1b1cee324d",
+      "reproducible_builds": 2
+    },
+    "disposable_image": {
+      "copy": "/home/fudya/devel/scr/.codex/sdlc/req-0001-offset-test/image_8.26.0",
+      "error": "native unregistration retained service membership",
+      "install": "pass",
+      "package_test": "pass",
+      "quarantine": [
+        "/home/fudya/devel/scr/.codex/sdlc/quarantine/image-2fb37ce67d396e77fa86.json",
+        "/home/fudya/devel/scr/.codex/sdlc/quarantine/image-dirty.json"
+      ],
+      "remove": "fail",
+      "restoration": "fail: 117 paths differ",
+      "source": "/home/fudya/devel/scr/var/image_8.26.0"
+    },
+    "next": "Recover quarantined disposable image only through SDLC tooling. Diagnose insserv -s removal semantics. Do not use quarantined copy or hardware.",
+    "result": "fail",
+    "safety": {
+      "continued_after_quarantine": false,
+      "hardware_mutation": false,
+      "image_lock_held": true,
+      "reboot": false,
+      "source_image_mutation_reported": false
+    },
+    "static_gate": "pass"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-22T15:07:53+00:00"
+}
