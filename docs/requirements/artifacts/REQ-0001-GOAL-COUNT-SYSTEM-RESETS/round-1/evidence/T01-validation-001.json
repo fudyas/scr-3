@@ -1,0 +1,36 @@
+{
+  "approved_plan_sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
+    "blocking_findings": [
+      {
+        "effect": "prerm stopped; removal failed; 117 paths differed; disposable image copy quarantined",
+        "finding": "update-rc.d -f scr-resets-monitor remove returned but insserv -s still reported scr-resets-monitor",
+        "id": "native-unregister-membership"
+      }
+    ],
+    "merge_gate": "Do not commit implementation, release DEB, test hardware, reboot, or reuse quarantined copy. Recover through SDLC tooling, then repair and retry T01.",
+    "passed": [
+      "maintainer-script syntax and revision-9 static gates",
+      "two canonical armhf DEB builds matched SHA-256 e9715c081bccc9778b18fa0eafbc3981e7f94dd37d33f2c27df3bb1b1cee324d",
+      "lock-held disposable install and package test",
+      "source image was separate; hardware and reboot untouched"
+    ],
+    "result": "fail",
+    "safety": {
+      "continue_hardware_use": false,
+      "continue_image_use": false,
+      "quarantine_markers": [
+        "/home/fudya/devel/scr/.codex/sdlc/quarantine/image-2fb37ce67d396e77fa86.json",
+        "/home/fudya/devel/scr/.codex/sdlc/quarantine/image-dirty.json"
+      ]
+    }
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "fail",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-22T15:08:38+00:00"
+}
