@@ -1,8 +1,7 @@
-# Revision 8 interfaces
+# Revision 9 interfaces
 
-- Module owns boot guard, immutable pending record identity, retry, count, filter, reset, serialization.
-- Bash frontend transports module requests only.
-- SysV activation follows verified Debian 8 default runlevel `2`.
-- Package removal handles loaded and absent module, deletes only validated generated records, restores baseline.
-- Toolchain compiler/binutils run only through `./bin/lets toolchain`.
-- Image mutation runs only inside one `./bin/lets sdlc lock-run` or `test-package` lock.
+- Init: `/etc/init.d/scr-resets-monitor`; `Required-Start: $local_fs`; `Default-Start: 2`; `Default-Stop: 0 1 6`.
+- Register: `/usr/sbin/update-rc.d scr-resets-monitor defaults`.
+- Unregister: `/usr/sbin/update-rc.d -f scr-resets-monitor remove`.
+- Verify: `/sbin/insserv -s`, runlevel links, `/etc/init.d/.depend.start`, `.depend.stop`, `.depend.boot`.
+- Package: one reproducible `Architecture: armhf` DEB.

@@ -1,10 +1,6 @@
 {"criteria":[
-  {"id":"R8-01","text":"Record parent-sync retry keeps exact pathname/inode and creates no duplicate."},
-  {"id":"R8-02","text":"Guard file/parent sync failure propagates and retries same guard."},
-  {"id":"R8-03","text":"Verified Debian 8 runlevel-2 activation loads exactly once per boot."},
-  {"id":"R8-04","text":"Loaded/absent-module remove and purge delete generated records and restore baseline safely."},
-  {"id":"R8-05","text":"One canonical Architecture armhf DEB and two byte-identical module/DEB builds pass static gates."},
-  {"id":"R8-06","text":"Disposable image install/test/remove restores exactly under continuous lock; failure quarantines."},
-  {"id":"R8-07","text":"Real hardware manual/reload and one bounded reboot prove automatic delta exactly +1 without anomaly."},
-  {"id":"R8-08","text":"Target cleanup/purge restores identity, paths, records, activation, hashes, taint, connectivity."}
+  {"id":"R9-01","text":"Native update-rc.d/insserv registration creates exact runlevel-2 link and startpar graph membership after $local_fs only."},
+  {"id":"R9-02","text":"Native unregistration restores graph content and activation links exactly; no direct generated-graph write."},
+  {"id":"R9-03","text":"Canonical armhf DEB passes static, reproducibility, locked disposable-image lifecycle, restoration, and quarantine gates."},
+  {"id":"R9-04","text":"Bounded hardware reboot produces automatic count delta exactly +1; cleanup restores target baseline."}
 ]}

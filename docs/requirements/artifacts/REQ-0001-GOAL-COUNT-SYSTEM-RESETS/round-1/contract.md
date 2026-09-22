@@ -1,3 +1,3 @@
-# Revision 8 contract
+# Revision 9 contract
 
-Implement approved revision 8 SHA-256 `15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5`. Preserve observable module-init counting, same-boot deduplication, approximate ABI waiver, RELEASE exclusions, ordinary module operations, one reversible `armhf` DEB, continuous image lock, restoration/quarantine rules. Never use MMIO, reset reasons, force operations, target APT, kernel/U-Boot patching, credential persistence.
+Implement approved revision 9 SHA-256 `10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9`. Retain revision-8 validated module, retry, package, ABI-waiver, restoration, and exclusion behavior. Change activation only: target-native `update-rc.d`/`insserv`, `$local_fs` dependency, generated-graph proof, native unregister, exact restoration. Never write `.depend.*` content directly. Never force module operation, change global concurrency, use target APT, patch kernel/U-Boot, persist credentials, or release image lock before verified restoration.

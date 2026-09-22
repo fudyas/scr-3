@@ -1,63 +1,28 @@
 {
   "acceptance": "acceptance.json",
-  "acceptance_sha256": "99a7b6cfdb796a1591c215555ebba29b84b0f42f2e5d1f2cbaef5729316cbc92",
-  "approved_plan_sha256": "15c49323b5434881e27f357bd675d3d7dedd02911392e1d0a43904316f15bbd5",
+  "acceptance_sha256": "b9fd7ee7d10897165f1ea80ed04170b7b45fe8c08737cdd1017f6e192b268bea",
+  "approved_plan_sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
   "contract": "contract.md",
-  "contract_sha256": "879663040b5913ffa317a7bb62bc10edfd3dc15fdca5421266f80521feb96f5d",
-  "definitions_sha256": "c8ad386eab45c0b72a6fe27fb14de10548df3358a423fae581f245e6da08954a",
+  "contract_sha256": "3f079d96c870e6b9b1d36fcb9c42844a6df219ce5c3a78a8f7b57bdc212b15aa",
+  "definitions_sha256": "cd221fbd99eb40ffc50fa11f56e936a12449031377e4e95a6341f4186712715c",
   "interfaces": "interfaces.md",
-  "interfaces_sha256": "66066d1f8ead1243df1a36678da3da4b71b341060e6a9f194e56d847ace4dcbc",
-  "plan_revision": 8,
+  "interfaces_sha256": "aedd7630af3deb19d9ae58081e83a06557be8b9fc635d12696c10bc44d1d1fa2",
+  "plan_revision": 9,
   "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
   "round": 1,
   "schema_version": 1,
   "tasks": [
     {
       "acceptance": [
-        "R8-01",
-        "R8-02"
+        "R9-01",
+        "R9-02",
+        "R9-03",
+        "R9-04"
       ],
       "depends_on": [],
       "file": "tasks/T01.md",
       "id": "T01",
-      "sha256": "95843969303758ef194c1627e054b8f1e6d3607e5b4ccd1f3a33b394aa5437b4"
-    },
-    {
-      "acceptance": [
-        "R8-03",
-        "R8-04"
-      ],
-      "depends_on": [
-        "T01"
-      ],
-      "file": "tasks/T02.md",
-      "id": "T02",
-      "sha256": "fa1508c28b931da7563ac590969cfe00b7c39545e30fbb3a8ae13f18b2182f27"
-    },
-    {
-      "acceptance": [
-        "R8-05",
-        "R8-06"
-      ],
-      "depends_on": [
-        "T01",
-        "T02"
-      ],
-      "file": "tasks/T03.md",
-      "id": "T03",
-      "sha256": "2d6ed5bcab88c14a64a6b15c1c92372658ea1ad9ce56a1a37abe6ec65c32b000"
-    },
-    {
-      "acceptance": [
-        "R8-07",
-        "R8-08"
-      ],
-      "depends_on": [
-        "T03"
-      ],
-      "file": "tasks/T04.md",
-      "id": "T04",
-      "sha256": "ab7b47786b0571f765ea7201ca1801476f718dff92fc6a34420a9df7233bb31b"
+      "sha256": "052a0d0f2ad1648f84b4b77693e7f373d448577527aa9498ab19cb7c0e8dd425"
     }
   ]
 }
