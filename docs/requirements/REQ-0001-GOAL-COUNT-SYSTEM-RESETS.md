@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 136
+sequence: 137
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-23T12:30:55+00:00
+updated: 2026-09-23T12:31:10+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2804,3 +2804,5 @@ Nontrivial facts: six retained payload files plus native shared graphs/links/run
 - `2026-09-23T12:23:29+00:00` [drafting-plan] Developer amendment after revision-10 T03 source read-only mount exit 32: retry recovery using read-write mount only on a verified disposable clone of authentic source so ext4 journal may replay. Never mount authentic source read-write. Verify clone pre-mount SHA-256 equals approved source SHA-256; hold image lock; fingerprint post-replay clone as recovery baseline; verify authentic source SHA-256 unchanged before and after; preserve quarantine until corrected package upgrade/remove/purge, exact restoration, unmount, loop release, and source-hash verification all PASS. Any failure retains quarantine and stops.
 
 - `2026-09-23T12:30:55+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-23T12:31:10+00:00` [draft-ready] Committed DRAFT revision 11: preserve validated rev10 T01/T02 and pinned 1.0.3 armhf DEB 8139e08b81216daf6ff9697ee8f9e60989cd830c8d3aad1a2b77bfe042b616f5; replace failed authentic-source ro mount with verified independent clone, rw journal replay at offset 50331648 size 3633315840, clean unmount/loop release, ro consistent-baseline fingerprint, source hash before/after. Authentic source never mounted rw; failed copy never overwritten/rebased. One real lock spans clone preparation, corrected-hook upgrade/test/remove/purge, exact restoration, all cleanup, source proof, tooling-only quarantine clearance. Any failure retains quarantine. Fresh disposable PASS before HW/reboot. No outstanding load-bearing question; no implementation/image/HW mutation; required approval gate next.

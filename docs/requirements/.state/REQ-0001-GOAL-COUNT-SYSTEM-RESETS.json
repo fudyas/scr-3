@@ -836,6 +836,12 @@
           "sequence": 136,
           "state": "drafting-plan",
           "time": "2026-09-23T12:30:55+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 11: preserve validated rev10 T01/T02 and pinned 1.0.3 armhf DEB 8139e08b81216daf6ff9697ee8f9e60989cd830c8d3aad1a2b77bfe042b616f5; replace failed authentic-source ro mount with verified independent clone, rw journal replay at offset 50331648 size 3633315840, clean unmount/loop release, ro consistent-baseline fingerprint, source hash before/after. Authentic source never mounted rw; failed copy never overwritten/rebased. One real lock spans clone preparation, corrected-hook upgrade/test/remove/purge, exact restoration, all cleanup, source proof, tooling-only quarantine clearance. Any failure retains quarantine. Fresh disposable PASS before HW/reboot. No outstanding load-bearing question; no implementation/image/HW mutation; required approval gate next.",
+          "sequence": 137,
+          "state": "draft-ready",
+          "time": "2026-09-23T12:31:10+00:00"
         }
       ],
       "number": 1,
@@ -843,8 +849,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 136,
-  "state": "drafting-plan",
+  "sequence": 137,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -972,7 +978,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-23T12:30:55+00:00",
+  "updated": "2026-09-23T12:31:10+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
