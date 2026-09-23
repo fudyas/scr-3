@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 118
+sequence: 119
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-23T06:58:33+00:00
+updated: 2026-09-23T06:58:53+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2485,3 +2485,5 @@ Nontrivial facts: six payload files plus native shared graphs/links/runtime/stor
 - `2026-09-23T06:49:25+00:00` [drafting-plan] Revision 9 implementation/recovery failed because Jessie insserv -s is --showall, not active-membership state. Amend plan: treat insserv -s as diagnostic evidence only; prove registration through native command rc, exact runlevel links, generated .depend.start membership and $local_fs ordering; prove unregistration through native command rc, zero links, and exact .depend.start/.depend.stop/.depend.boot baseline hashes. Recover quarantined disposable image only through lock-held SDLC --recover upgrade/remove/restoration; no manual graph or quarantine edits; no hardware/reboot before recovery and disposable PASS.
 
 - `2026-09-23T06:58:33+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-23T06:58:53+00:00` [draft-ready] Committed DRAFT revision 10: insserv -s diagnostic only; native rc, exact all-runlevel links, startpar TARGETS/local_fs order and stop registration define activation; native removal requires zero links and exact immutable three-graph baseline. Preserve rev8 module/armhf/reproducibility/ABI waiver. Include coordinator-confirmed bounded recovery-tooling repair: immutable original baseline, existing quarantined copy preserved, corrected-hook dpkg upgrade/remove/purge, original restoration, unmount/source proof before tooling-only quarantine clearance. Latest failed recovery: 109 paths differ, artifact 678c92d30ff86b9ec4a6870c62b09c27fc8dbf5e6632bef9964ffc111f8ce9c7; no recovery PASS claimed. No unanswered load-bearing policy question. No implementation, image or HW action. Required deterministic approval gate next.

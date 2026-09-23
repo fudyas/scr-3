@@ -728,6 +728,12 @@
           "sequence": 118,
           "state": "drafting-plan",
           "time": "2026-09-23T06:58:33+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 10: insserv -s diagnostic only; native rc, exact all-runlevel links, startpar TARGETS/local_fs order and stop registration define activation; native removal requires zero links and exact immutable three-graph baseline. Preserve rev8 module/armhf/reproducibility/ABI waiver. Include coordinator-confirmed bounded recovery-tooling repair: immutable original baseline, existing quarantined copy preserved, corrected-hook dpkg upgrade/remove/purge, original restoration, unmount/source proof before tooling-only quarantine clearance. Latest failed recovery: 109 paths differ, artifact 678c92d30ff86b9ec4a6870c62b09c27fc8dbf5e6632bef9964ffc111f8ce9c7; no recovery PASS claimed. No unanswered load-bearing policy question. No implementation, image or HW action. Required deterministic approval gate next.",
+          "sequence": 119,
+          "state": "draft-ready",
+          "time": "2026-09-23T06:58:53+00:00"
         }
       ],
       "number": 1,
@@ -735,8 +741,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 118,
-  "state": "drafting-plan",
+  "sequence": 119,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -834,7 +840,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-23T06:58:33+00:00",
+  "updated": "2026-09-23T06:58:53+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
