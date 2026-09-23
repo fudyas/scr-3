@@ -1,0 +1,31 @@
+{
+  "approved_plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+    "limitations": [
+      "No real mount, ext4 replay, installed broken-package transition, restoration, source hash, or marker clearance claimed from T02",
+      "T03 must stop immediately and retain quarantine on any actual recovery failure"
+    ],
+    "result": "pass",
+    "safety": {
+      "continue_fresh_lifecycle": false,
+      "continue_hardware": false,
+      "continue_recovery_once": true,
+      "continue_to_t03": true,
+      "quarantine_preserved": true
+    },
+    "validated": [
+      "R11-04: authentic source never mounted; distinct verified clone receives rw journal replay then ro baseline fingerprint under same real lock",
+      "R11-04: clean unmount/loop release and exact source identity/hash checks gate failed-copy mutation and final clearance",
+      "R11-04: source/copy/clone aliases rejected; failed copy preserved; dirty rebaseline absent; outer-only marker clearance retained",
+      "R11-06 T02 portion: 22-test SDLC suite exercises clone hash/alias/order/failure retention plus retained package/native fixtures; guide/agent contracts match implementation"
+    ]
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "pass",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T02",
+  "time": "2026-09-23T13:02:39+00:00"
+}
