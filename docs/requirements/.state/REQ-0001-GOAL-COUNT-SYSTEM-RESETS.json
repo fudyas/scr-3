@@ -1,11 +1,4 @@
 {
-  "approval": {
-    "plan_revision": 9,
-    "plan_sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
-    "reason": "Developer approved DRAFT revision 9 and directed implementation to proceed.",
-    "status": "auto-approved",
-    "time": "2026-09-22T14:54:49+00:00"
-  },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
   "id": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
@@ -723,6 +716,12 @@
           "sequence": 116,
           "state": "implementing",
           "time": "2026-09-23T05:47:08+00:00"
+        },
+        {
+          "message": "Revision 9 implementation/recovery failed because Jessie insserv -s is --showall, not active-membership state. Amend plan: treat insserv -s as diagnostic evidence only; prove registration through native command rc, exact runlevel links, generated .depend.start membership and $local_fs ordering; prove unregistration through native command rc, zero links, and exact .depend.start/.depend.stop/.depend.boot baseline hashes. Recover quarantined disposable image only through lock-held SDLC --recover upgrade/remove/restoration; no manual graph or quarantine edits; no hardware/reboot before recovery and disposable PASS.",
+          "sequence": 117,
+          "state": "drafting-plan",
+          "time": "2026-09-23T06:49:25+00:00"
         }
       ],
       "number": 1,
@@ -730,8 +729,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 116,
-  "state": "implementing",
+  "sequence": 117,
+  "state": "drafting-plan",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -808,21 +807,28 @@
           }
         }
       }
-    }
-  ],
-  "task_workflow": {
-    "active": null,
-    "definitions_sha256": "cd221fbd99eb40ffc50fa11f56e936a12449031377e4e95a6341f4186712715c",
-    "round": 1,
-    "tasks": {
-      "T01": {
-        "attempts": 1,
-        "status": "failed"
+    },
+    {
+      "plan": {
+        "revision": 9,
+        "sha256": "10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9",
+        "status": "draft"
+      },
+      "workflow": {
+        "active": null,
+        "definitions_sha256": "cd221fbd99eb40ffc50fa11f56e936a12449031377e4e95a6341f4186712715c",
+        "round": 1,
+        "tasks": {
+          "T01": {
+            "attempts": 1,
+            "status": "failed"
+          }
+        }
       }
     }
-  },
+  ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-23T05:47:08+00:00",
+  "updated": "2026-09-23T06:49:25+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",

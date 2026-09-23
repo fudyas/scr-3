@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 116
-approval: auto-approved
+sequence: 117
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-23T05:47:08+00:00
+updated: 2026-09-23T06:49:25+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2235,3 +2235,5 @@ Independent validation must PASS complete customer requirement as narrowed by re
 - `2026-09-22T15:08:38+00:00` [implementing] Task T01 attempt 1 validation fail
 
 - `2026-09-23T05:47:08+00:00` [implementing] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
+
+- `2026-09-23T06:49:25+00:00` [drafting-plan] Revision 9 implementation/recovery failed because Jessie insserv -s is --showall, not active-membership state. Amend plan: treat insserv -s as diagnostic evidence only; prove registration through native command rc, exact runlevel links, generated .depend.start membership and $local_fs ordering; prove unregistration through native command rc, zero links, and exact .depend.start/.depend.stop/.depend.boot baseline hashes. Recover quarantined disposable image only through lock-held SDLC --recover upgrade/remove/restoration; no manual graph or quarantine edits; no hardware/reboot before recovery and disposable PASS.
