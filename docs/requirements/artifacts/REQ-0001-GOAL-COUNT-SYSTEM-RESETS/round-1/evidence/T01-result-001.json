@@ -1,0 +1,40 @@
+{
+  "approved_plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+    "artifact": {
+      "architecture": "armhf",
+      "deb": "scr-req-0001-goal-count-system-resets_1.0.3_armhf.deb",
+      "deb_sha256": "8139e08b81216daf6ff9697ee8f9e60989cd830c8d3aad1a2b77bfe042b616f5",
+      "module_sha256": "f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc",
+      "package": "scr-req-0001-goal-count-system-resets",
+      "version": "1.0.3"
+    },
+    "limitations": [
+      "Historical revision-10 PASS reused as unchanged evidence; no false new build/reproducibility execution claim",
+      "No image, quarantine, hardware, module-load, target APT, or reboot action in T01"
+    ],
+    "next": "Independent T01 validation; then T02 clone-recovery tooling validation.",
+    "passed": [
+      "revision-10 T01 independent PASS at 2026-09-23T08:51:47+00:00 reviewed; native registration/unregistration, immutable baseline, upgrade/abort, armhf, ABI, static scope and reproducibility evidence unchanged",
+      "revision-10 T02 independent PASS at 2026-09-23T09:30:42+00:00 reviewed; final corrected artifact hash 8139e08b81216daf6ff9697ee8f9e60989cd830c8d3aad1a2b77bfe042b616f5 retained",
+      "canonical DEB and packaged module hashes rechecked exactly; revision-11 changes only development recovery tooling/tests/docs/task evidence",
+      "./bin/lets sdlc test PASS: 21 passed in 0.73s; package static/native fixture included",
+      "git diff --check PASS"
+    ],
+    "result": "pass",
+    "safety": {
+      "hardware_mutation": false,
+      "image_mutation": false,
+      "quarantine_changed": false,
+      "reboot": false,
+      "target_apt": false
+    }
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-23T12:58:55+00:00"
+}
