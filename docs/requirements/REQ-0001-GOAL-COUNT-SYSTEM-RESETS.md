@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: awaiting-approval
+state: auto-approved
 round: 1
-sequence: 120
-approval: none
+sequence: 121
+approval: auto-approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-23T06:58:57+00:00
+updated: 2026-09-23T07:27:42+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2489,3 +2489,5 @@ Nontrivial facts: six payload files plus native shared graphs/links/runtime/stor
 - `2026-09-23T06:58:53+00:00` [draft-ready] Committed DRAFT revision 10: insserv -s diagnostic only; native rc, exact all-runlevel links, startpar TARGETS/local_fs order and stop registration define activation; native removal requires zero links and exact immutable three-graph baseline. Preserve rev8 module/armhf/reproducibility/ABI waiver. Include coordinator-confirmed bounded recovery-tooling repair: immutable original baseline, existing quarantined copy preserved, corrected-hook dpkg upgrade/remove/purge, original restoration, unmount/source proof before tooling-only quarantine clearance. Latest failed recovery: 109 paths differ, artifact 678c92d30ff86b9ec4a6870c62b09c27fc8dbf5e6632bef9964ffc111f8ce9c7; no recovery PASS claimed. No unanswered load-bearing policy question. No implementation, image or HW action. Required deterministic approval gate next.
 
 - `2026-09-23T06:58:57+00:00` [awaiting-approval] Trivial policy failed; developer approval is required
+
+- `2026-09-23T07:27:42+00:00` [auto-approved] Developer approved DRAFT revision 10 SHA-256 9ecccb712b5813c5c735da44697f404f576c51fd18639ba66afd07eb0fc719f4 and directed pipeline to proceed.
