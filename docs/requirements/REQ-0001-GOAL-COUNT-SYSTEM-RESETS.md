@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 117
+sequence: 118
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-23T06:49:25+00:00
+updated: 2026-09-23T06:58:33+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2002,6 +2002,252 @@ Deliver revision-9-bound task manifest; updated init/package code with repositor
 
 Independent validation must PASS complete customer requirement as narrowed by recorded developer amendments, revision 9, package reversibility, native dependency registration, automatic boot `+1`, exact image/device restoration, task acceptance, comments/layout, and credential secrecy. No merge until independent PASS. Nontrivial: kernel-privileged module, boot activation, shared generated SysV graphs, persistent records/runtime namespace, custom maintainer scripts, approximate ABI waiver, controlled reboot. Commit DRAFT before display. Run deterministic `trivial-policy`; only tooling PASS may waive approval. Otherwise wait for explicit approval of exact revision/hash. After approval, auto-progress until hardware gate, safety failure, or tooling blocker.
 
+### Solution plan — DRAFT revision 10
+
+#### DRAFT revision 10 — native-registration proof and quarantined-image recovery
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes DRAFT revision 9 SHA-256 `10ea6fc3aaca30de4d9ee0ec59f35a089869cba0403537b77be8c3d3f4a97bf9` after amendment sequence 117. Prior drafts, approvals, attempts, failures, artifacts remain audit history. No prior hardware-follow-up round closed. Preserve validated revision-8 module behavior, approximate ABI waiver, canonical requirement layout, comments/style, one reversible `armhf` package, restoration, and exclusions. Changes: remove `insserv -s` as acceptance oracle; repair native package lifecycle; add narrowly required SDLC recovery safeguards; recover existing quarantined copy before further image/HW testing.
+
+#### Sources, load-bearing decisions, evidence limits
+
+Read complete durable REQ through sequence 117: customer source, requirements/image analysis, planner answers, DRAFT revisions 1–9, approvals, implementation/validation/hardware evidence, event log. Read `AGENTS.md`, requirement-worktree `AGENTS.md`, `docs/SDLC-DEVELOPER-GUIDE.md`, `docs/DEVELOPER-GUIDE.md`, complete `docs/MONIT.md`, revision-9 task contract/interfaces/acceptance/results/validation, `evidence/revision-9/insserv-semantics.md`, current maintainer scripts, offset test helper, and `tools/sdlc/src/sdlc.py` recovery implementation. Evidence paths below relative to canonical requirement tree unless absolute: `sdlc/requirements/REQ-0001-GOAL-COUNT-SYSTEM-RESETS/` in requirement worktree.
+
+All load-bearing choices reviewed before drafting: observable-init semantics; module/Bash authority; empty-file durability; filenames/time/CLI; approximate ABI; native start/stop registration; original-baseline ownership; upgrade/abort behavior; shared-graph conflicts; recovery of installed broken package; continuous lock; quarantine clearance; bounded reboot; source/credential protection; approval gate. Existing developer answers + sequence 117 resolve policy. Planner raised recovery-tooling gap through coordinator before drafting. Coordinator confirmed existing “proceed” authorization covers necessary bounded tooling repair: immutable original baseline, preserved quarantined copy, corrected-package upgrade/remove/purge, original-fingerprint comparison, unmount/source verification, tooling-only quarantine clearance. No general tooling redesign authorized. No unanswered load-bearing developer question remains. Evidence availability/restoration feasibility remain implementation gates, never assumed PASS.
+
+Latest failed recovery evidence supplied by coordinator, not independently re-read from root-only journal: locked recovery-only retry invoked `./bin/lets sdlc verify-package ... --recover`; outer exit `1`; `prerm` exit `1`; exact errors:
+
+```text
+unexpected insserv -s declarative output after native unregistration
+scr-resets-monitor has unexpected insserv -s runlevel/sequence output
+error: package removal did not restore the image; quarantined (109 paths differ)
+```
+
+Recovery artifact: `packages/REQ-0001-GOAL-COUNT-SYSTEM-RESETS-round-1/build/scr-req-0001-goal-count-system-resets_1.0.2_armhf.deb`, SHA-256 `678c92d30ff86b9ec4a6870c62b09c27fc8dbf5e6632bef9964ffc111f8ce9c7`; uncommitted recovery candidate, never release artifact. Coordinator reports static PASS, two reproducible builds, SDLC `29 passed` before failed recovery. No quarantine marker removed; no later image/HW reuse. Journal hash unavailable; no invented hash or recovery-success claim.
+
+Earlier revision-9 T01 result/independent validation: canonical `1.0.2_armhf.deb` SHA-256 `e9715c081bccc9778b18fa0eafbc3981e7f94dd37d33f2c27df3bb1b1cee324d`; static/two-build/install/package-test PASS; removal FAIL `native unregistration retained service membership`; `117 paths differ`; copy quarantined. Later `109` count belongs separate failed recovery, not improvement/restoration proof. Both failed artifacts excluded from release selection.
+
+Quarantined disposable copy: `/home/fudya/devel/scr/.codex/sdlc/req-0001-offset-test/image_8.26.0`; associated root `/home/fudya/devel/scr/.codex/sdlc/req-0001-offset-test/root`. Markers: `/home/fudya/devel/scr/.codex/sdlc/quarantine/image-2fb37ce67d396e77fa86.json`, `/home/fudya/devel/scr/.codex/sdlc/quarantine/image-dirty.json`, recorded `root:root 0600`. Treat image/mount state as unknown until recovery preflight. Never overwrite copy with source, discard failed state, recreate baseline from dirty state, or remove marker manually.
+
+#### Preserved target, module, and safety contract
+
+Historical verified target `192.168.68.55`, `SCR-7CCC91`, ADLINK LEC-iMX6, Debian 8 Jessie, ARMv7/`armhf`, SysV runlevel `2`, kernel `3.10.105-imx6 #5 SMP PREEMPT`, baseline taint `4096`. Config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`; uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`; vermagic `3.10.105-imx6 SMP preempt mod_unload ARMv7 p2v8 `. `/run` tmpfs; persistent log directory on root ext4. Device identity/current state rechecked before later authorized HW use; no raw-image/device equivalence inferred from version label.
+
+Source `/home/fudya/devel/scr/var/image_8.26.0`: 3,850,371,072 bytes; last verified SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`. Source stays read-only. No source-image mutation, hardware use, or reboot until quarantine recovery and subsequent disposable lifecycle PASS.
+
+Revision-8 evidence retained: DEB SHA-256 `1cd9d8e4000f9502c05b169e1e2ecedbd276206cb07fdc0f464be1cbc435de7c`; module SHA-256 `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc`; manual first init `+1`; repeated start and ordinary same-boot unload/reload `+0`; injected guard/file/parent-sync faults retained identity and completed; taint unchanged; cleanup restored target. Automatic reboot increment `+0` remained FAIL because `.depend.start` omitted service. Historical PASS supports unchanged behavior, never substitutes revision-10 lifecycle/boot acceptance.
+
+Counter remains one durable empty file per observable boot reaching accepted `scr_reset_monitor` initialization. Same-boot supported reload/repeated start adds zero. Pre-init resets/boots uncounted. File count = counter; no persistent numeric counter, reason write, physical-reset completeness claim, or reset-loop detection/mitigation. Later developer scope amendment supersedes original reason requirement; original customer text remains untouched.
+
+Module alone owns guard, event identity, exclusive creation, durability, retries, count/filter/reset, serialization/cancellation. Actual validated guard path `/run/scr-resets-monitor.boot-guard` supersedes historical proposed `/run/scr-resets-monitor/boot-guard`; preserve actual path/control ABI. Empty record `/var/log/scr/reset-<epochMs>-<suffix>`, signed UTC epoch milliseconds and exactly `[a-z]{4}`, `0600 root:root`; new log directory `0755 root:root`. Invalid/backward clock records immediately without time synchronization. Exclusive creation prevents overwrite; collision retry bounded to 64 candidates/invocation. Successful create fixes filename/inode; file/parent sync failure retries same identity, never new event. Guard errors propagate; no false completion. Bounded delayed storage retries, at most 60 seconds between attempts, keep boot running. Existing validated 60-second retry remains. Crash before inode+directory durability and storage violating flush guarantees may lose evidence; limits explicit.
+
+CLI `/usr/sbin/scr-resets-monitor --count [--since <timestamp>]`, `--reset`, help. Timestamp exact `yyyy-mm-dd[ hh[:mm[:ss]]]` UTC; omitted fields zero; inclusive filename comparison. Reject `last`, invalid Gregorian/range/overflow/trailing/timezone/leap-second/conflicting input. Module validates semantic truth; Bash handles bounded argument shape, literal transport, result display only. Root-only `/dev/scr-resets-monitor`, `0600 root:root`; kernel privilege check and open-descriptor module pinning. Requests bounded 256 bytes; reply buffer 96 bytes; malformed/NUL/fragment/protocol/concurrency/lost-response tests retained. Module absent means explicit failure, no filesystem fallback or implicit load.
+
+Count/reset scope: immediate non-symlink single-link regular empty file, whole name valid, timestamp parseable without overflow. Unsafe matching objects preserved with nonzero error; no recursion/broad delete. Reset serializes/cancels current pending event, retains same-boot deduplication, removes scoped records and syncs directory; no automatic recreation that boot. Original-baseline archive never touched by reset. Partial failure reports error; lost response never replayed automatically.
+
+Developer accepted approximate NXP source commit `e35e57f24ef5851787812a18a38feeb9deb6ea46`, exact live config above, LETS-managed Linaro GCC `4.8.3 20140401 (prerelease)`, binutils `2.24.0.20140311 Linaro 2014.03`; live compiler was GCC `4.8.4`. Missing exact vendor tree/generated headers/`Module.symvers`/recipe remain explicit ABI risk. Revision-6 pinned seven-package Trusty runtime + archive SHA-256 `2b4b29bcfed26948b654088aabbd7e5357691f66f0ba4864df63b2c00f054152` remain unchanged. Compiler/binutils only through `./bin/lets devenv init` and `./bin/lets toolchain`, state under `.lets`, healthy installation skipped. No new diagnostic probe allocation; production checks preserve bounded waiver.
+
+Forbidden: target APT/network/dependency upgrade/build; host APT/global toolchain install; force module load/unload; vermagic/version bypass; unexported-symbol trick; i.MX6 SRC/register/MMIO/reason work; kernel/U-Boot patch/replacement; boot-selector/DT/initramfs/module-index/`depmod` change; monit/cron/watchdog/USB-counter change; credential persistence. Credentials stay ignored mode-`0600` `admin/hw.credentials`; secrets absent from logs, command text, process listings, REQ, artifacts, Git. Ordinary module operations only; no reboot for cleanup.
+
+#### Native SysV registration and unregistration acceptance
+
+Verified Jessie `insserv 1.14.0-5`, `startpar 0.59-3`, `sysv-rc 2.88dsf-59`. `/etc/init.d/rc` selects `CONCURRENCY=makefile`; startpar consumes `.depend.boot`, `.depend.start`, `.depend.stop`. Existing direct `S04` link did not establish graph membership. `/usr/sbin/update-rc.d` delegates registration/removal to `/sbin/insserv`. `/etc/insserv.conf` resolves `$local_fs` as `+mountall +mountall-bootclean +mountoverflowtmp +umountfs`.
+
+`insserv -s` means `--showall`: source scanner reads available init scripts and may synthesize start/stop levels from LSB defaults after all links removed. Row existence, absence, count, ordering, sequence width, or exact row formatting cannot pass/fail registration/removal. Capture diagnostic stdout/stderr/status if useful; diagnostic failure remains diagnostic and cannot override authoritative lifecycle checks. Source trace: `evidence/revision-9/insserv-semantics.md`, Debian `insserv` `1.14.0-5` `insserv.8.in`, `insserv.c` lines 6799–6819/6860–6882, `listing.c` `show_all()` lines 2111–2176. Remove both old name-membership assertion and failed strict declarative-row assertion everywhere, including hooks, package-test, mocks, docs, recovery tests.
+
+Exact LSB header remains:
+
+```text
+### BEGIN INIT INFO
+# Provides:          scr-resets-monitor
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2
+# Default-Stop:      0 1 6
+# Short-Description: Load SCR observable-boot counter
+### END INIT INFO
+```
+
+`/etc/init.d/scr-resets-monitor` one-shot loader, `0755 root:root`. Start checks exact kernel, removal-pending state, module absence; ordinary `insmod` exact private module. Stop uses existing fallible prepare/quiesce interface then ordinary `rmmod`, propagates error. Loader contains no guard/event/count/delete truth. No install-time/chroot module loading; failed automatic load logs nonzero failure while boot continues. Sole start facility `$local_fs`; no network, valid-time, syslog, monit, watchdog, remote-filesystem dependency.
+
+Registration success requires every condition:
+
+- `/usr/sbin/update-rc.d scr-resets-monitor defaults` rc `0` while validated script present.
+- Exactly one native-generated start link `/etc/rc2.d/S[0-9][0-9]scr-resets-monitor`; exactly one stop link in each `/etc/rc0.d`, `/etc/rc1.d`, `/etc/rc6.d`, name `K[0-9][0-9]scr-resets-monitor`; every target exactly `../init.d/scr-resets-monitor`.
+- Zero other service links across `/etc/rc[0-6S].d`; no stale rcS or alternate systemd/upstart activation. Record exact native sequence numbers/targets for given baseline; subsequent same-baseline reinstall/upgrade must match. Never assume historical `S04` or hand-publish links.
+- `.depend.start` parsed `TARGETS` contains exact service token once, not comment/substring match; generated dependency relationships + boot/start phase order prove execution after resolved `$local_fs` prerequisites. `.depend.stop` includes expected stop target/order before local-filesystem shutdown. `.depend.boot` has no unintended start activation. Startpar-equivalent graph test proves service scheduled exactly once in runlevel 2.
+- Native files valid, unrelated service contributions preserved, global `CONCURRENCY=makefile` unchanged. Native rc/link/graph/order ambiguity fails configuration before reboot.
+
+Unregistration success requires `/usr/sbin/update-rc.d -f scr-resets-monitor remove` rc `0` while script still exists, zero service entries/links in every `/etc/rc[0-6S].d`, and all three graph content hashes/existence/types exactly immutable preinstall baseline. `.depend.*` content changed/restored only by native tools: never write, patch, copy/rename backup over graph, or parse/re-emit graph. Never `insserv -f`, disable global concurrency, or declare success from `insserv -s`.
+
+Historical target baseline, not automatically disposable-image baseline:
+
+| Graph | Bytes | SHA-256 |
+| --- | --- | --- |
+| `/etc/init.d/.depend.start` | 401 | `0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742` |
+| `/etc/init.d/.depend.stop` | 1637 | `71cc8cdaea1f740a3b14dfa8faae9a9c5816b48b7e9b5b896274b2f802027797` |
+| `/etc/init.d/.depend.boot` | 1259 | `21d1f1b0ab0f641d8e9b0b9d45a59b239f7cb4d197b78547343f6eabbe55827b` |
+
+All historical graphs regular `0644 0:0`, mtime epoch `1753620164`; no service links after revision-8 cleanup. Capture/check each environment's own first baseline. Only after native content/type equality restore uid/gid/mode/atime/mtime/ACL/xattr/capability/hard-link relationships supported by verified no-follow metadata operations; reverify content afterward. Native output cannot restore required existence/content/link topology or metadata ⇒ retain backup/journal, nonzero failure, quarantine. Byte-identical source image proof separate from semantic filesystem restoration; inode numbers/ctime/allocation inherently not restored by ordinary package operations, never claim whole-copy byte identity.
+
+#### Package ownership, immutable backups, conflicts
+
+Produce exactly one package `scr-req-0001-goal-count-system-resets`, canonical new version `1.0.3`, `Architecture: armhf`, candidate `scr-req-0001-goal-count-system-resets_1.0.3_armhf.deb`; verify no higher existing candidate before version assignment. Bind one path/hash, exclude historical `_all.deb`/failed `1.0.2` candidates. Same package contains corrected recovery hooks and final runtime payload; no ad hoc recovery helper DEB or hidden persistent package. Development-only SDLC tooling repair never enters image except through declared package payload when image functionality requires it.
+
+Dpkg owns `/usr/lib/scr-req-0001-goal-count-system-resets/payload`; maintainer scripts publish managed paths after durable capture. No managed conffiles or `Replaces` ownership seizure. Dependencies limited to already-present compatible `bash`, module utilities, core filesystem tools, SysV/`insserv`; missing/incompatible dependency fails preflight, never APT repair.
+
+| Surface | Ownership/restoration |
+| --- | --- |
+| `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko` | `0644 root:root`; unchanged validated module behavior, reproduced hash/static checks. |
+| `/usr/sbin/scr-resets-monitor` | `0755 root:root`; Bash transport only. |
+| `/etc/init.d/scr-resets-monitor` | `0755 root:root`; native header/start/stop contract. |
+| `/usr/lib/scr-resets-monitor/package-test` | `0755 root:root`; corrected static/native registration tests; no host-kernel ARM load. |
+| `/usr/share/doc/scr-resets-monitor/RELEASE.md` | `0644 root:root`; scope/ABI/EOL/clock/storage/native-oracle/recovery limits. |
+| `/var/lib/scr-resets-monitor/package-state` | Sixth existing payload destination; baseline existence/content/metadata captured, compatible state retained across upgrade. |
+| `/etc/rc[0-6S].d/*scr-resets-monitor` | Exact native-generated link inventory; unexpected preexisting service link/code ownership refused before first install. |
+| `/etc/init.d/.depend.start`, `.depend.stop`, `.depend.boot` | Shared native-generated graphs; immutable first bytes/hashes/metadata retained for proof; content never restored by direct write. |
+| `/var/log/scr` and valid immediate `reset-*` records | Preserve original directory/records; delete generated scoped records during uninstall; restore original records even after administrative reset. Unrelated entries unchanged. |
+| `/run/scr-resets-monitor.boot-guard`, `/dev/scr-resets-monitor` | Module runtime state; restore original absence only after quiescence/ordinary unload. |
+| `/var/lib/scr-req-0001-goal-count-system-resets/sdlc-backup` and journal/removal marker | Root-only original baseline + phase/provenance; immutable through upgrades, reinstall, interrupted removal, recovery. Delete only after proved restoration. |
+| `/var/lib/scr-sdlc/owners` requirement entry and affected parent dirs | Claim exact code/runtime/record/shared-graph surfaces; restore own changes only, preserve others and parent metadata. |
+
+Preflight records absence, full bytes/hash, type, symlink target, uid/gid/mode, atime/mtime precision, hard-link groups, ACLs/xattrs/capabilities, parent directories, package/APT state, native command versions/hashes, record inventory, capacity. `lstat`/no-follow/identity validation mandatory. Unsafe object, unsupported metadata preservation, unexpected privileged concurrent edit, missing original backup, or ambiguous ownership fails before mutation. No silent symlink traversal or broad deletion. Original backup includes originally absent directory flags; backup digest checked unchanged before/after upgrade/recovery.
+
+Ownership registry rejects exact, parent/child, namespace overlaps. Shared generated graphs require serialized package-manager operations plus participant inventory: never restore over another package's contribution. Disjoint packages may coexist. Another graph participant admitted only after tests prove supported install/remove orders preserve each participant and all-package removal returns original common baseline; otherwise refuse combination before mutation. No graph exclusions or last-writer-wins policy. Unexpected peer installation during transaction ⇒ conflict, preserve evidence, stop. Current single-package recovery expects captured original no-service graph state, not guessed peer-adjusted baseline.
+
+#### Maintainer scripts, upgrades, failures, rollback
+
+| Phase | Required behavior |
+| --- | --- |
+| `preinst install` | Verify architecture, dependencies/native semantics, all conflicts, metadata/space; durably snapshot original baseline before publish/registration; journal intent/phase. Partial baseline never promoted ready without complete verified capture. |
+| `postinst configure` | Atomically publish payload with validated metadata; register natively; enforce authoritative link/graph/order gates; never load module. Idempotent reconfigure preserves original baseline. On failure, native unregister and verified rollback; report failure, keep backup if cleanup incomplete. |
+| `preinst upgrade`, old/new `prerm upgrade`, `postrm upgrade` | Preserve original baseline and digest, baseline/current records, guard, removal intent; snapshot immediate previous payload/registration separately for upgrade rollback. Never run removal data cleanup or unload resident module merely because hook argument is `upgrade` or `failed-upgrade`. Reject incompatible state/control ABI. Native registration transition may change links only under journal/lock. |
+| Broken-package recovery upgrade | Use ordinary dpkg upgrade to new version containing corrected hooks. Exercise old failing `prerm`, dpkg new-`prerm failed-upgrade` fallback, old `postrm upgrade`, new `preinst`/`postinst` ordering. Corrected fallback accepts only documented upgrade continuation after checked state; never bypass native errors, reset baseline, remove records, reactivate removal-pending service, or edit installed hook files manually. |
+| Failed/aborted upgrade | Restore immediately previous compatible payload/activation through native tools while preserving immutable original baseline and event data. Removal-pending state stays disabled. Rollback to known broken old hooks is not successful recovery; retain quarantine and explicit failed state. |
+| `prerm remove` / `deconfigure` | Persist removal-pending durably; unregister natively while script exists; verify zero links + exact baseline graph content. If module loaded, use module reset/prepare/quiesce as supported, close own descriptors, ordinary unload. Busy/failure returns nonzero, activation disabled, backup/journal retained. Never force/reboot. |
+| Module-absent cleanup | Package lifecycle compares baseline manifest and scoped current records; delete only nonbaseline immediate valid-name empty regular single-link records after ownership/no-follow/overflow checks; preserve unsafe/unrelated records and fail nonzero. No frontend fallback or separate count authority. |
+| `postrm remove` / `purge` | Require recorder/control/worker absence and native unregistration proof; restore baseline records/payload/types/links/metadata/claims/parents; restore graph metadata only after native content match. Remove only verified package-created empty directories/runtime state. Both remove and purge restore originals; repeated purge idempotent. Delete last backup/journal only after all restoration checks pass. |
+| `abort-install`, `abort-upgrade`, `failed-upgrade`, retry | Explicit case-specific journal transitions; no broad grouping with destructive remove semantics. Resume/reverse safely; never reactivate after removal request or erase sole original backup. Every failed phase retains evidence and nonzero status. |
+
+Removal cannot finish while module/device/pending worker can recreate records. Busy unload remains pending until reboot occurs for unrelated authorized operational reason; no script/agent initiates cleanup reboot. Ordinary removal retry after natural reboot completes; image tests quarantine instead of claiming deferred success.
+
+#### Necessary bounded SDLC recovery-tooling repair
+
+Current inspected `verify-package --recover` captures mounted current tree as `before`, then clears quarantine immediately after local comparison, before outer unmount/source verification. Existing offset helper unconditionally copies source over disposable path and performs raw `/etc/group`/dpkg-statoverride edits. These paths cannot prove requested recovery and must not run unchanged. Repair only recovery/baseline/transaction safety through `./bin/lets sdlc ...`; never invoke Python module directly or hand-edit ledger/journal/markers.
+
+Tooling must durably bind original fingerprint and metadata manifest to requirement, original source hash, exact existing copy/root identity, installed artifact, backup digest, managed paths, explicit verifier exclusions, and phase journal. Recover requires original baseline, never fresh fingerprint of dirty root. Prefer preserved preinstall full fingerprint. If legacy run lacks full fingerprint, recover reference only from independently proved unchanged source plus preserved first-install backup and original test setup evidence, under lock, without altering failed copy; reconcile every known test-only change and document derivation. Missing trustworthy evidence is hard blocker, not permission to redefine original or erase failure. No journal hash invented.
+
+Quarantine remains persistent until outer recovery transaction proves package removal/purge, exact original restoration, temporary fixture reversal, unmount/loop release, unchanged source hash. Nested verifier reports provisional restored state; only outer SDLC owner clears matching quarantine identities after all gates. Never clear unrelated quarantine. One actual acquired lock covers whole transaction; caller-supplied `SDLC_IMAGE_LOCK_HELD`/`SDLC_RECOVERY` alone cannot substitute verified lock ownership/explicit recovery intent. Mount recovery must preserve existing mounted state for inspection and safely resume/reject; no overwriting copy or broad unmount.
+
+Offset handling, if required, stays tooling-owned and bound to verified partition evidence: prior helper used offset `50331648`, size limit `3633315840`, `noatime`. Revalidate exact copy identity/geometry before mount; no direct source rw mount. Remove raw fixture mutation from helper. Avoid NSS/statoverride fixture changes when possible; any unavoidable image change must be owned by same reversible requirement DEB and included in baseline/restore proof, never unowned shell edit or exclusion. Existing `group.baseline` and `statoverride.baseline` only corroborate historical test modifications; authenticated originals needed before restoring through declared package/tooling recovery contract.
+
+Tooling regression tests cover persisted baseline reuse, dirty-baseline rejection, copy-overwrite refusal, absent/corrupt baseline, wrong image/hash, lock ownership/nesting, interrupted upgrade/removal, final purge, fingerprint/metadata mismatch, native failure, unmount/loop failure, source mismatch, marker retention at every failure/crash point, successful outer-only clearance, unrelated-marker preservation. Update SDLC guide/leaf help/agent contract only where changed recovery interface requires it. No general redesign.
+
+#### Recovery sequence — existing quarantined copy only
+
+1. VERIFY approved revision-10 hash and reproducible corrected `1.0.3_armhf.deb` hash.
+2. VERIFY corrected maintainer scripts and bounded recovery-tooling tests PASS without image/HW mutation.
+3. ACQUIRE actual SDLC image lock for existing quarantined copy through explicit tooling recovery path.
+4. BIND original baseline, immutable package backup, quarantine identities, source hash, and installed dpkg state.
+5. VERIFY existing copy identity; prohibit source-copy overwrite or fresh baseline capture.
+6. MOUNT or safely resume existing copy under same lock using verified geometry.
+7. VERIFY preserved first-baseline backup digest and original graph hashes before upgrade.
+8. UPGRADE installed broken package through ordinary dpkg to corrected version under SDLC `--recover` orchestration.
+9. VERIFY original backup digest unchanged and corrected hooks installed; no module load or source/HW mutation.
+10. REMOVE package through corrected native-unregister path while init script still present.
+11. PURGE residual requirement package state through corrected hooks.
+12. VERIFY original baseline content, links, graph hashes, metadata, records, package namespace, claims, parent dirs, and test fixtures exactly restored; no recorder/runtime/pending state.
+13. UNMOUNT copy under same lock.
+14. VERIFY loop/mount state released and original source SHA-256 unchanged.
+15. ***if*** any baseline, upgrade, native command, remove/purge, restoration, unmount, source, or cleanup gate fails ***then***
+    1. RETAIN quarantine, baseline, copy, and phase evidence.
+    2. STOP dependent work; no clean unlock/reuse authorization.
+16. ***else***
+    1. RECORD full recovery PASS through SDLC tooling.
+    2. CLEAR only matched quarantine through tooling after final proof.
+    3. RELEASE image lock.
+
+Existing CLI forms are starting interfaces, not claims current implementation already safe: `./bin/lets sdlc lock-run --image <existing-copy> -- <tooling-owned-recovery-command>` encloses complete lifecycle; `./bin/lets sdlc verify-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --root <existing-root> --deb <corrected-armhf-deb> --recover` uses bound original baseline under same real lock. Wire explicit recovery entry/options through SDLC tooling as required; never bypass quarantine with environment variable alone. Recovery PASS restores prior failed copy; fresh-install PASS still separately required.
+
+#### Regression, reproducibility, and clean disposable lifecycle
+
+Preserve all revision-8 state/CLI/storage/ABI/lifecycle tests. Add independent fixtures showing installed unlinked LSB script remains in `insserv -s`; vary declarative rows/order/sequence formatting without changing authoritative state. Those variations must not change install/remove verdict. Conversely, good-looking `-s` output cannot mask native nonzero, missing/extra/wrong-target link, missing `.depend.start TARGETS` member, bad `$local_fs` order, missing stop registration, or graph baseline mismatch. Exercise actual Jessie native tools in supported disposable root, not mocks alone.
+
+Lifecycle matrix: fresh install/remove; install/purge; reinstall; reconfigure; real dpkg `1.0.2` broken→`1.0.3` recovery upgrade; supported prior→new upgrade; failed upgrade/abort; every maintainer interruption boundary; zero/nonzero native commands; present/absent/unsafe graph/link; loaded/absent/busy module; baseline logs/records; generated records; unrelated entries; overlap rejection; admissible peer-package add/remove order; repeated cleanup. Actual dpkg transition required; directly invoking `preinst upgrade` alone cannot prove upgrade lifecycle.
+
+Build unchanged module twice cleanly through LETS toolchain; require identical SHA-256, ELF32 little-endian ARM EABI5, ARMv7 attributes, exact vermagic, supported relocations with type `3` absent, expected target exports, no forced compatibility or unexpected instrumentation/FP/sanitizer/helper/layout dependency. Build canonical `armhf` DEB twice identically. Preserve source/license/config/runtime/toolchain provenance and repository Bash/Python comment conventions/kernel C conventions. SDLC unit tests through `./bin/lets sdlc test`; changed Python code follows project Python skill; changed procedure docs follow Structured English.
+
+After recovery PASS, fresh lifecycle uses supported `./bin/lets sdlc test-package REQ-0001-GOAL-COUNT-SYSTEM-RESETS --image var/image_8.26.0 --deb <canonical-armhf-deb> --test-command /usr/lib/scr-resets-monitor/package-test`, or one corrected `./bin/lets sdlc lock-run` orchestration where verified offset mount necessary:
+
+1. ACQUIRE SDLC image lock.
+2. VERIFY no quarantine or conflicting mount.
+3. VERIFY source SHA-256.
+4. CREATE new tooling-owned disposable copy.
+5. MOUNT copy under same lock.
+6. CAPTURE immutable original fingerprint, metadata, package state, links/graphs, and exclusion manifest before mutation.
+7. INSTALL exact hashed DEB without network/APT/module load.
+8. TEST native registration and complete lifecycle matrix with authoritative oracle.
+9. UNINSTALL every produced package after success or functional failure.
+10. PURGE residual requirement package state as needed for final absence proof.
+11. VERIFY original path/type/content/hash/link/record/metadata/parent/graph/package namespace/claim restoration.
+12. UNMOUNT copy under lock.
+13. RELEASE loop devices under lock.
+14. VERIFY source SHA-256 unchanged and tooling scratch cleanup complete.
+15. ***if*** cleanup or restoration fails ***then***
+    1. QUARANTINE affected image through tooling.
+    2. RETAIN copy, original baseline, and journal.
+    3. STOP; no unlock/reuse as clean until tooling reports recovery.
+16. ***else***
+    1. RECORD lifecycle PASS and restoration evidence.
+    2. RELEASE lock.
+
+Lock spans mount→install→test→uninstall→restoration verification→unmount→unlock. Process exit may release OS lock; persistent quarantine still forbids use. Requirement-managed paths, graphs, records, metadata, test fixtures never verifier exclusions. Enumerate only normal dpkg/log/runtime bookkeeping exclusions; prove requirement package status/info absence separately. Uninstall restores all managed surfaces, baseline records, metadata, and protected files. Source SHA-256 equality proves original raw image byte-identical; disposable image filesystem/dpkg journal bytes not falsely claimed identical.
+
+#### Real hardware and one bounded reboot
+
+No HW work until quarantine recovery, new clean disposable lifecycle, corrected native tests, reproducibility, and prerequisite task validation PASS. Then exact target `192.168.68.55`, with usable SSH plus recorded operator/console/reflash recovery status. One newly bounded ordinary reboot solely for automatic-activation acceptance; no retry reboot after failure without new coordinator disposition.
+
+1. VERIFY exact board/hostname/kernel/config/uImage/architecture/runlevel, free space, connectivity/recovery, no quarantine/ownership conflict.
+2. CAPTURE target-specific first package/APT/protected-file/record/runtime/link/graph/full-metadata baseline, native-tool hashes, boot ID, taint, and bounded dmesg/log cursor.
+3. COPY exact canonical DEB transiently and verify remote hash/mode.
+4. INSTALL without APT/network/dependency upgrade or automatic module load.
+5. VERIFY native rc, exact complete link set, `.depend.start` target/dependencies, stop registration, and unchanged concurrency.
+6. START manually through ordinary loader; verify module/guard/device, exactly one record, count baseline `+1`, expected logs/taint only.
+7. REPEAT start and ordinary unload/reload; verify zero extra records.
+8. EXERCISE retained bounded sync-fault/CLI tests; preserve baseline records and define installed pre-reboot count.
+9. VERIFY graph/order/activation and recovery readiness again.
+10. REBOOT once ordinarily only after all prior gates PASS.
+11. RECONNECT within recorded bounded timeout; verify boot ID changed and identity/protected hashes unchanged.
+12. VERIFY automatic module/guard/device, expected logs, exactly `+1` record from pre-reboot baseline, no duplicate/anomaly/new unexplained taint.
+13. REMOVE/purge through package lifecycle: pending marker, native unregister, ordinary quiesce/unload, scoped cleanup, baseline restoration.
+14. REMOVE transient DEB after verified package cleanup.
+15. VERIFY exact target graphs/links/metadata/records/package namespace/protected hashes restored, no module/device/guard/pending worker/backup/journal/claim residue, baseline taint and healthy connectivity.
+16. ***if*** any boot, warning/oops/BUG/panic/hang, taint, graph, unload, restoration, or connectivity gate fails ***then***
+    1. STOP further tests.
+    2. PRESERVE evidence and quarantine affected device/image.
+    3. RETAIN disabled activation and backups when removal incomplete.
+    4. REQUIRE verified recovery; never force, cleanup reboot, direct graph edit, or kernel/U-Boot patch.
+
+#### Acceptance, task binding, deliverables, approval gate
+
+After approval, regenerate bounded task manifest only through `./bin/lets sdlc task-plan`, exact revision-10 SHA binding; old task PASS/FAIL retained as history. Suggested dependency chain: T01 corrected native oracle/hooks + unit/native fixtures; T02 bounded tooling recovery safeguards + tests/reproducible artifacts; T03 recover existing quarantined copy then fresh locked lifecycle; T04 exact-target single-reboot/cleanup. Independent task validation before each dependent task; HW task blocked until T03 PASS.
+
+| ID | Required proof |
+| --- | --- |
+| `R10-01` | `insserv -s` diagnostic only everywhere; rc + exact all-runlevel links + startpar target/order + expected stop registration control install verdict. |
+| `R10-02` | Native unregister rc `0`, zero all-runlevel service links, exact original `.depend.start/.depend.stop/.depend.boot` hashes/types/metadata; no direct graph content edits. |
+| `R10-03` | One `armhf` package; original baseline survives real upgrade/abort/recovery; corrected hooks replace broken installed hooks through ordinary dpkg; loaded/absent-module cleanup and conflicts safe. |
+| `R10-04` | Recovery tooling binds authentic original baseline, never overwrites failed copy/rebaselines dirty root, keeps real lock, clears quarantine only after restoration + unmount + source PASS; fault tests prove retention. |
+| `R10-05` | Existing quarantined copy recovered via corrected-package upgrade/remove/purge; full original restoration proven; tooling reports recovery, then fresh disposable matrix PASS; source hash exact. |
+| `R10-06` | Two identical `.ko` and canonical DEB builds; static/ABI/CLI/sync-fault/exact-once tests, comments/layout, source/license/RELEASE limits preserved. |
+| `R10-07` | After prerequisite PASS, exact HW native graph gate and one bounded reboot produce automatic module/guard/device plus exactly `+1`, no duplicate or anomaly/taint change. |
+| `R10-08` | Ordinary target removal/purge restores exact baseline records, graphs, links, metadata, protected files, package namespace and connectivity; no force/cleanup reboot/credentials/residue. |
+
+Deliver corrected source/package/tooling tests, revision-bound manifest, exact commit + canonical DEB/.ko hashes, original-baseline provenance/digests, first/latest failure evidence, recovery journal with real hashes when accessible, native before/installed/removed graph/link inventories, lock/phase/unmount/source proof, HW count/log/taint evidence, and `RELEASE.md`. No fabricated retrospective evidence; unavailable baseline blocks recovery. All produced packages means this single requirement package including any declared test fixture changes; removing it restores every changed image surface. Development tooling changes reviewed separately and never hidden as image mutations.
+
+`./bin/lets sdlc acceptance REQ-0001-GOAL-COUNT-SYSTEM-RESETS` must show current approved-plan binding and every criterion validated before implementation commit/independent whole-package validation. No merge/release on FAIL or historical rejected commit/artifact. Independent validation checks full customer requirement as amended, native oracle, recovery safety, reversible package, automatic boot, baseline proof, secrets, and task binding. Developer hardware follow-up still required to close requirement.
+
+Nontrivial facts: six payload files plus native shared graphs/links/runtime/storage, custom maintainer logic, privileged kernel/control surface, boot/service activation, shared-package overlap risk, bounded recovery-tooling repair, approximate ABI, controlled reboot. Persist via `./bin/lets sdlc section`; stage `draft-ready`; run deterministic `trivial-policy` with `--files 6 --tests --boot --service --storage --security --overlap --custom-maintainer-scripts`. Commit DRAFT before display. Only tooling's explicit trivial-policy PASS may waive approval. Otherwise wait developer approval/amendments bound to exact revision/hash. Never self-approve or implement during drafting.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -2237,3 +2483,5 @@ Independent validation must PASS complete customer requirement as narrowed by re
 - `2026-09-23T05:47:08+00:00` [implementing] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-23T06:49:25+00:00` [drafting-plan] Revision 9 implementation/recovery failed because Jessie insserv -s is --showall, not active-membership state. Amend plan: treat insserv -s as diagnostic evidence only; prove registration through native command rc, exact runlevel links, generated .depend.start membership and $local_fs ordering; prove unregistration through native command rc, zero links, and exact .depend.start/.depend.stop/.depend.boot baseline hashes. Recover quarantined disposable image only through lock-held SDLC --recover upgrade/remove/restoration; no manual graph or quarantine edits; no hardware/reboot before recovery and disposable PASS.
+
+- `2026-09-23T06:58:33+00:00` [drafting-plan] Updated round 1 solution-plan section
