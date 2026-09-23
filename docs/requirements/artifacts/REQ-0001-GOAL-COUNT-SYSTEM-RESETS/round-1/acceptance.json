@@ -1,10 +1,10 @@
 {"criteria":[
-  {"id":"R10-01","text":"`insserv -s` diagnostic only; native rc, exact links, generated graph membership/order, stop registration control install verdict."},
-  {"id":"R10-02","text":"Native unregister rc zero, zero all-runlevel service links, exact original three-graph hashes/types/metadata; no direct graph content edits."},
-  {"id":"R10-03","text":"One armhf package; authentic original baseline survives real upgrade/abort/recovery; corrected hooks replace broken hooks through ordinary dpkg; loaded/absent cleanup and conflicts safe."},
-  {"id":"R10-04","text":"Recovery tooling binds authentic original baseline, rejects dirty rebaseline/copy overwrite, holds real lock, clears matched quarantine only after restoration, unmount, loop release, source-hash PASS; failures retain markers."},
-  {"id":"R10-05","text":"Existing quarantined copy recovered through corrected upgrade/remove/purge with exact restoration; tooling reports recovery; later fresh disposable lifecycle PASS; source hash exact."},
-  {"id":"R10-06","text":"Two identical module and canonical DEB builds; static, ABI, CLI, sync-fault, exact-once, native lifecycle, tooling tests PASS; RELEASE limits preserved."},
-  {"id":"R10-07","text":"After prerequisites, exact target native graph gate and one bounded reboot yield module, guard, device, exactly plus one record, no duplicate/anomaly/taint change."},
-  {"id":"R10-08","text":"Ordinary target remove/purge restores exact records, graphs, links, metadata, protected files, package namespace, connectivity; no force, cleanup reboot, credentials, residue."}
+  {"id":"R11-01","text":"`insserv -s` diagnostic only; native rc, exact links, generated graph membership/order, stop registration control install verdict."},
+  {"id":"R11-02","text":"Native unregister rc zero, zero all-runlevel service links, exact original three-graph hashes/types/metadata; no direct graph content edits."},
+  {"id":"R11-03","text":"One armhf package; original baseline survives real upgrade/abort/recovery; corrected hooks replace broken hooks through ordinary dpkg; loaded/absent cleanup and conflicts safe."},
+  {"id":"R11-04","text":"One real lock covers independent clone creation and pre-mount source-hash equality, rw replay, clean unmount/loop release, ro fingerprint, source checks, existing-copy recovery; authentic source never mounted; every failure retains quarantine."},
+  {"id":"R11-05","text":"Pinned corrected DEB recovers existing quarantined copy through upgrade/test/remove/purge; restored copy exactly equals authenticated replayed-clone baseline; tooling clears quarantine; later fresh disposable lifecycle passes; source hash exact."},
+  {"id":"R11-06","text":"Retained identical module and canonical DEB build evidence stays bound to exact hashes; static, ABI, CLI, sync-fault, exact-once, native lifecycle, clone-tooling tests pass; RELEASE limits preserved."},
+  {"id":"R11-07","text":"After prerequisite PASS, exact target native graph gate and one bounded reboot yield module, guard, device, exactly plus one record, no duplicate/anomaly/taint change."},
+  {"id":"R11-08","text":"Ordinary target remove/purge restores exact records, graphs, links, metadata, protected files, package namespace, connectivity; no force, cleanup reboot, credentials, residue."}
 ]}
