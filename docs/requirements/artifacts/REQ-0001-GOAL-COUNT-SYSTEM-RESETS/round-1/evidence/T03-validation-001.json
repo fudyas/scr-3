@@ -1,0 +1,36 @@
+{
+  "approved_plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+    "evidence": {
+      "baseline_fingerprint_sha256": "60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6",
+      "error": "immutable backup control unavailable or unsafe: /home/fudya/devel/scr/.codex/sdlc/req-0001-offset-test/root/var/lib/scr-req-0001-goal-count-system-resets/sdlc-backup/integrity.manifest",
+      "journal_sha256": "f7b528aa1bd05b12a0bc6b8410b50b8a762f52215cff492a2c7948fe9858a7ba",
+      "run": "f02bd479-7082-4401-9c7a-9c4d3abcb700"
+    },
+    "failed": [
+      "R11-05: failed-copy preserved backup lacks safe integrity.manifest required to authenticate immutable original baseline",
+      "R11-05: package transition, restoration comparison, marker clearance and fresh lifecycle did not run",
+      "R11-07/R11-08: T03 prerequisite not met; hardware task blocked"
+    ],
+    "result": "fail",
+    "safety": {
+      "continue_fresh_lifecycle": false,
+      "continue_hardware": false,
+      "continue_recovery": false,
+      "quarantine_preserved": true,
+      "requires_replan": true
+    },
+    "validated": [
+      "R11-04 actual clone portion PASS: authentic source unmounted; clone pre-hash exact; rw replay; clean release; ro fingerprint; second release; source hash exact",
+      "R11-04 failure safety PASS: tool retained quarantine and durable copy/clone/baseline/journal evidence"
+    ]
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "fail",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T03",
+  "time": "2026-09-23T13:08:05+00:00"
+}
