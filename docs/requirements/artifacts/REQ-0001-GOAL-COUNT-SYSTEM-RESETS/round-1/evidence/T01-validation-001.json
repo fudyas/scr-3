@@ -1,0 +1,30 @@
+{
+  "approved_plan_sha256": "9ecccb712b5813c5c735da44697f404f576c51fd18639ba66afd07eb0fc719f4",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "9ecccb712b5813c5c735da44697f404f576c51fd18639ba66afd07eb0fc719f4",
+    "limitations": [
+      "Actual broken-package dpkg transition, Jessie native graph behavior, authentic recovery baseline, and full restoration remain T03 gates after T02 tooling PASS",
+      "No image or hardware behavior claimed from T01 static/fixture tests"
+    ],
+    "result": "pass",
+    "safety": {
+      "continue_hardware_use": false,
+      "continue_image_use": false,
+      "continue_to_t02": true,
+      "quarantine_preserved": true
+    },
+    "validated": [
+      "R10-01: no insserv showall result controls lifecycle; native rc, exact links, generated target/order checks implemented",
+      "R10-02: unregistration requires native rc, zero all-runlevel links, exact original three-graph content/type/basic metadata; graph content has no direct write path",
+      "R10-03 T01 portion: one armhf 1.0.3 package, first baseline retained through upgrade-family hooks, loaded/absent cleanup paths present",
+      "R10-06 T01 portion: byte-identical module/DEB builds and static ABI/scope/toolchain/package tests pass"
+    ]
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "pass",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-23T08:51:47+00:00"
+}
