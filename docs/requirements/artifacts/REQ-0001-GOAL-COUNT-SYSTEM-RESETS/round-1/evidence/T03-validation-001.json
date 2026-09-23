@@ -1,0 +1,31 @@
+{
+  "approved_plan_sha256": "9ecccb712b5813c5c735da44697f404f576c51fd18639ba66afd07eb0fc719f4",
+  "attempt": 1,
+  "report": {
+    "approved_plan_sha256": "9ecccb712b5813c5c735da44697f404f576c51fd18639ba66afd07eb0fc719f4",
+    "evidence": {
+      "error": "cannot mount /dev/loop2 read-only",
+      "exit_status": 32,
+      "quarantine": "retained",
+      "run": "fd7b7994-b6aa-471d-992c-1346ff128713"
+    },
+    "failed": [
+      "R10-05: authentic source read-only mount failed before baseline; existing quarantined copy cannot be recovered or declared restored",
+      "R10-05: fresh disposable lifecycle cannot run because recovery did not PASS",
+      "R10-07/R10-08 prerequisite: hardware work remains prohibited"
+    ],
+    "result": "fail",
+    "safety": {
+      "continue_fresh_lifecycle": false,
+      "continue_hardware_use": false,
+      "continue_recovery": false,
+      "quarantine_preserved": true
+    }
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "fail",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T03",
+  "time": "2026-09-23T09:33:02+00:00"
+}

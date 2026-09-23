@@ -825,6 +825,12 @@
           "sequence": 133,
           "state": "implementing",
           "time": "2026-09-23T09:32:58+00:00"
+        },
+        {
+          "message": "Task T03 attempt 1 validation fail",
+          "sequence": 134,
+          "state": "implementing",
+          "time": "2026-09-23T09:33:02+00:00"
         }
       ],
       "number": 1,
@@ -832,7 +838,7 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 133,
+  "sequence": 134,
   "state": "implementing",
   "superseded_task_workflows": [
     {
@@ -931,7 +937,7 @@
     }
   ],
   "task_workflow": {
-    "active": "T03",
+    "active": null,
     "definitions_sha256": "6849f6f0c9ce74f22c69b14435347a1dddfa3ab238179c06b6f8695ccbef529d",
     "round": 1,
     "tasks": {
@@ -945,7 +951,7 @@
       },
       "T03": {
         "attempts": 1,
-        "status": "awaiting-validation"
+        "status": "failed"
       },
       "T04": {
         "attempts": 0,
@@ -954,7 +960,7 @@
     }
   },
   "title": "Count system resets reliably",
-  "updated": "2026-09-23T09:32:58+00:00",
+  "updated": "2026-09-23T09:33:02+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
