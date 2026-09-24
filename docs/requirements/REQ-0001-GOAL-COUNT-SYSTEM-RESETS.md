@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 170
+sequence: 171
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T08:47:44+00:00
+updated: 2026-09-24T08:52:34+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2669,6 +2669,175 @@ This is bounded engineering continuation from approved revision 11. Customer beh
 
 After gates PASS, update Implementation with inspection report/digest, source/clone/copy/journal hashes, migration proof, exact `1.0.4` DEB/module hashes, two-build evidence, tests, restoration/clearance, fresh lifecycle, limitations, and deviations. Run `implementation-commit --deb` only after every non-hardware implementation gate and task validation PASS. Then auto-resume independent whole-requirement validation. No commit/release/HW/reboot before those gates.
 
+### Solution plan — DRAFT revision 13
+
+### Solution plan — DRAFT revision 13
+
+#### DRAFT revision 13 — hermetic target-architecture ordinary dpkg
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 12 SHA-256 `88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7` after T03 failure at durable sequence `169` and engineering-replan transition sequence `170`. Earlier requirements, answers, drafts, approvals, artifacts, task results, failures, recovery journals, and hardware evidence remain audit history. Preserve revision-12 reset behavior, package ownership, source-attested legacy migration, native SysV oracle, exact restoration, continuous lock, quarantine, approximate-ABI waiver, and one-reboot hardware authority. Sole amendment: execute package lifecycle with target image's authentic `armhf` dpkg and binaries through hermetic, pinned, host-side QEMU/PRoot runtime. No force, host dpkg, target helper installation, global `binfmt_misc`, image helper copy, dirty rebaseline, or direct image edit.
+
+No customer-visible behavior change. Counter remains one durable empty `/var/log/scr/reset-<signed UTC epoch milliseconds>-<exactly four lowercase letters>` file per observable boot reaching accepted module initialization. Same-boot start/reload adds zero; pre-init boots/resets remain uncounted. Module alone owns event/guard/file/retry/count/filter/reset truth; Bash frontend only transports. No reason/MMIO/SRC work, reset-loop detection, kernel/U-Boot replacement, target APT/network, force load/unload, cleanup reboot, or credential persistence. No unanswered policy question. Runtime feasibility and complete cleanup remain fail-closed gates.
+
+#### Exact revision-12 evidence and blocker
+
+- T01/T02 independent PASS under approved revision-12 plan. Package version `1.0.4`, `Architecture: armhf`; last two-build candidate SHA-256 `bb67bba672e4530fa372b166496cb345ca741f5faaac354ef62e118c5a1bf811`; module SHA-256 `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc`; `./bin/lets sdlc test`: `26 passed`; `git diff --check`: PASS. Candidate now historical: failed-copy rw hash changed after its inspection-report pin, so never reuse for recovery/release.
+- Run `292f25f1-12c2-495b-8c07-eff03001e714`, journal SHA-256 `4e1497cc17c9495a0cbc0e73a6fa0e3d00e5de4b570d271dc5ac26a4b6397038`, stopped before package `preinst`/dpkg transition. Exact error: `dpkg: unrecoverable fatal error, aborting: unknown system group 'crontab' in statoverride file; the system group got removed before the override, which is most probably a packaging bug, to recover you can remove the override manually with dpkg-statoverride`. Diagnosis: host dpkg `1.22` used host NSS against authentic target statoverride names. No target `/etc/group` or `/var/lib/dpkg/statoverride` edit authorized.
+- Fresh read-only inspection `7d3f9ff3-f4b1-4d7e-8cef-e7d230c8cf8d` PASS against then-current copy SHA-256 `381ec8c048e7f1dfe79dd01b6684afc680f61cad2b44eb2d8dda4d472263e8aa`; report SHA-256 `428a838126f09c10ed432b37a579f26b50b27aa48a19e0437fd30006cdf6c2df`; journal SHA-256 `b0473949a7feb13fd612ffe77f2ab40991ad8a1b599262c1f2afeb3697f8a764`; installed state `rF  1.0.2`; canonical legacy digest unchanged `3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe`; quarantine retained.
+- Run `d4874ce1-94b0-4efe-82a9-7ac248726a4c`, journal SHA-256 `e8178463267372df8d07a37e94b60413992c663d8253c3942dee932d1edbf372`, used private process mount namespace with exact authenticated target group bytes read-only. NSS/statoverride parsing passed. Host dpkg then rejected exact DEB: `dpkg: error processing archive scr-req-0001-goal-count-system-resets_1.0.4_armhf.deb (--install): package architecture (armhf) does not match system (amd64)`. Host is `amd64`; `--force-architecture` forbidden. No package transition started.
+- Authentic source `/home/fudya/devel/scr/var/image_8.26.0` remains SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`. Current failed-copy raw SHA-256 `27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2`; change reflects clean rw mount metadata only, never package transition. Protected `/etc/group` SHA-256 `4f040bdc3ec55879e94efb96ca12c80f5f5b16bd07e055e0b82f951af0af1cc3`; `/var/lib/dpkg/statoverride` SHA-256 `6e5b3880a63bc3b41a72f71d0548e257b409dd519dcf6c047cedd70bf9c824ca`; both exact. Quarantine marker-pair SHA-256 `3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae`. Zero related mounts and loops after both attempts. No fresh lifecycle, HW mutation, or reboot.
+- Revision-11 authentic evidence retained: source-clone replay hash `64f89f060afb05ade2d524d4dc0e80cc46465232e509e35a0079b34ee3c811e2`; semantic fingerprint `60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6`; baseline JSON SHA-256 `af2ed68958a40c6f8f375e63275bf5d1839788735e8113ff92c39656e87725ad`. Graph hashes remain `.depend.start` `0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742`, `.depend.stop` `71cc8cdaea1f740a3b14dfa8faae9a9c5816b48b7e9b5b896274b2f802027797`, `.depend.boot` `21d1f1b0ab0f641d8e9b0b9d45a59b239f7cb4d197b78547343f6eabbe55827b`. Native tool hashes remain `/usr/sbin/update-rc.d` `aa5eda3f5b0eec0574faa6bad323766cbab3f851d13a75e81181e62a0285a99d`, `/sbin/insserv` `3049dd9aba7faefa0ef4428e1126c4ee3f26f9143c9052f554c42a265d0353eb`, `/etc/insserv.conf` `b6631a710efe7241001d99a220f15ae3ac9d2555d038dfc8053717703cdbfb3f`.
+
+#### Preserved package, ownership, migration, and restoration contract
+
+Retain exactly one requirement package `scr-req-0001-goal-count-system-resets`, version `1.0.4`, `Architecture: armhf`. Rebuild after new read-only inspection because package embeds inspection-report identity. Two clean builds must be byte-identical; record new canonical DEB SHA-256 only after build. Preserve module bytes/hash above unless separately justified and reproduced. Historical `425217cd15e66ebcab3606a18f45d897ad0c5d5b9891ab95314c5c5c96691424` and `bb67bba672e4530fa372b166496cb345ca741f5faaac354ef62e118c5a1bf811` candidates stay rejected history.
+
+Dpkg private payload ownership, six runtime payloads, published paths, shared native graphs/links, backup/owner registry, `/var/log/scr`, `/run/scr-resets-monitor.boot-guard`, `/dev/scr-resets-monitor`, records, metadata, parents, conflicts, and upgrades remain revision-12 exact. No conffile ownership seizure or `Replaces`. Missing dependency fails; never target APT repair. Exact/parent/child ownership overlap refused. Shared graph participant allowed only after install/remove-order proof; otherwise refused.
+
+Revision-12 legacy migration remains exact. Read-only inspection authenticates installed `1.0.2` legacy backup against approved source/replay baseline and canonical digest. Recovery-only `1.0.4 preinst upgrade` independently revalidates pinned source, replay fingerprint, report hash, legacy digest, layout, graph/tool facts; adds only package-owned integrity/tool/provenance controls atomically and durably. Legacy members never changed, recaptured, touched, normalized, or derived from dirty managed paths. Outer tool proves legacy subset unchanged after upgrade. Missing/partial/wrong controls fail closed. Ordinary install/upgrade never activates migration exception.
+
+Native registration remains target `/usr/sbin/update-rc.d`/`/sbin/insserv`; install oracle: rc `0`, exact one runlevel-2 start link, exact runlevel 0/1/6 stop links, correct targets, `.depend.start` exact membership and `$local_fs` order, expected `.depend.stop`, no `.depend.boot` activation. Removal oracle: native rc `0`, zero service links, exact original three-graph content/type/metadata. `insserv -s` stays diagnostic only. Never directly write graph content or disable `CONCURRENCY=makefile`.
+
+Maintainer behavior remains: `preinst install` captures immutable original baseline before publish; `postinst configure` publishes payload/registers but never loads module; upgrade preserves original baseline/events/activation; removal sets durable pending state, unregisters while script exists, quiesces and ordinary-unloads if loaded, removes only safe generated records; `postrm` restores originals/records/metadata/parents/claims and deletes backup only after proof. Busy unload stays pending until unrelated natural reboot; no cleanup reboot. Every failed phase returns nonzero, retains sole backup/journal/quarantine evidence.
+
+#### Hermetic target-execution runtime
+
+Add requirement-scoped target-execution runtime installer and verifier reachable only through `./bin/lets sdlc ...`. Runtime lives under LETS state, outside authentic source, failed copy, mount root, DEB, Git-tracked package tree, and quarantine namespace. Use pinned amd64 host executables for PRoot and `qemu-arm-static`, plus complete required host runtime-library closure. Obtain each artifact from recorded authoritative upstream package/archive URL. Pin artifact name, version, architecture, byte size, SHA-256, effective redirect origin, license, extraction member inventory, and dependency closure in tracked manifest. Exact pins/hashes become implementation evidence before any image mutation; placeholders forbidden.
+
+No host/target APT, `dpkg -i` of runtime, package script execution, sudo install, `/usr/local` install, PATH-global wrapper, Docker, VM, `binfmt_misc`, `update-binfmts`, systemd unit, kernel module, or global registration. Extract archives as data only after traversal, absolute-path, special-node, duplicate-member, ownership, mode, ELF, interpreter, and dependency checks. Runtime may contain only declared files beneath unique generation directory. PRoot runs through pinned loader/library path when dynamic; QEMU static claim verified by ELF program headers/dependencies. Verify amd64 PRoot, amd64 `qemu-arm-static`, expected versions/help signatures, executable hashes, and licenses on every use.
+
+Installation algorithm:
+
+1. ACQUIRE dedicated LETS runtime lock in canonical state
+2. VERIFY existing published generation and manifest
+3. ***if*** generation is valid ***then***
+   1. REUSE without network or rewrite
+4. ***else***
+   1. DOWNLOAD each pinned artifact to exclusive private partial path using HTTPS allowlist, bounded redirects/timeouts, exact size, and SHA-256
+   2. VALIDATE archive/member safety before extraction
+   3. EXTRACT rootlessly without maintainer scripts
+   4. VALIDATE full ELF/runtime dependency closure and exact file manifest
+   5. RUN no-image self-tests in isolated scratch root
+   6. SYNCHRONIZE files and generation directory
+   7. PUBLISH whole generation by same-filesystem atomic rename
+   8. REMOVE only verified installer-owned stale partials
+5. RELEASE runtime lock
+
+Runtime build/install must be idempotent, offline-capable after first verified fetch, concurrent-safe, and atomic. Shared lock pins generation for command lifetime. Corrupt cache/generation, URL drift, hash mismatch, missing library, wrong ELF/interpreter, unsupported ptrace, unexpected QEMU/PRoot behavior, or incomplete cleanup blocks before image lock/mutation. Never auto-fallback to host dpkg, force, binfmt, chroot helper copy, container, or alternate unpinned runtime.
+
+#### Private target dpkg execution
+
+Outer recovery holds real image lock and mounts exact failed copy rw. It invokes pinned host PRoot directly; PRoot presents mounted target root as `/` and uses pinned external `qemu-arm-static` as translator. Target `/usr/bin/dpkg`, `/bin/sh`, `/usr/bin/dpkg-query`, `/usr/sbin/update-rc.d`, `/sbin/insserv`, and every maintainer-script child execute from target root as ARM binaries under translation. Host dpkg never runs. Target `/etc/passwd`, `/etc/group`, NSS modules/config, dpkg database, statoverride, shell, and utilities remain natural execution authority. Remove revision-12 host-NSS workaround from mutation path; retained run proves diagnosis only.
+
+Create unique private execution scratch outside target. Expose exact read-only DEB only through PRoot virtual file mapping into guest namespace; mapping must create no inode, placeholder, copy, bind mount, directory, or metadata change in target root. PRoot/QEMU binaries and host libraries stay external; no target helper path. If selected PRoot cannot present read-only artifact without target placeholder or leaks host paths, stop and replan. Do not bind host `/`, `/etc`, `/usr`, `/var`, `/home`, `/proc`, `/sys`, `/dev`, or network state into target. Allow only exact mounted target root and exact read-only DEB mapping. Package does not load module during image lifecycle, so host `/proc/modules` authority unnecessary. Tests requiring proc/device runtime stay static until real hardware.
+
+Use clean fixed environment: `LC_ALL=C`, `LANG=C`, target `PATH=/usr/sbin:/usr/bin:/sbin:/bin`, target `HOME=/root`, fixed umask; unset host loader/compiler/Python/Perl/shell injection, `DPKG_ROOT`, `DPKG_ADMINDIR`, `LD_*`, QEMU overrides except audited translator setting, recovery flags except exact bounded package migration inputs, and proxy/network variables. Close unrelated file descriptors. Run as transaction's real root only; no fake-root identity. Capture argv with secrets absent, executable identities, runtime manifest ID, target binary hashes, stdout/stderr/status, elapsed bounds, and child termination.
+
+Before mutation, target-execution probe must PASS inside read-only or disposable scratch target context:
+
+- Target `/usr/bin/dpkg` safe regular file, hash bound to authentic replay baseline/current failed copy.
+- `dpkg --print-architecture` exact `armhf`; `dpkg --version` identifies target binary/version, not host `1.22 amd64`.
+- `dpkg-query` reads target database and reports exact `rF  1.0.2` recovery state/version.
+- Target shell executes deterministic command; target NSS resolves `crontab` and `ssl-cert`; target statoverride parses unchanged.
+- PRoot/QEMU child `exec`, symlink, rename, fsync, lock, uid/gid, mode, and exit propagation semantics support dpkg/hooks.
+- No host dpkg process, `binfmt_misc` entry/change, mount, target helper, placeholder, unexpected guest bind, or network socket appears.
+
+Mutation commands use ordinary target dpkg operations only: install exact `1.0.4` DEB, query/audit, remove package, purge package. No `--force-*`, architecture override, foreign-architecture registration, `--admindir` redirection to host, direct status/info edit, maintainer-script direct invocation, unpack-only shortcut, or copied host dpkg. Dpkg target locks must be exclusive. Verify hook execution by ordered package migration journal, installed control-script hashes matching DEB, dpkg status/version transitions, native graph/link effects, and captured target dpkg output. Run package test inside same target execution root. Each subprocess timeout/translation crash/signal/nonzero leaves quarantine and transaction evidence; never retry with changed execution method automatically.
+
+After every target command, terminate descendants, release PRoot/QEMU ptrace/process state, remove virtual mapping, and prove private scratch contains only retained external journal evidence. No new target path except declared package/dpkg lifecycle mutations. Runtime generation remains read-only reusable LETS state; uninstalling requirement package need not remove host development runtime, but runtime never counts as image content.
+
+#### Fresh inspection, rebuild, recovery, and exact restoration
+
+Current failed-copy SHA-256 changed from last inspection pin after clean rw mount. Before rebuild or mutation:
+
+1. ACQUIRE real quarantine-aware image lock
+2. VERIFY source SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`, current failed copy SHA-256 `27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2`, exact marker-pair SHA-256 `3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae`, fixtures, replay baseline, geometry offset `50331648`, size `3633315840`, empty root, zero loops/mounts
+3. MOUNT exact failed copy read-only with `noatime`
+4. REPEAT revision-12 exact legacy/source/protected/native/package inspection
+5. REQUIRE installed `rF  1.0.2`, protected hashes exact, canonical legacy digest `3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe`, and no package-owned migration
+6. CAPTURE new report/journal bound to current raw copy hash
+7. UNMOUNT and release loop
+8. VERIFY source/copy/replay evidence unchanged and quarantine retained
+9. ***if*** any gate/cleanup fails ***then***
+   1. RETAIN quarantine/evidence
+   2. STOP before rebuild/recovery
+
+Rebuild `1.0.4` twice with new report hash/plan binding. Record byte-identical new DEB SHA-256 and unchanged module hash. Independently validate package/static/runtime tests before one new recovery mutation attempt.
+
+Recovery sequence:
+
+1. VERIFY pinned target-runtime generation offline before image lock
+2. ACQUIRE one real recovery image lock
+3. REVALIDATE source/copy/root/marker/fixtures/replay/inspection/DEB/runtime identities and capacity
+4. CREATE and replay new verified source clone or revalidate approved retained clone per revision-12 rules
+5. REQUIRE rw replay, clean release, ro authentic fingerprint, second release, and unchanged source
+6. MOUNT exact failed copy rw with approved geometry and `noatime`; never overwrite/rebase
+7. REVALIDATE legacy digest/protected files and target dpkg probe
+8. INSTALL exact rebuilt `1.0.4` through hermetic target `armhf` dpkg; package alone migrates legacy backup
+9. VERIFY target dpkg reports configured `1.0.4`, ordered hooks ran, old legacy subset unchanged, new integrity/tool/provenance controls complete, installed hooks match DEB, group/statoverride exact
+10. RUN package test through same target execution root
+11. REMOVE through ordinary target dpkg
+12. PURGE through ordinary target dpkg
+13. REQUIRE target dpkg status/info namespace absent and no PRoot/QEMU child/mapping/scratch/target helper residue
+14. COMPARE restored failed copy exactly with authenticated replay baseline: managed paths, package/owner/runtime namespaces, records, parents, metadata, protected files, links, three native graphs
+15. UNMOUNT failed copy
+16. VERIFY all transaction/reference/source loops and mounts released
+17. VERIFY source hash unchanged
+18. CLEAR exact matched per-image marker, then global dirty marker, through outer SDLC tooling only
+19. ***if*** any runtime, probe, dpkg, hook, migration, test, removal, purge, process cleanup, restoration, unmount, loop, source, or clearance gate fails ***then***
+   1. ATTEMPT bounded owned-process termination and unmount only
+   2. RETAIN quarantine, exact copy, source clone, baseline, inspection, runtime manifest, package/migration evidence, fixtures, and journals
+   3. STOP before fresh lifecycle/HW
+
+After recovery PASS, run fresh disposable `1.0.4` install/test/remove/purge/restoration using same verified target runtime. One real image lock spans copy, mount, baseline, install, test, uninstall, purge, restoration verification, process/mapping cleanup, unmount, source proof, unlock. Fresh install must use normal baseline capture, never recovery migration. Any cleanup/restoration failure quarantines copy and forbids clean unlock/reuse until tooling reports recovery. Prove uninstalling all produced packages—this single package—restores original image semantic state; original source SHA equality proves source raw bytes unchanged. Never claim disposable raw-byte equality after dpkg/ext4 journal activity.
+
+#### Tests and failure injection
+
+- Runtime provenance: authoritative URL/redirect allowlist, exact sizes/SHA-256/licenses, safe archive inventory, dependency closure, ELF architecture/interpreter/static assertions, version output. Hash/size/URL/member/library mismatch fails before publish/use.
+- Runtime lifecycle: first install, healthy skip, corrupt cache repair, corrupt generation repair, offline reuse, concurrent installers/users, interrupted download/extract/verify/publish, stale partial safety, shared-generation lock, no broad delete. No host/global install or mutation.
+- Isolation: no binfmt before/after change, no global registration/service, no host dpkg child, no host filesystem binds, no target helper/copy/placeholder, no network, no leaked fd/env, no surviving QEMU/PRoot process, no scratch residue. Inject PRoot/QEMU crash, timeout, signal, ptrace denial, virtual-map failure, child escape attempt, cleanup failure; image remains quarantined.
+- Target identity: wrong target dpkg hash/type/link, `--print-architecture != armhf`, host `amd64` banner, wrong dpkg status/version, altered target NSS/statoverride, missing interpreter/library/tool, lock conflict all stop before package transition. Explicitly assert no `--force-architecture`/`--force-*` anywhere.
+- Execution semantics: target shell and dpkg child exec, exit/signal propagation, fsync/rename/locks, uid/gid/mode, LSB tools, maintainer ordering. Trace proves new `preinst upgrade 1.0.2`, old/new fallback ordering where applicable, new `postinst configure`, `prerm remove`, `postrm remove/purge` ran under target dpkg.
+- Revision-12 package tests retained: canonical legacy digest; source-attested recovery-only migration; partial migration recovery; normal install/upgrade fail-closed; old members unchanged; integrity coverage; graph/link oracle; record scope; loaded/absent module cleanup; conflicts; protected metadata; upgrade/abort; removal retry.
+- Reproducibility: new inspection report pinned; two clean byte-identical `armhf` DEBs; exact new DEB hash; module hash `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc`; six payloads; package-state/RELEASE/task plan bound to revision 13.
+- Real recovery faults at every phase: runtime verification, clone/replay, failed-copy mount, probe, install/hook boundaries, package test, remove, purge, target-process cleanup, compare, unmount, loop/source proof, marker clearance. Every failure retains markers and blocks fresh/HW.
+- Fresh disposable matrix: install/remove, install/purge, reinstall, reconfigure, supported upgrade, `1.0.2` migration fixture, failed/aborted operations, native nonzero/malformed graphs/links, unsafe records, overlap, repeated cleanup. Target dpkg only.
+
+#### Hardware gate
+
+Hardware remains revision-12/revision-11 exact; no authority change. No HW work until recovery and fresh disposable lifecycle independently PASS, new artifact/build/runtime evidence PASS, and acceptance workflow complete. Target `192.168.68.55`, `SCR-7CCC91`, ADLINK LEC-iMX6, Debian 8 Jessie, ARMv7/`armhf`, SysV runlevel `2`, kernel `3.10.105-imx6 #5 SMP PREEMPT`, config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`, uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`, baseline taint `4096` rechecked.
+
+Install exact rebuilt DEB without target APT/network. Verify native graphs/links; manual start gives exactly `+1`; repeated start/unload/reload gives `+0`; retained CLI/sync-fault checks PASS. One ordinary reboot only after all preflight gates; reconnect and require automatic module/guard/device plus exactly `+1`, no duplicate/anomaly/new taint. Ordinary target remove/purge restores records, graphs, links, metadata, protected files, package namespace, connectivity; no force, cleanup reboot, direct graph edit, or persistent credential. Failure stops, preserves evidence, disables activation when safely possible, and requires verified recovery.
+
+#### Bounded tasks and acceptance
+
+- T01: implement pinned LETS target-runtime acquisition/verification/isolation plus unit/fault/offline/concurrency tests. Prove target dpkg probe against non-mutating fixture; no image mutation.
+- T02: integrate hermetic target runner into `recover-package`, package-test, remove/purge, journal, cleanup, docs/agent contracts. Preserve revision-12 package/runtime behavior. Independent static/fault validation; no quarantined-image mutation.
+- T03: run new lock-held read-only inspection on current copy; pin report; rebuild `1.0.4` twice; record new DEB/module hashes; independently validate package/runtime/task binding. Read-only image action only.
+- T04: one lock-held existing-copy recovery via target dpkg; require exact restoration/clearance PASS; then fresh disposable target-dpkg lifecycle PASS. Failure retains quarantine and stops.
+- T05: unchanged exact-target one-reboot/cleanup acceptance only after T04 independent PASS.
+
+Acceptance IDs:
+
+- `R13-01`: Runtime manifest pins authoritative QEMU/PRoot/closure artifacts by version, architecture, size, SHA-256, URL, license, ELF/dependency facts; install is safe, atomic, idempotent, offline, concurrent, LETS-state-only.
+- `R13-02`: Private target runner uses authentic target `armhf` dpkg/shell/NSS/database/tools; proves exact binary hashes, `--print-architecture armhf`, target version/status, unchanged group/statoverride; never host dpkg, force, binfmt, global install, network, host bind, or target helper/copy/placeholder.
+- `R13-03`: Runtime/translation/process/mapping failure cleanup leaves zero children, mounts, loops, mappings, target helper paths, and unauthorized mutations; failure retains quarantine/evidence and stops.
+- `R13-04`: Fresh read-only inspection binds current copy `27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2` to exact protected hashes and canonical legacy digest; new report pins rebuilt `1.0.4`.
+- `R13-05`: Two clean rebuilt `armhf` DEBs are identical; exact new DEB hash recorded; module hash retained; revision-12 source-attested migration and runtime behavior unchanged.
+- `R13-06`: Existing copy upgrades `1.0.2` to `1.0.4` through ordinary target dpkg; ordered hooks execute; legacy subset unchanged; controls complete; package test PASS; target remove/purge leaves status/info absent.
+- `R13-07`: One real lock spans source/clone proof, mount, target install, test, uninstall, purge, restoration, target-runtime cleanup, unmount, source proof, marker clearance; exact replay-baseline restoration PASS; only matched quarantine clears.
+- `R13-08`: Fresh disposable target-dpkg lifecycle PASS under continuous lock; uninstalling all produced packages restores every managed/shared/protected/original surface; no residue; source exact.
+- `R13-09`: Native activation/removal oracle stays command rc + exact links + generated graph membership/order + exact three-graph restoration; `insserv -s` diagnostic only; no direct graph content edit.
+- `R13-10`: Exact HW one reboot yields automatic module/guard/device and exactly `+1`, no duplicate/anomaly/new taint; ordinary remove/purge exactly restores target without force/cleanup reboot/credentials/residue.
+
+#### Continuation policy, deliverables, and gate
+
+Material-change assessment: `customer_behavior=false`, `scope=false`, `risk=false`, `safety_relaxation=false`, `hardware_authority=false`. Hermetic target execution replaces incompatible host dpkg only. It preserves exact package, lifecycle, image surfaces, failure ceiling, no-force rule, lock/restoration/quarantine invariants, and one-reboot authority. New host-side runtime is bounded development tooling outside image; pinned isolation and fail-closed gates do not broaden customer/image behavior. Run `./bin/lets sdlc continuation-policy REQ-0001-GOAL-COUNT-SYSTEM-RESETS --reason <exact revision-12 T03 evidence>` with no material flags. Deterministic tool decides approval inheritance; never self-approve.
+
+Deliver runtime manifest/artifact hashes/licenses, safe extraction/dependency proof, offline/idempotent/concurrency/fault results, exact target dpkg/QEMU/PRoot identity and command journals, new inspection report, two-build DEB evidence, module hash, hook/status/native graph evidence, recovery/fresh lifecycle fingerprints, process/mapping/mount/loop/source cleanup proof, marker clearance, HW logs/count/taint/restoration, revision-13 task artifacts, and updated `RELEASE.md`. No fabricated retrospective evidence. Exact pins/hashes unavailable before implementation remain mandatory recorded gates, never assumptions.
+
+Persist plan only through `./bin/lets sdlc section`; commit DRAFT before display. Run deterministic continuation policy after `draft-ready`. Implementation starts only after tooling reports inherited or explicit approval. `./bin/lets sdlc acceptance` must show every non-HW criterion independently PASS before implementation commit/whole-package validation. No merge/release/HW action on FAIL, stale inspection/artifact, historical rejected DEB, or quarantined image. Developer hardware follow-up still closes requirement.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -3010,3 +3179,5 @@ After gates PASS, update Implementation with inspection report/digest, source/cl
 - `2026-09-24T08:47:39+00:00` [implementing] Task T03 attempt 1 validation fail
 
 - `2026-09-24T08:47:44+00:00` [drafting-plan] Revision 12 T03 FAIL: recovery runs 292f25f1-12c2-495b-8c07-eff03001e714 and d4874ce1-94b0-4efe-82a9-7ac248726a4c stopped before package transition. Authenticated target group fixed host-NSS mismatch in private read-only namespace; host dpkg then rejected exact armhf DEB because compiled host architecture is amd64. Approved no-force rule forbids --force-architecture. Source unchanged; protected files exact; quarantine retained; zero mounts/loops. Replan hermetic target-architecture ordinary dpkg execution or equivalent without force/direct image edit, preserving package ownership, restoration, and hardware authority.
+
+- `2026-09-24T08:52:34+00:00` [drafting-plan] Updated round 1 solution-plan section
