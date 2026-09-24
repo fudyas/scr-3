@@ -1,0 +1,67 @@
+{
+  "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+  "attempt": 1,
+  "report": {
+    "acceptance": [
+      "R12-05",
+      "R12-06",
+      "R12-07"
+    ],
+    "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+    "artifact": {
+      "architecture": "armhf",
+      "deb_sha256": "bb67bba672e4530fa372b166496cb345ca741f5faaac354ef62e118c5a1bf811",
+      "module_sha256": "f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc",
+      "reproducible_builds": 2,
+      "tests": "./bin/lets sdlc test: 26 passed; git diff --check: pass",
+      "version": "1.0.4"
+    },
+    "attempts": [
+      {
+        "deb_sha256": "425217cd15e66ebcab3606a18f45d897ad0c5d5b9891ab95314c5c5c96691424",
+        "diagnosis": "Host dpkg 1.22 resolves target statoverride names through host NSS. Authentic target /etc/group contains crontab and ssl-cert; host NSS does not. No target group or statoverride change allowed.",
+        "error": "dpkg: unrecoverable fatal error, aborting: unknown system group 'crontab' in statoverride file; the system group got removed before the override, which is most probably a packaging bug, to recover you can remove the override manually with dpkg-statoverride",
+        "image_sha256_before": "ac5c738ac366e79dfa7313ceff7f6b682b3fe7b8103f8c02eee4e496cc2d0c13",
+        "journal_sha256": "4e1497cc17c9495a0cbc0e73a6fa0e3d00e5de4b570d271dc5ac26a4b6397038",
+        "run": "292f25f1-12c2-495b-8c07-eff03001e714"
+      },
+      {
+        "image_sha256_before": "381ec8c048e7f1dfe79dd01b6684afc680f61cad2b44eb2d8dda4d472263e8aa",
+        "inspection_journal_sha256": "b0473949a7feb13fd612ffe77f2ab40991ad8a1b599262c1f2afeb3697f8a764",
+        "inspection_report_sha256": "428a838126f09c10ed432b37a579f26b50b27aa48a19e0437fd30006cdf6c2df",
+        "inspection_result": "pass; rF  1.0.2; canonical digest 3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe; quarantine retained",
+        "inspection_run": "7d3f9ff3-f4b1-4d7e-8cef-e7d230c8cf8d"
+      },
+      {
+        "deb_sha256": "bb67bba672e4530fa372b166496cb345ca741f5faaac354ef62e118c5a1bf811",
+        "diagnosis": "Private mount namespace supplied exact authenticated target group read-only and passed statoverride parsing. Host amd64 dpkg then enforced compiled host architecture despite armhf target root. Approved no-force rule forbids --force-architecture.",
+        "error": "dpkg: error processing archive scr-req-0001-goal-count-system-resets_1.0.4_armhf.deb (--install): package architecture (armhf) does not match system (amd64)",
+        "image_sha256_before": "381ec8c048e7f1dfe79dd01b6684afc680f61cad2b44eb2d8dda4d472263e8aa",
+        "journal_sha256": "e8178463267372df8d07a37e94b60413992c663d8253c3942dee932d1edbf372",
+        "run": "d4874ce1-94b0-4efe-82a9-7ac248726a4c"
+      }
+    ],
+    "next": "Replan exact target-architecture ordinary dpkg execution without force, target/host direct edit, dirty rebaseline, marker edit, or broader image/HW authority. Fresh read-only inspection and candidate rebuild required after every rw mount hash change.",
+    "result": "fail",
+    "safety": {
+      "active_related_loops_after": 0,
+      "active_related_mounts_after": 0,
+      "current_failed_copy_sha256": "27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2",
+      "fresh_lifecycle_started": false,
+      "hardware_mutation": false,
+      "package_transition_started": false,
+      "protected_group_sha256": "4f040bdc3ec55879e94efb96ca12c80f5f5b16bd07e055e0b82f951af0af1cc3",
+      "protected_statoverride_sha256": "6e5b3880a63bc3b41a72f71d0548e257b409dd519dcf6c047cedd70bf9c824ca",
+      "quarantine_marker_sha256": "3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae",
+      "quarantine_retained": true,
+      "reboot": false,
+      "source_sha256": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6"
+    },
+    "task": "T03"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T03",
+  "time": "2026-09-24T08:47:33+00:00"
+}
