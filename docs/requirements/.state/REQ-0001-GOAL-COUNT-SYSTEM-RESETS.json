@@ -1,4 +1,11 @@
 {
+  "approval": {
+    "plan_revision": 12,
+    "plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+    "reason": "Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision-11 T03 run f02bd479-7082-4401-9c7a-9c4d3abcb700 stopped before dpkg because legacy 1.0.2 backup lacks newer integrity controls. Revision 12 keeps customer reset behavior, scope, runtime/module/package surfaces, risk ceiling, reversible-package rule, continuous lock, restoration/quarantine invariants, and one-reboot hardware authority unchanged. Amendment adds read-only source authentication and package-owned fail-closed 1.0.4 control migration; no dirty rebaseline, manual image edit, safety relaxation, broader hardware action, or external policy input.",
+    "status": "auto-approved",
+    "time": "2026-09-24T07:44:08+00:00"
+  },
   "continuation": {
     "eligible": true,
     "from_plan": {
@@ -972,6 +979,12 @@
           "sequence": 156,
           "state": "draft-ready",
           "time": "2026-09-24T07:43:56+00:00"
+        },
+        {
+          "message": "Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision-11 T03 run f02bd479-7082-4401-9c7a-9c4d3abcb700 stopped before dpkg because legacy 1.0.2 backup lacks newer integrity controls. Revision 12 keeps customer reset behavior, scope, runtime/module/package surfaces, risk ceiling, reversible-package rule, continuous lock, restoration/quarantine invariants, and one-reboot hardware authority unchanged. Amendment adds read-only source authentication and package-owned fail-closed 1.0.4 control migration; no dirty rebaseline, manual image edit, safety relaxation, broader hardware action, or external policy input.",
+          "sequence": 157,
+          "state": "auto-approved",
+          "time": "2026-09-24T07:44:08+00:00"
         }
       ],
       "number": 1,
@@ -979,8 +992,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 156,
-  "state": "draft-ready",
+  "sequence": 157,
+  "state": "auto-approved",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1138,7 +1151,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T07:43:56+00:00",
+  "updated": "2026-09-24T07:44:08+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
