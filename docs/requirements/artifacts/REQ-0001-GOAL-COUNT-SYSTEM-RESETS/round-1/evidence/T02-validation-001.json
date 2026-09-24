@@ -1,0 +1,56 @@
+{
+  "approved_plan_sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
+  "attempt": 1,
+  "report": {
+    "acceptance": [
+      "R13-02",
+      "R13-03",
+      "R13-09"
+    ],
+    "approved_plan_sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
+    "evidence": {
+      "exact_error": "proot warning: can't sanitize binding \"/proc/89396/fd/3\": No such file or directory\nproot error: '/run/scr-sdlc-qemu-arm-static' not found (root = /tmp/pytest-of-ubuntu/pytest-58/test_target_runner_executes_st0/target, cwd = /, $PATH=(null))\nfatal error: see `proot --help`.",
+      "expected_exit": 42,
+      "independent_reproduction": "Same failure reproduced with dynamic path /proc/90798/fd/3.",
+      "observed_exit": 1,
+      "pinned_source": "https://github.com/proot-me/proot/blob/v5.1.0/src/path/binding.c#L443-L450",
+      "probe_sha256": "faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8",
+      "source_finding": "new_binding calls realpath2(..., true); negative status emits exact can't sanitize binding warning and rejects binding. Memfd link resolves to anonymous deleted backing storage, producing ENOENT despite live descriptor.",
+      "tests": "57 passed, 2 failed"
+    },
+    "failed": [
+      "R13-02: live target ARM probe expected exit 42 and observed exit 1; authentic target dpkg/shell/NSS/database/native-tool preflight cannot start.",
+      "Pinned PRoot 5.1.0 categorically rejects anonymous sealed memfd `/proc/<broker-pid>/fd/<fd>` bind source during host-path canonicalization.",
+      "Static broker-command test remains stale: expected two `/proc` mappings in outer command and observed zero after mapping creation moved into privileged broker.",
+      "R13-03 functional execution gate not met; cleanup portion PASS. R13-09 native oracle cannot run."
+    ],
+    "required_next": "Return to drafting-plan. Replace unsupported transport with evidence-backed exact immutable read-only QEMU/DEB exposure while preserving no-helper/no-placeholder/no-global-bind/no-force/restoration/quarantine invariants. Run continuation-policy; auto-resume only if all material-change flags remain false.",
+    "result": "fail",
+    "safety": {
+      "failed_copy_sha256": "27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2",
+      "fresh_lifecycle_started": false,
+      "hardware_mutation": false,
+      "image_mutation": false,
+      "package_transition_started": false,
+      "quarantine_changed": false,
+      "quarantine_marker_pair_sha256": "3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae",
+      "quarantine_retained": true,
+      "reboot": false,
+      "requires_replan": true,
+      "source_sha256": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6"
+    },
+    "task": "T02",
+    "validated": [
+      "Approved revision-13 T02 stop rule confirmed: exact read-only artifact mapping required; target helper/copy/placeholder, host/global bind, and changed-method fallback forbidden.",
+      "Independent `./bin/lets sdlc test` equivalent reproduced `57 passed, 2 failed`; `git diff --check` PASS.",
+      "Sealed memfd bytes and `F_SEAL_SEAL|F_SEAL_SHRINK|F_SEAL_GROW|F_SEAL_WRITE` controls exact; failure cleanup left zero active PRoot/QEMU/broker process, mount, loop, scratch entry, mapping, or target guest path.",
+      "Task-result acceptance binding corrected from erroneous `R13-02,R13-03,R13-04,R13-05` to approved manifest `R13-02,R13-03,R13-09`; prior sequence 182 remains immutable audit history."
+    ]
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "fail",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T02",
+  "time": "2026-09-24T10:35:36+00:00"
+}
