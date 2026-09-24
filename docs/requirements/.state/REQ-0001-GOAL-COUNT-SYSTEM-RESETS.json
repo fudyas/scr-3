@@ -1,10 +1,19 @@
 {
-  "approval": {
-    "plan_revision": 11,
-    "plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
-    "reason": "Developer approved DRAFT revision 11 SHA-256 ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66.",
-    "status": "auto-approved",
-    "time": "2026-09-23T12:46:38+00:00"
+  "continuation": {
+    "eligible": true,
+    "from_plan": {
+      "revision": 11,
+      "sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+      "status": "draft"
+    },
+    "prior_approval": {
+      "plan_revision": 11,
+      "plan_sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+      "reason": "Developer approved DRAFT revision 11 SHA-256 ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66.",
+      "status": "auto-approved",
+      "time": "2026-09-23T12:46:38+00:00"
+    },
+    "reason": "Revision 11 T03 recovery FAIL run f02bd479-7082-4401-9c7a-9c4d3abcb700: clone replay/source immutability PASS; stopped before dpkg because preserved legacy 1.0.2 backup predates integrity.manifest/integrity.sha256. Read-only journal/quarantine/authentic-baseline diagnosis: marker run ba9e92b3-e1ee-4407-833a-ae3899f0662e inventories baseline.ready, native graph hashes/metadata/times, links, path/missing and parent/time records, but no integrity controls; authenticated replay fingerprint 60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6 proves original managed paths absent and exact source graphs/tools. Replan package-owned source-attested legacy-baseline migration; never dirty-rebaseline, weaken restoration, edit backup/marker/graph directly, overwrite failed copy, or retry before approved bounded plan. Quarantine retained."
   },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
@@ -945,6 +954,12 @@
           "sequence": 153,
           "state": "implementing",
           "time": "2026-09-24T07:29:46+00:00"
+        },
+        {
+          "message": "Revision 11 T03 recovery FAIL run f02bd479-7082-4401-9c7a-9c4d3abcb700: clone replay/source immutability PASS; stopped before dpkg because preserved legacy 1.0.2 backup predates integrity.manifest/integrity.sha256. Read-only journal/quarantine/authentic-baseline diagnosis: marker run ba9e92b3-e1ee-4407-833a-ae3899f0662e inventories baseline.ready, native graph hashes/metadata/times, links, path/missing and parent/time records, but no integrity controls; authenticated replay fingerprint 60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6 proves original managed paths absent and exact source graphs/tools. Replan package-owned source-attested legacy-baseline migration; never dirty-rebaseline, weaken restoration, edit backup/marker/graph directly, overwrite failed copy, or retry before approved bounded plan. Quarantine retained.",
+          "sequence": 154,
+          "state": "drafting-plan",
+          "time": "2026-09-24T07:33:16+00:00"
         }
       ],
       "number": 1,
@@ -952,8 +967,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 153,
-  "state": "implementing",
+  "sequence": 154,
+  "state": "drafting-plan",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1078,33 +1093,40 @@
           }
         }
       }
-    }
-  ],
-  "task_workflow": {
-    "active": null,
-    "definitions_sha256": "56f6f6388ac13968b08a11011fe1f10042b6f1149f8a6fef35bbf0d108267284",
-    "round": 1,
-    "tasks": {
-      "T01": {
-        "attempts": 1,
-        "status": "validated"
+    },
+    {
+      "plan": {
+        "revision": 11,
+        "sha256": "ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66",
+        "status": "draft"
       },
-      "T02": {
-        "attempts": 1,
-        "status": "validated"
-      },
-      "T03": {
-        "attempts": 1,
-        "status": "failed"
-      },
-      "T04": {
-        "attempts": 0,
-        "status": "pending"
+      "workflow": {
+        "active": null,
+        "definitions_sha256": "56f6f6388ac13968b08a11011fe1f10042b6f1149f8a6fef35bbf0d108267284",
+        "round": 1,
+        "tasks": {
+          "T01": {
+            "attempts": 1,
+            "status": "validated"
+          },
+          "T02": {
+            "attempts": 1,
+            "status": "validated"
+          },
+          "T03": {
+            "attempts": 1,
+            "status": "failed"
+          },
+          "T04": {
+            "attempts": 0,
+            "status": "pending"
+          }
+        }
       }
     }
-  },
+  ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T07:29:46+00:00",
+  "updated": "2026-09-24T07:33:16+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
