@@ -1146,6 +1146,12 @@
           "sequence": 185,
           "state": "drafting-plan",
           "time": "2026-09-24T10:44:32+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 14 after revision-13 T02 sealed-memfd/PRoot canonicalization FAIL. Replace unusable memfd transport with exact QEMU/DEB self-bind mounts remounted ro inside propagation-private mount+network namespace; bounded no-image ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 exited 42, parent namespace unchanged, zero residue. Require adversarial content/metadata immutability, namespace/process/FD cleanup, authentic target dpkg, exact restoration/quarantine, no target inode/copy/placeholder, broad/global bind, force, host dpkg, image-source mount, or HW expansion. Customer behavior, scope, risk, safety rules, and one-reboot authority unchanged; continuation-policy next.",
+          "sequence": 186,
+          "state": "draft-ready",
+          "time": "2026-09-24T10:44:37+00:00"
         }
       ],
       "number": 1,
@@ -1153,8 +1159,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 185,
-  "state": "drafting-plan",
+  "sequence": 186,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1376,7 +1382,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T10:44:32+00:00",
+  "updated": "2026-09-24T10:44:37+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",

@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 185
+sequence: 186
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T10:44:32+00:00
+updated: 2026-09-24T10:44:37+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3385,3 +3385,5 @@ Deliver exact feasibility journal, namespace/mountinfo identities, full QEMU has
 - `2026-09-24T10:35:51+00:00` [drafting-plan] Revision 13 T02 FAIL: pinned PRoot 5.1.0 rejects sealed anonymous memfd source during realpath2 host-binding canonicalization. Live ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 expected exit 42, observed 1: proot warning: can't sanitize binding "/proc/89396/fd/3": No such file or directory; /run/scr-sdlc-qemu-arm-static absent. Independent suite: 57 passed, 2 failed; diff check PASS. Cleanup zero processes/mounts/loops/scratch/guest paths. No image mutation; copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2, source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6, marker pair 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae unchanged; quarantine retained. Replan exact immutable read-only mapping/isolation; no named writable bind, changed-method fallback, target helper/copy/placeholder, global bind, force, T03/T04/fresh/HW.
 
 - `2026-09-24T10:44:32+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-24T10:44:37+00:00` [draft-ready] Committed DRAFT revision 14 after revision-13 T02 sealed-memfd/PRoot canonicalization FAIL. Replace unusable memfd transport with exact QEMU/DEB self-bind mounts remounted ro inside propagation-private mount+network namespace; bounded no-image ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 exited 42, parent namespace unchanged, zero residue. Require adversarial content/metadata immutability, namespace/process/FD cleanup, authentic target dpkg, exact restoration/quarantine, no target inode/copy/placeholder, broad/global bind, force, host dpkg, image-source mount, or HW expansion. Customer behavior, scope, risk, safety rules, and one-reboot authority unchanged; continuation-policy next.
