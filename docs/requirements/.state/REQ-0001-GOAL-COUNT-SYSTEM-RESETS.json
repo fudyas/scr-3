@@ -1171,6 +1171,12 @@
           "sequence": 188,
           "state": "auto-approved",
           "time": "2026-09-24T10:45:17+00:00"
+        },
+        {
+          "message": "Implementation started from the approved plan",
+          "sequence": 189,
+          "state": "implementing",
+          "time": "2026-09-24T10:45:22+00:00"
         }
       ],
       "number": 1,
@@ -1178,8 +1184,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 188,
-  "state": "auto-approved",
+  "sequence": 189,
+  "state": "implementing",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1401,7 +1407,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T10:45:17+00:00",
+  "updated": "2026-09-24T10:45:22+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
