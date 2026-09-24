@@ -1,0 +1,58 @@
+{
+  "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+  "attempt": 1,
+  "report": {
+    "acceptance": [
+      "R12-01"
+    ],
+    "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+    "inspection": {
+      "baseline_fingerprint_sha256": "60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6",
+      "baseline_sha256": "af2ed68958a40c6f8f375e63275bf5d1839788735e8113ff92c39656e87725ad",
+      "clone_sha256": "64f89f060afb05ade2d524d4dc0e80cc46465232e509e35a0079b34ee3c811e2",
+      "image_sha256": "ac5c738ac366e79dfa7313ceff7f6b682b3fe7b8103f8c02eee4e496cc2d0c13",
+      "installed": "rF  1.0.2",
+      "journal": "/home/fudya/devel/scr/.codex/sdlc/recovery/REQ-0001-GOAL-COUNT-SYSTEM-RESETS/472a0a02-f257-4247-ab10-36b58bb9bb36/journal.json",
+      "journal_sha256": "6109df00bd8156f646b9641c18239fd885b638b362a5b17c33d4c35619a67e23",
+      "legacy_canonical_sha256": "095b676cf9a723a6089757f88322e93a22498c52a7bec6d13046932d0b2aa006",
+      "phase": "inspected-quarantine-retained",
+      "report": "/home/fudya/devel/scr/.codex/sdlc/recovery/REQ-0001-GOAL-COUNT-SYSTEM-RESETS/472a0a02-f257-4247-ab10-36b58bb9bb36/legacy-inspection.json",
+      "report_sha256": "21ac1e3799183125c32a3fb96fd336e2578157a008f8c9db4c6636a688ee713b",
+      "run": "472a0a02-f257-4247-ab10-36b58bb9bb36",
+      "source_sha256": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6"
+    },
+    "installed_hook_sha256": {
+      "postinst": "65f3489048bfb644387f6dc9f7d756dcdfdcbafa5b14c9f781c96a2cb6d1a84a",
+      "postrm": "d89901c60cb659086971c3eba525f2dcbb7c543c6e016f2e4e1e2356173abcff",
+      "preinst": "da812d8a8da0f6e2f90493b0b626d29117369cf7c028656915832d17677e6598",
+      "prerm": "16adce53f04e70afb4a0f95cfe4f75f76497ee2cdde6e4b552692db61d6ff7e0"
+    },
+    "result": "pass",
+    "safety": {
+      "active_related_loops_after": 0,
+      "active_related_mounts_after": 0,
+      "clone_unchanged": true,
+      "dpkg_invoked": false,
+      "failed_copy_mount": "read-only,noatime",
+      "failed_copy_unchanged": true,
+      "hardware_mutation": false,
+      "image_write": false,
+      "lock_held_across_mount_inspection_unmount_and_proof": true,
+      "quarantine_retained": true,
+      "reboot": false,
+      "replay_clone_mount": "read-only,noatime",
+      "source_unchanged": true
+    },
+    "task": "T01",
+    "tests": {
+      "command": "./bin/lets sdlc test",
+      "diff_check": "pass",
+      "result": "24 passed"
+    }
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-24T08:07:01+00:00"
+}
