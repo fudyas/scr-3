@@ -1183,6 +1183,12 @@
           "sequence": 190,
           "state": "implementing",
           "time": "2026-09-24T10:47:52+00:00"
+        },
+        {
+          "message": "Activated task T01 attempt 1",
+          "sequence": 191,
+          "state": "implementing",
+          "time": "2026-09-24T10:47:57+00:00"
         }
       ],
       "number": 1,
@@ -1190,7 +1196,7 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 190,
+  "sequence": 191,
   "state": "implementing",
   "superseded_task_workflows": [
     {
@@ -1413,13 +1419,13 @@
     }
   ],
   "task_workflow": {
-    "active": null,
+    "active": "T01",
     "definitions_sha256": "25606e97246e5fb618f85567768dff39045d8c173058ea858198a4df16695d5a",
     "round": 1,
     "tasks": {
       "T01": {
-        "attempts": 0,
-        "status": "pending"
+        "attempts": 1,
+        "status": "active"
       },
       "T02": {
         "attempts": 0,
@@ -1440,7 +1446,7 @@
     }
   },
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T10:47:52+00:00",
+  "updated": "2026-09-24T10:47:57+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
