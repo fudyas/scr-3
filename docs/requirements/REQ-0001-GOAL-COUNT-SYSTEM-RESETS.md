@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 171
+sequence: 172
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T08:52:34+00:00
+updated: 2026-09-24T08:52:40+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3181,3 +3181,5 @@ Persist plan only through `./bin/lets sdlc section`; commit DRAFT before display
 - `2026-09-24T08:47:44+00:00` [drafting-plan] Revision 12 T03 FAIL: recovery runs 292f25f1-12c2-495b-8c07-eff03001e714 and d4874ce1-94b0-4efe-82a9-7ac248726a4c stopped before package transition. Authenticated target group fixed host-NSS mismatch in private read-only namespace; host dpkg then rejected exact armhf DEB because compiled host architecture is amd64. Approved no-force rule forbids --force-architecture. Source unchanged; protected files exact; quarantine retained; zero mounts/loops. Replan hermetic target-architecture ordinary dpkg execution or equivalent without force/direct image edit, preserving package ownership, restoration, and hardware authority.
 
 - `2026-09-24T08:52:34+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-24T08:52:40+00:00` [draft-ready] Committed DRAFT revision 13 after revision-12 T03 host-dpkg incompatibility: preserve exact 1.0.4 package/migration/runtime behavior and all lock/restoration/quarantine/no-force/HW rules; replace host dpkg with pinned hermetic PRoot plus qemu-arm-static executing authentic target armhf dpkg/shell/NSS/tools. No binfmt/global install, host dpkg, target helper/copy/placeholder, direct edit, dirty rebaseline, or broader authority. Fresh inspection/rebuild precedes one recovery retry. Customer behavior, scope, risk, safety, and HW authority unchanged; continuation-policy next.
