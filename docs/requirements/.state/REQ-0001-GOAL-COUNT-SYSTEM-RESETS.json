@@ -1,26 +1,19 @@
 {
-  "approval": {
-    "plan_revision": 13,
-    "plan_sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
-    "reason": "Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision 12 T03 failed before package transition. Run 292f25f1-12c2-495b-8c07-eff03001e714 journal 4e1497cc17c9495a0cbc0e73a6fa0e3d00e5de4b570d271dc5ac26a4b6397038 exposed host-NSS lookup; private read-only authenticated target group passed it. Fresh inspection 7d3f9ff3-f4b1-4d7e-8cef-e7d230c8cf8d report 428a838126f09c10ed432b37a579f26b50b27aa48a19e0437fd30006cdf6c2df preserved rF  1.0.2 and canonical digest 3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe. Run d4874ce1-94b0-4efe-82a9-7ac248726a4c journal e8178463267372df8d07a37e94b60413992c663d8253c3942dee932d1edbf372 then proved host amd64 dpkg rejects exact armhf DEB. No force allowed. Source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6 unchanged; current copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2; protected files exact; marker SHA 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae; quarantine retained; zero mounts/loops. Revision 13 changes development tooling only: pinned isolated PRoot/QEMU executes authentic target armhf dpkg without host dpkg, force, binfmt, target helper/copy/placeholder, image edit, safety relaxation, or broader HW authority. Customer behavior, scope, risk, safety rules, and hardware authority unchanged.",
-    "status": "auto-approved",
-    "time": "2026-09-24T08:52:58+00:00"
-  },
   "continuation": {
     "eligible": true,
     "from_plan": {
-      "revision": 12,
-      "sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+      "revision": 13,
+      "sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
       "status": "draft"
     },
     "prior_approval": {
-      "plan_revision": 12,
-      "plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
-      "reason": "Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision-11 T03 run f02bd479-7082-4401-9c7a-9c4d3abcb700 stopped before dpkg because legacy 1.0.2 backup lacks newer integrity controls. Revision 12 keeps customer reset behavior, scope, runtime/module/package surfaces, risk ceiling, reversible-package rule, continuous lock, restoration/quarantine invariants, and one-reboot hardware authority unchanged. Amendment adds read-only source authentication and package-owned fail-closed 1.0.4 control migration; no dirty rebaseline, manual image edit, safety relaxation, broader hardware action, or external policy input.",
+      "plan_revision": 13,
+      "plan_sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
+      "reason": "Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision 12 T03 failed before package transition. Run 292f25f1-12c2-495b-8c07-eff03001e714 journal 4e1497cc17c9495a0cbc0e73a6fa0e3d00e5de4b570d271dc5ac26a4b6397038 exposed host-NSS lookup; private read-only authenticated target group passed it. Fresh inspection 7d3f9ff3-f4b1-4d7e-8cef-e7d230c8cf8d report 428a838126f09c10ed432b37a579f26b50b27aa48a19e0437fd30006cdf6c2df preserved rF  1.0.2 and canonical digest 3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe. Run d4874ce1-94b0-4efe-82a9-7ac248726a4c journal e8178463267372df8d07a37e94b60413992c663d8253c3942dee932d1edbf372 then proved host amd64 dpkg rejects exact armhf DEB. No force allowed. Source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6 unchanged; current copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2; protected files exact; marker SHA 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae; quarantine retained; zero mounts/loops. Revision 13 changes development tooling only: pinned isolated PRoot/QEMU executes authentic target armhf dpkg without host dpkg, force, binfmt, target helper/copy/placeholder, image edit, safety relaxation, or broader HW authority. Customer behavior, scope, risk, safety rules, and hardware authority unchanged.",
       "status": "auto-approved",
-      "time": "2026-09-24T07:44:08+00:00"
+      "time": "2026-09-24T08:52:58+00:00"
     },
-    "reason": "Revision 12 T03 FAIL: recovery runs 292f25f1-12c2-495b-8c07-eff03001e714 and d4874ce1-94b0-4efe-82a9-7ac248726a4c stopped before package transition. Authenticated target group fixed host-NSS mismatch in private read-only namespace; host dpkg then rejected exact armhf DEB because compiled host architecture is amd64. Approved no-force rule forbids --force-architecture. Source unchanged; protected files exact; quarantine retained; zero mounts/loops. Replan hermetic target-architecture ordinary dpkg execution or equivalent without force/direct image edit, preserving package ownership, restoration, and hardware authority."
+    "reason": "Revision 13 T02 FAIL: pinned PRoot 5.1.0 rejects sealed anonymous memfd source during realpath2 host-binding canonicalization. Live ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 expected exit 42, observed 1: proot warning: can't sanitize binding \"/proc/89396/fd/3\": No such file or directory; /run/scr-sdlc-qemu-arm-static absent. Independent suite: 57 passed, 2 failed; diff check PASS. Cleanup zero processes/mounts/loops/scratch/guest paths. No image mutation; copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2, source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6, marker pair 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae unchanged; quarantine retained. Replan exact immutable read-only mapping/isolation; no named writable bind, changed-method fallback, target helper/copy/placeholder, global bind, force, T03/T04/fresh/HW."
   },
   "created": "2026-09-17T08:55:39+00:00",
   "current_round": 1,
@@ -1141,6 +1134,12 @@
           "sequence": 183,
           "state": "implementing",
           "time": "2026-09-24T10:35:36+00:00"
+        },
+        {
+          "message": "Revision 13 T02 FAIL: pinned PRoot 5.1.0 rejects sealed anonymous memfd source during realpath2 host-binding canonicalization. Live ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 expected exit 42, observed 1: proot warning: can't sanitize binding \"/proc/89396/fd/3\": No such file or directory; /run/scr-sdlc-qemu-arm-static absent. Independent suite: 57 passed, 2 failed; diff check PASS. Cleanup zero processes/mounts/loops/scratch/guest paths. No image mutation; copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2, source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6, marker pair 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae unchanged; quarantine retained. Replan exact immutable read-only mapping/isolation; no named writable bind, changed-method fallback, target helper/copy/placeholder, global bind, force, T03/T04/fresh/HW.",
+          "sequence": 184,
+          "state": "drafting-plan",
+          "time": "2026-09-24T10:35:51+00:00"
         }
       ],
       "number": 1,
@@ -1148,8 +1147,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 183,
-  "state": "implementing",
+  "sequence": 184,
+  "state": "drafting-plan",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1334,37 +1333,44 @@
           }
         }
       }
-    }
-  ],
-  "task_workflow": {
-    "active": null,
-    "definitions_sha256": "61e0c21e98c3547b86a73bb1050294a0249c95a502eeab284ec92f8c524f5d5c",
-    "round": 1,
-    "tasks": {
-      "T01": {
-        "attempts": 1,
-        "status": "validated"
+    },
+    {
+      "plan": {
+        "revision": 13,
+        "sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
+        "status": "draft"
       },
-      "T02": {
-        "attempts": 1,
-        "status": "failed"
-      },
-      "T03": {
-        "attempts": 0,
-        "status": "pending"
-      },
-      "T04": {
-        "attempts": 0,
-        "status": "pending"
-      },
-      "T05": {
-        "attempts": 0,
-        "status": "pending"
+      "workflow": {
+        "active": null,
+        "definitions_sha256": "61e0c21e98c3547b86a73bb1050294a0249c95a502eeab284ec92f8c524f5d5c",
+        "round": 1,
+        "tasks": {
+          "T01": {
+            "attempts": 1,
+            "status": "validated"
+          },
+          "T02": {
+            "attempts": 1,
+            "status": "failed"
+          },
+          "T03": {
+            "attempts": 0,
+            "status": "pending"
+          },
+          "T04": {
+            "attempts": 0,
+            "status": "pending"
+          },
+          "T05": {
+            "attempts": 0,
+            "status": "pending"
+          }
+        }
       }
     }
-  },
+  ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T10:35:36+00:00",
+  "updated": "2026-09-24T10:35:51+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
