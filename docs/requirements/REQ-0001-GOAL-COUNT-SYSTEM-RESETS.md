@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 155
+sequence: 156
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T07:43:51+00:00
+updated: 2026-09-24T07:43:56+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2980,3 +2980,5 @@ After gates PASS, update Implementation with inspection report/digest, source/cl
 - `2026-09-24T07:33:16+00:00` [drafting-plan] Revision 11 T03 recovery FAIL run f02bd479-7082-4401-9c7a-9c4d3abcb700: clone replay/source immutability PASS; stopped before dpkg because preserved legacy 1.0.2 backup predates integrity.manifest/integrity.sha256. Read-only journal/quarantine/authentic-baseline diagnosis: marker run ba9e92b3-e1ee-4407-833a-ae3899f0662e inventories baseline.ready, native graph hashes/metadata/times, links, path/missing and parent/time records, but no integrity controls; authenticated replay fingerprint 60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6 proves original managed paths absent and exact source graphs/tools. Replan package-owned source-attested legacy-baseline migration; never dirty-rebaseline, weaken restoration, edit backup/marker/graph directly, overwrite failed copy, or retry before approved bounded plan. Quarantine retained.
 
 - `2026-09-24T07:43:51+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-24T07:43:56+00:00` [draft-ready] Committed DRAFT revision 12 after revision-11 T03 legacy-backup blocker: add lock-held read-only legacy inspection, exact source-attested canonical digest, package-owned recovery-only 1.0.4 migration adding controls without modifying/recapturing legacy members, outer unchanged-member/restoration proof, quarantine retention, fresh lifecycle before unchanged HW. Customer behavior, scope, risk, safety rules, and hardware authority unchanged; continuation-policy next.

@@ -966,6 +966,12 @@
           "sequence": 155,
           "state": "drafting-plan",
           "time": "2026-09-24T07:43:51+00:00"
+        },
+        {
+          "message": "Committed DRAFT revision 12 after revision-11 T03 legacy-backup blocker: add lock-held read-only legacy inspection, exact source-attested canonical digest, package-owned recovery-only 1.0.4 migration adding controls without modifying/recapturing legacy members, outer unchanged-member/restoration proof, quarantine retention, fresh lifecycle before unchanged HW. Customer behavior, scope, risk, safety rules, and hardware authority unchanged; continuation-policy next.",
+          "sequence": 156,
+          "state": "draft-ready",
+          "time": "2026-09-24T07:43:56+00:00"
         }
       ],
       "number": 1,
@@ -973,8 +979,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 155,
-  "state": "drafting-plan",
+  "sequence": 156,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1132,7 +1138,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-24T07:43:51+00:00",
+  "updated": "2026-09-24T07:43:56+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",
