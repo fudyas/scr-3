@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: draft-ready
+state: auto-approved
 round: 1
-sequence: 186
-approval: none
+sequence: 187
+approval: auto-approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T10:44:37+00:00
+updated: 2026-09-24T10:45:08+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3387,3 +3387,5 @@ Deliver exact feasibility journal, namespace/mountinfo identities, full QEMU has
 - `2026-09-24T10:44:32+00:00` [drafting-plan] Updated round 1 solution-plan section
 
 - `2026-09-24T10:44:37+00:00` [draft-ready] Committed DRAFT revision 14 after revision-13 T02 sealed-memfd/PRoot canonicalization FAIL. Replace unusable memfd transport with exact QEMU/DEB self-bind mounts remounted ro inside propagation-private mount+network namespace; bounded no-image ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 exited 42, parent namespace unchanged, zero residue. Require adversarial content/metadata immutability, namespace/process/FD cleanup, authentic target dpkg, exact restoration/quarantine, no target inode/copy/placeholder, broad/global bind, force, host dpkg, image-source mount, or HW expansion. Customer behavior, scope, risk, safety rules, and one-reboot authority unchanged; continuation-policy next.
+
+- `2026-09-24T10:45:08+00:00` [auto-approved] Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision-13 T02 stopped before image/package transition: PRoot 5.1.0 realpath2 rejects sealed memfd /proc/89396/fd/3; probe expected 42, observed 1; 57 passed, 2 failed. Cleanup zero; source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6, copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2, marker pair 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae unchanged; quarantine retained. Revision 14 changes host-side transport only: exact per-file QEMU/DEB self-bind mounts remounted read-only inside propagation-private mount+network namespace. Bounded no-image feasibility proved ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 exit 42, parent namespace unchanged, zero residue. Kernel read-only mount strengthens immutability; no target inode/copy/placeholder, broad/global bind, authentic-source mount, host dpkg, force, binfmt, image edit, safety relaxation, or broader hardware authority. Customer behavior, scope, risk, safety rules, reversible-package/restoration/quarantine invariants, and one-reboot authority unchanged.
