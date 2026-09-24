@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: auto-approved
 round: 1
-sequence: 158
+sequence: 159
 approval: auto-approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T07:45:18+00:00
+updated: 2026-09-24T07:45:22+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2986,3 +2986,5 @@ After gates PASS, update Implementation with inspection report/digest, source/cl
 - `2026-09-24T07:44:08+00:00` [auto-approved] Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision-11 T03 run f02bd479-7082-4401-9c7a-9c4d3abcb700 stopped before dpkg because legacy 1.0.2 backup lacks newer integrity controls. Revision 12 keeps customer reset behavior, scope, runtime/module/package surfaces, risk ceiling, reversible-package rule, continuous lock, restoration/quarantine invariants, and one-reboot hardware authority unchanged. Amendment adds read-only source authentication and package-owned fail-closed 1.0.4 control migration; no dirty rebaseline, manual image edit, safety relaxation, broader hardware action, or external policy input.
 
 - `2026-09-24T07:45:18+00:00` [auto-approved] Split approved-plan candidate into 4 bounded tasks
+
+- `2026-09-24T07:45:22+00:00` [auto-approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
