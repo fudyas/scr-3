@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 184
+sequence: 185
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T10:35:51+00:00
+updated: 2026-09-24T10:44:32+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2838,6 +2838,182 @@ Deliver runtime manifest/artifact hashes/licenses, safe extraction/dependency pr
 
 Persist plan only through `./bin/lets sdlc section`; commit DRAFT before display. Run deterministic continuation policy after `draft-ready`. Implementation starts only after tooling reports inherited or explicit approval. `./bin/lets sdlc acceptance` must show every non-HW criterion independently PASS before implementation commit/whole-package validation. No merge/release/HW action on FAIL, stale inspection/artifact, historical rejected DEB, or quarantined image. Developer hardware follow-up still closes requirement.
 
+### Solution plan — DRAFT revision 14
+
+### Solution plan — DRAFT revision 14
+
+#### DRAFT revision 14 — private immutable file mounts for target dpkg
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersede approved revision-13 plan SHA-256 `f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027` only where revision 13 used sealed memfd QEMU/DEB exposure. All other revision-13 and revision-12 requirements remain normative: customer behavior; one reversible package; ownership, upgrade, conflicts, maintainer scripts, source-attested legacy migration, backups/restoration; native SysV oracle; runtime pins; exact lock/quarantine rules; approximate-ABI waiver; one-reboot hardware authority.
+
+No customer-visible change. Counter remains one durable empty `/var/log/scr/reset-<signed UTC epoch milliseconds>-<exactly four lowercase letters>` per observable boot reaching accepted module initialization. Same-boot start/reload adds zero. Pre-init reset remains missed. Module alone owns event, guard, file, retry, count, filter, reset truth. Bash frontend only transports. No reset reason, MMIO/SRC, reset-loop detection, kernel/U-Boot replacement, target APT/network, force load/unload, cleanup reboot, or credentials.
+
+Deliver exactly one image-change package: `scr-req-0001-goal-count-system-resets`, version `1.0.4`, `Architecture: armhf`. Preserve module SHA-256 `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc`. Rebuild only after fresh inspection; two clean builds must match byte-for-byte. Historical DEBs `425217cd15e66ebcab3606a18f45d897ad0c5d5b9891ab95314c5c5c96691424` and `bb67bba672e4530fa372b166496cb345ca741f5faaac354ef62e118c5a1bf811` remain rejected. Record new DEB SHA-256 only after reproducible build.
+
+#### Exact revision-13 result and safety state
+
+Revision-13 T01 remains reusable PASS. Runtime manifest/generation SHA-256 remains `f92dd6c2525d57b2b50b92007fa4f3619e9c6b8abc412e6371a1d739a39da710`; generation suffix remains `f92dd6c2525d57b2`. Stripped ARM probe SHA-256 remains `faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8`, expected exit `42`. Final T01 suite: `55 passed`; offline install/verify, concurrent installers, repair, provenance, process cleanup, and independent probe rebuild PASS. Preserve pinned PRoot `5.1.0-1.3` amd64 artifact SHA-256 `01a5d27c4ac16e184bdb356c9e69fa7d494325ac653c4cd64fae4c3fc63cdbbb`, QEMU user static `1:8.2.2+ds-0ubuntu1.18` artifact SHA-256 `5bb397f66063efa349f6fd5cb3b68cd96f29edd0994e4ba5115cf0859a716bf0`, and complete pinned loader/library/license closure. Installed exact `qemu-arm-static` file SHA-256 remains `47a63bcbdf3030cf42230a0521dae38ff9d62ba1268d5cafc7d8ccf7da7c761c`; implementation must retain full recorded hash, never ellipsis.
+
+Revision-13 T02 result SHA-256 `a3f052b841d1d94397b8d94ebc031a978113a1233023bb1c509a294f7ac5e01d`; validation SHA-256 `cbc5cc66433e77ef5c273fef76c5e563594564bd09d222baec3200f0165a53da`. Suite: `57 passed, 2 failed`; `git diff --check`: PASS. Probe expected `42`, observed `1`. Exact error:
+
+```text
+proot warning: can't sanitize binding "/proc/89396/fd/3": No such file or directory
+proot error: '/run/scr-sdlc-qemu-arm-static' not found (root = /tmp/pytest-of-ubuntu/pytest-58/test_target_runner_executes_st0/target, cwd = /, $PATH=(null))
+fatal error: see `proot --help`.
+```
+
+Independent reproduction used `/proc/90798/fd/3`. Pinned PRoot v5.1.0 `new_binding()` calls `realpath2(..., true)` and rejects failed host-source canonicalization: `https://github.com/proot-me/proot/blob/v5.1.0/src/path/binding.c#L443-L450`; current equivalent: `https://github.com/proot-me/proot/blob/master/src/path/binding.c#L456-L465`. Sealed memfd resolves to anonymous deleted backing storage; retained descriptor cannot satisfy PRoot pathname canonicalization. Remove memfd transport. Never retry it.
+
+T02 cleanup PASS: zero active PRoot/QEMU/broker processes, mounts, loops, scratch entries, mappings, or guest paths. No image/package/fresh/HW transition. Authentic source SHA-256 remains `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`; failed copy remains `27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2`; quarantine marker pair remains `3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae`. Quarantine stays.
+
+#### Selected immutable exposure
+
+Use exact per-file read-only bind mounts inside one new broker-owned mount namespace plus new network namespace. Never create a target inode, target copy, target placeholder, global bind, shared host bind, host installation, `binfmt_misc` registration, or authentic-image-source mount. Parent namespace keeps ordinary runtime/artifact paths unchanged. Namespace teardown removes mounts when final descendant dies.
+
+Linux `mount(2)` defines `MS_REMOUNT|MS_BIND|MS_RDONLY` as changing only bind-mount flags, not underlying filesystem mount: `https://man7.org/linux/man-pages/man2/mount.2.html`. Bounded no-image feasibility already PASS:
+
+- Entered `unshare --mount --net --propagation private`.
+- Self-bound exact named QEMU file onto same canonical path.
+- Remounted exact file `ro,nosuid,nodev`.
+- Source identity stayed `2096:2416228:4250456:755:1000:1000`.
+- Namespace mount options proved exact `ro,nosuid,nodev,relatime,discard,errors=remount-ro,data=ordered`; parent mount stayed ordinary `rw,relatime,discard,errors=remount-ro,data=ordered`.
+- Exact ARM probe SHA-256 `faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8` remained read-only/noexec as artifact, mapped through PRoot, exited `42`; outer command exited `0`.
+- QEMU SHA-256 stayed `47a63bcbdf3030cf42230a0521dae38ff9d62ba1268d5cafc7d8ccf7da7c761c`.
+- Temporary root removed; zero matching mount/process afterward.
+
+Landlock is not sole immutability control. Official kernel documentation says ABI 2 adds `REFER`, ABI 3 adds `TRUNCATE`, ABI 5 adds device ioctl control; pre-sandbox file descriptors retain prior rights. It also does not mediate all metadata operations needed here, including `chmod`, `chown`, `utime`, `access`, `stat`, and `flock`: `https://docs.kernel.org/userspace-api/landlock.html`. Thus Landlock-only design cannot prove exact immutable QEMU/DEB metadata. Optional Landlock may add defense only after independent compatibility proof; failure/absence cannot select weaker behavior. Kernel-enforced read-only private mounts remain mandatory authority.
+
+#### Broker algorithm and proof
+
+1. ACQUIRE verified runtime-generation shared lock and exact artifact lifetime lock.
+2. VERIFY broker runs as transaction real root; target root, runtime generation, QEMU, PRoot, loader/libraries, artifact, scratch, source, copy, marker, and journal identities match pins.
+3. REQUIRE QEMU and DEB are named safe regular files, no symlink, no ambiguous component, expected owner/mode/size/hash/device/inode/link count; REQUIRE safe non-writable parent chain and no concurrent publisher.
+4. SNAPSHOT parent mount namespace, network namespace, `binfmt_misc`, process set, open FDs, file identities, and source/copy/quarantine hashes.
+5. FORK single bounded broker child in new process group.
+6. ENTER new mount namespace and new network namespace.
+7. MARK `/` recursively private before any bind; REQUIRE parent/shared propagation cannot receive child mounts.
+8. CLOSE every unrelated or writable inherited FD. Keep only audited journal pipes, read-only/runtime handles, and required target lifecycle handles. Reject unexpected FD, writable QEMU/DEB descriptor, socket, or namespace handle.
+9. SELF-BIND exact canonical QEMU file onto itself; REMOUNT only that bind `ro,nosuid,nodev`; retain execution.
+10. SELF-BIND exact canonical DEB onto itself; REMOUNT only that bind `ro,nosuid,nodev,noexec`.
+11. VERIFY from `/proc/self/mountinfo` two exact file mountpoints only; exact canonical source/target, mount ID, device/inode, file type, `ro`, safety flags, no parent/subtree/broad bind, no target-root mount replacement.
+12. ATTEMPT independent mutation matrix before PRoot:
+    1. REQUIRE write-open, `pwrite`, append, `truncate`, `ftruncate`, fallocate/collapse, unlink, rename, exchange, hard-link, symlink replacement, `chmod`, `fchmod`, `chown`, `fchown`, `utime`, `utimensat`, xattr, and relevant filesystem ioctl mutation fail.
+    2. REQUIRE artifact execution fails from `noexec`.
+    3. REQUIRE QEMU read/execute works.
+    4. REQUIRE `access`, `stat`, and `flock` reveal no persistent mutation or escape.
+    5. RECHECK full bytes and identity: hash, size, device, inode, link count, uid, gid, mode, timestamps, xattrs, and canonical path.
+13. ***if*** any mutation succeeds, proof is ambiguous, source alias exists, or metadata changes ***then***
+    1. TERMINATE/reap whole process group.
+    2. PROVE namespace death and zero mount/process residue.
+    3. RETAIN quarantine.
+    4. STOP and replan stronger mechanism; never use Landlock alone or weaken read-only guarantee.
+14. INVOKE pinned loader/PRoot/QEMU. Map exact now-read-only named QEMU and DEB paths virtually into guest. Expose only target root, exact QEMU, exact DEB, and exact private scratch required by target dpkg. Never expose host `/`, `/etc`, `/usr`, `/var`, `/home`, `/sys`, `/dev`, network, writable artifact alias, or target helper path.
+15. RUN clean environment: `LC_ALL=C`, `LANG=C`, target `PATH=/usr/sbin:/usr/bin:/sbin:/bin`, `HOME=/root`, fixed umask; remove host loader/compiler/Python/Perl/shell/proxy injection, `DPKG_ROOT`, `DPKG_ADMINDIR`, stray `LD_*`, and unapproved QEMU/recovery variables.
+16. RECORD namespace IDs, propagation state, mountinfo rows, source identities, FD census, runtime generation, executable hashes, exact argv without secrets, target binary hashes, stdout/stderr/status, duration, process tree, and pre/post mutation proofs.
+17. TERMINATE descendants on success, failure, timeout, signal, exception, or interruption. Send bounded TERM then KILL to remaining group members, reap leader/children, and prove no active or zombie-owned descendant.
+18. REQUIRE namespace inode has no surviving PID; REQUIRE private mounts vanished; REQUIRE zero scratch/guest/helper residue; REQUIRE parent mount/network/binfmt snapshots unchanged; REQUIRE QEMU/DEB/source/copy/quarantine identities unchanged.
+19. ***if*** cleanup or proof fails ***then***
+    1. RETAIN image lock and quarantine.
+    2. RETAIN exact journals/evidence.
+    3. STOP before package transition, marker clearance, fresh lifecycle, or HW.
+
+No fallback may change mapping method inside a transaction. No host dpkg, `--force-architecture`, other `--force-*`, foreign-architecture registration, target helper/copy/placeholder, direct dpkg database edit, maintainer-script direct call, unpack-only shortcut, global mount, network, container, or VM.
+
+#### Target dpkg, package, migration, and restoration
+
+After broker PASS, authenticate target `/usr/bin/dpkg`, `/bin/sh`, `/usr/bin/dpkg-query`, `/usr/sbin/update-rc.d`, `/sbin/insserv`, NSS, group, statoverride, and dynamic closure against source/replay/current inspection. Require `dpkg --print-architecture` exact `armhf`; target dpkg version banner, never host `1.22 amd64`; `dpkg-query` exact `rF  1.0.2`; `crontab` and `ssl-cert` resolution; unchanged `/etc/group` SHA-256 `4f040bdc3ec55879e94efb96ca12c80f5f5b16bd07e055e0b82f951af0af1cc3`; unchanged `/var/lib/dpkg/statoverride` SHA-256 `6e5b3880a63bc3b41a72f71d0548e257b409dd519dcf6c047cedd70bf9c824ca`.
+
+Preserve revision-12 package contract exactly. `preinst install` captures immutable original baseline before publish. Recovery-only `preinst upgrade` authenticates source/replay/report, installed `1.0.2`, canonical legacy digest `3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe`, graph/tool facts, then atomically adds package-owned integrity/tool/provenance controls. It never modifies, recaptures, touches, normalizes, or derives legacy members from dirty managed paths. `postinst configure` publishes/registers but never loads module. Upgrade preserves original baseline/events/activation. Removal writes durable pending state, unregisters while script exists, quiesces, ordinary-unloads when possible, and removes only safe generated records. `postrm` restores originals, records, metadata, parents, claims, graphs, and links; backup deletion occurs only after proof. Busy unload remains pending until unrelated natural reboot. Any phase failure returns nonzero and preserves sole backup, journal, lock, and quarantine.
+
+Native oracle stays exact. Install requires native command rc `0`, one runlevel-2 start link, runlevel 0/1/6 stop links, correct targets, `.depend.start` membership and `$local_fs` order, expected `.depend.stop`, no `.depend.boot` activation. Removal requires native rc `0`, zero service links, exact graph restoration:
+
+- `.depend.start` SHA-256 `0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742`
+- `.depend.stop` SHA-256 `71cc8cdaea1f740a3b14dfa8faae9a9c5816b48b7e9b5b896274b2f802027797`
+- `.depend.boot` SHA-256 `21d1f1b0ab0f641d8e9b0b9d45a59b239f7cb4d197b78547343f6eabbe55827b`
+
+`insserv -s` remains diagnostic only. Never directly edit graph content or disable `CONCURRENCY=makefile`. Tool pins remain `/usr/sbin/update-rc.d` `aa5eda3f5b0eec0574faa6bad323766cbab3f851d13a75e81181e62a0285a99d`, `/sbin/insserv` `3049dd9aba7faefa0ef4428e1126c4ee3f26f9143c9052f554c42a265d0353eb`, `/etc/insserv.conf` `b6631a710efe7241001d99a220f15ae3ac9d2555d038dfc8053717703cdbfb3f`.
+
+#### Fresh inspection, rebuild, and locked lifecycle
+
+Revision-11 authentic replay remains authority: clone hash `64f89f060afb05ade2d524d4dc0e80cc46465232e509e35a0079b34ee3c811e2`; semantic fingerprint `60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6`; baseline JSON SHA-256 `af2ed68958a40c6f8f375e63275bf5d1839788735e8113ff92c39656e87725ad`. Geometry remains offset `50331648`, size `3633315840`.
+
+1. ACQUIRE real quarantine-aware image lock.
+2. VERIFY source, failed-copy, marker, replay, geometry, empty mount root, zero loops/mounts.
+3. MOUNT exact failed copy read-only `noatime`.
+4. REPEAT revision-12 legacy/source/protected/native/package inspection.
+5. REQUIRE `rF  1.0.2`, canonical legacy digest, exact protected hashes, no package-owned partial migration.
+6. CAPTURE new report/journal bound to current raw hash.
+7. UNMOUNT, release loop, verify source/copy/quarantine unchanged.
+8. BUILD `1.0.4` twice; require byte-identical armhf DEBs; record new DEB SHA-256 and unchanged module hash.
+9. INDEPENDENTLY VALIDATE package, runtime, private-mount broker, mutation matrix, target probe, and task binding before image mutation.
+10. ACQUIRE one real recovery lock.
+11. VERIFY runtime offline; replay authenticated source clone; preserve authentic source read-only and exact.
+12. MOUNT failed copy rw only under approved geometry.
+13. RUN broker/target preflight.
+14. INSTALL exact `1.0.4` using ordinary authentic target dpkg.
+15. VERIFY ordered hooks, configured status, unchanged legacy subset, complete controls, DEB/control-script hashes, protected files, graphs, links.
+16. RUN package test through same target root.
+17. REMOVE and PURGE through ordinary target dpkg.
+18. REQUIRE dpkg status/info absent; zero runner process, namespace, private mount, mapping, scratch, helper, copy, placeholder, or FD residue.
+19. COMPARE exact restored semantic state with authenticated replay: all managed/shared/protected/original paths, records, metadata, parents, package/owner/runtime namespaces, links, graphs.
+20. UNMOUNT and release every loop.
+21. VERIFY authentic source unchanged.
+22. CLEAR matched per-image marker, then global dirty marker, through outer SDLC tooling only.
+23. ***if*** any setup, mutation, package, restoration, cleanup, source, or clearance gate fails ***then***
+    1. ATTEMPT bounded owned-process cleanup only.
+    2. RETAIN quarantine, image, clone, baseline, reports, package/runtime evidence, and journals.
+    3. STOP before fresh lifecycle/HW.
+
+After recovery PASS, execute fresh disposable install/test/remove/purge/restoration with same broker. One real lock spans copy, mount, baseline, install, test, uninstall, purge, exact restoration, namespace/process/mount cleanup, unmount, source proof, unlock. Fresh install uses normal baseline capture, never migration exception. Prove uninstalling all produced packages—this one package—restores original image semantic state. Do not claim disposable raw-byte equality after ext4/dpkg journal activity.
+
+#### Tests and failure injection
+
+- Reuse independently validated revision-13 T01 pins/tests; rerun only affected runner interface and complete regression.
+- Private namespace: unshare/make-private failure; inherited shared propagation; wrong namespace inode; nested namespace; parent mount snapshot drift; namespace survivor; exact cleanup.
+- File mounts: symlink/special/hard-linked source; path swap; mount race; wrong inode/device/hash; partial first/second bind; remount flag omission; broad bind; target-path bind; mountinfo ambiguity; parent-visible mount. All stop.
+- Immutability: live write, append, truncate, fallocate, unlink, rename, exchange, link, symlink, chmod, chown, mtime/atime/xattr, ioctl, open-FD, `/proc/<pid>/fd`, alternate-path, and alias attacks against exact QEMU/DEB. Require denial plus exact post-identity.
+- Landlock limitation regression: show Landlock-only policy cannot substitute for read-only mounts; ABI/error never selects weaker route.
+- Execution: exact ARM probe exit `42`; target shell/dpkg child exec; signals/exits; locks, rename, fsync, uid/gid/mode; maintainer order; target NSS/statoverride; no host dpkg.
+- Faults: PRoot/QEMU/broker crash, hang, SIGSEGV, `KeyboardInterrupt`, timeout, child fork/escape, journal failure, TERM/KILL failure, namespace survivor. Require reap and zero residue; otherwise quarantine.
+- Package tests: source-attested migration, partial migration, unchanged legacy members, integrity coverage, graph/link oracle, protected metadata, records, conflicts, upgrade/abort, loaded/absent cleanup, removal retry.
+- Lifecycle faults at every recovery/fresh phase. Never clear marker after any failure.
+
+#### Hardware gate
+
+Unchanged. No HW before recovery and fresh disposable lifecycle independently PASS. Target remains `192.168.68.55`, `SCR-7CCC91`, ADLINK LEC-iMX6, Debian 8 Jessie, ARMv7/armhf, SysV runlevel `2`, kernel `3.10.105-imx6 #5 SMP PREEMPT`, config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`, uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`, baseline taint `4096`.
+
+Install exact rebuilt DEB without target APT/network. Verify native graph/link oracle. Manual start exactly `+1`; repeated start/unload/reload `+0`; CLI/sync-fault checks PASS. Permit one ordinary reboot only after all gates. Require automatic module/guard/device, exactly `+1`, no duplicate/anomaly/new taint. Ordinary remove/purge restores records, graphs, links, metadata, protected files, package namespace, connectivity. No force, cleanup reboot, direct graph edit, or persistent credential.
+
+#### Bounded tasks and acceptance
+
+- T01: retain revision-13 runtime PASS; implement private mount/network broker and adversarial no-image feasibility/fault suite. Independent validate. No image mutation.
+- T02: integrate broker into target runner/recovery/package-test/remove/purge; prove exact target dpkg and cleanup. Independent validate. No quarantined-image mutation.
+- T03: fresh lock-held read-only inspection; pin report; rebuild `1.0.4` twice; validate exact DEB/module/runtime/task evidence.
+- T04: one lock-held existing-copy recovery, exact restoration, cleanup, marker clearance; then fresh disposable lifecycle. Failure retains quarantine and stops.
+- T05: unchanged one-reboot HW acceptance only after T04 independent PASS.
+
+Acceptance IDs:
+
+- `R14-01`: Revision-13 T01 runtime manifest/generation, artifact pins, licenses, ELF/dependency closure, offline/atomic/idempotent/concurrent behavior remain exact and independently reusable.
+- `R14-02`: Private mount+network broker exposes exact named QEMU/DEB via exact per-file `ro` bind mounts; PRoot canonicalization and ARM probe exit `42`; no target inode/copy/placeholder, broad/global bind, host dpkg, binfmt, or network.
+- `R14-03`: Independent mutation matrix proves QEMU/DEB bytes and metadata immutable against write/truncate/rename/link/chmod/chown/time/xattr/ioctl/open-FD/alias attacks; weak or ambiguous proof stops and replans.
+- `R14-04`: Every success/failure leaves zero broker/PRoot/QEMU descendants, private namespace mounts, loops, mappings, scratch, guest/helper paths, leaked FDs, or parent namespace changes; failure retains quarantine.
+- `R14-05`: Authentic target dpkg/shell/NSS/database/tools prove `armhf`, exact version/status/hashes, unchanged group/statoverride, ordered hook execution; no force or direct database edit.
+- `R14-06`: Fresh inspection binds copy `27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2`, protected hashes, canonical legacy digest, and new report; two rebuilt `1.0.4` armhf DEBs match; exact new hash recorded.
+- `R14-07`: Existing `1.0.2` copy upgrades to `1.0.4`; package-owned source-attested migration leaves legacy subset unchanged, adds complete controls, passes test, then ordinary remove/purge leaves dpkg namespace absent.
+- `R14-08`: One real lock spans source/clone proof, mount, broker, install, test, uninstall, purge, restoration, all cleanup, unmount, source proof, marker clearance; exact replay restoration PASS.
+- `R14-09`: Fresh disposable lifecycle proves uninstalling all produced packages restores every managed/shared/protected/original surface; no residue; authentic source exact.
+- `R14-10`: Native activation/removal oracle remains exact links, graph membership/order, three-graph restoration; `insserv -s` diagnostic only; no direct graph edit.
+- `R14-11`: Exact HW one reboot gives automatic module/guard/device and exactly `+1`, no duplicate/anomaly/new taint; ordinary purge restores target without force/reboot/credentials/residue.
+
+#### Continuation policy, deliverables, and gate
+
+Material-change flags: `customer_behavior=false`, `scope=false`, `risk=false`, `safety_relaxation=false`, `hardware_authority=false`.
+
+Reason: revision-13 T02 stopped before image/package transition because pinned PRoot rejects anonymous memfd path canonicalization. Revision 14 changes only host-side development isolation: exact per-file read-only bind mounts exist solely inside a propagation-private mount namespace and disappear with broker descendants. This replaces unusable transport, strengthens immutable exposure, preserves exact package/image surfaces, no-force/no-helper/no-placeholder/no-global-bind rules, continuous lock, restoration/quarantine ceiling, and unchanged one-reboot authority. Landlock-only weaker protection is rejected.
+
+Deliver exact feasibility journal, namespace/mountinfo identities, full QEMU hash, adversarial mutation results, FD/process cleanup proof, target dpkg evidence, new inspection report, two-build DEB hash, hook/native graph evidence, recovery/fresh fingerprints, marker clearance, HW logs/count/taint/restoration, revision-14 task artifacts, and updated `RELEASE.md`. No fabricated retrospective evidence. Persist only through `./bin/lets sdlc ...`; commit DRAFT before display; run deterministic continuation policy. Never self-approve. Implementation starts only after tooling reports inherited or explicit approval.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -3207,3 +3383,5 @@ Persist plan only through `./bin/lets sdlc section`; commit DRAFT before display
 - `2026-09-24T10:35:36+00:00` [implementing] Task T02 attempt 1 validation fail
 
 - `2026-09-24T10:35:51+00:00` [drafting-plan] Revision 13 T02 FAIL: pinned PRoot 5.1.0 rejects sealed anonymous memfd source during realpath2 host-binding canonicalization. Live ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 expected exit 42, observed 1: proot warning: can't sanitize binding "/proc/89396/fd/3": No such file or directory; /run/scr-sdlc-qemu-arm-static absent. Independent suite: 57 passed, 2 failed; diff check PASS. Cleanup zero processes/mounts/loops/scratch/guest paths. No image mutation; copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2, source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6, marker pair 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae unchanged; quarantine retained. Replan exact immutable read-only mapping/isolation; no named writable bind, changed-method fallback, target helper/copy/placeholder, global bind, force, T03/T04/fresh/HW.
+
+- `2026-09-24T10:44:32+00:00` [drafting-plan] Updated round 1 solution-plan section
