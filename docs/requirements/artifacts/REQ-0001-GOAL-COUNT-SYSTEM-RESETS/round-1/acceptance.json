@@ -1,12 +1,13 @@
 {"criteria":[
-  {"id":"R13-01","text":"Runtime pins authoritative QEMU/PRoot/closure by version, architecture, size, SHA-256, URL, license, ELF/dependency facts; safe atomic idempotent offline concurrent LETS-state-only install."},
-  {"id":"R13-02","text":"Private runner uses authentic target armhf dpkg/shell/NSS/database/tools; exact hashes, architecture, version/status and protected files proven; never host dpkg, force, binfmt, global install, network, host bind, target helper/copy/placeholder."},
-  {"id":"R13-03","text":"Runtime/translation/process/mapping failure leaves zero children, mounts, loops, mappings, target helper paths, unauthorized mutations; quarantine retained."},
-  {"id":"R13-04","text":"Fresh read-only inspection binds current copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2 to exact protected hashes/canonical legacy digest and new report."},
-  {"id":"R13-05","text":"Two rebuilt armhf DEBs identical; new hash recorded; module hash retained; revision-12 migration/runtime behavior unchanged."},
-  {"id":"R13-06","text":"Existing copy upgrades 1.0.2 to 1.0.4 through ordinary target dpkg; hooks/legacy/controls/test verified; target remove/purge leaves status/info absent."},
-  {"id":"R13-07","text":"One lock covers source/clone proof, mount, target lifecycle, restoration, runtime cleanup, unmount/source proof, matched-marker clearance; replay-baseline restoration PASS."},
-  {"id":"R13-08","text":"Fresh disposable target-dpkg lifecycle PASS under one lock; removing all produced packages restores every image surface; no residue; source exact."},
-  {"id":"R13-09","text":"Native oracle remains rc, exact links, generated graph membership/order, exact graph restoration; insserv -s diagnostic only; no graph content edit."},
-  {"id":"R13-10","text":"Exact HW one reboot yields automatic module/guard/device and exactly +1, no duplicate/anomaly/new taint; ordinary remove/purge restores target without force/cleanup reboot/credentials/residue."}
+  {"id":"R14-01","text":"Revision-13 T01 runtime manifest/generation, artifact pins, licenses, ELF/dependency closure, offline/atomic/idempotent/concurrent behavior remain exact and independently reusable."},
+  {"id":"R14-02","text":"Private mount+network broker exposes exact named QEMU/DEB through exact per-file read-only bind mounts; PRoot canonicalization and ARM probe exit 42; no target inode/copy/placeholder, broad/global bind, host dpkg, binfmt, or network."},
+  {"id":"R14-03","text":"Independent mutation matrix proves QEMU/DEB bytes and metadata immutable against write/truncate/rename/link/chmod/chown/time/xattr/ioctl/open-FD/alias attacks; weak or ambiguous proof stops and replans."},
+  {"id":"R14-04","text":"Every success/failure leaves zero broker/PRoot/QEMU descendants, private namespace mounts, loops, mappings, scratch, guest/helper paths, leaked FDs, or parent namespace changes; failure retains quarantine."},
+  {"id":"R14-05","text":"Authentic target dpkg/shell/NSS/database/tools prove armhf, exact version/status/hashes, unchanged group/statoverride, ordered hook execution; no force or direct database edit."},
+  {"id":"R14-06","text":"Fresh inspection binds copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2, protected hashes, canonical legacy digest, and new report; two rebuilt 1.0.4 armhf DEBs match; exact new hash recorded."},
+  {"id":"R14-07","text":"Existing 1.0.2 copy upgrades to 1.0.4; package-owned source-attested migration leaves legacy subset unchanged, adds complete controls, passes test, then ordinary remove/purge leaves dpkg namespace absent."},
+  {"id":"R14-08","text":"One real lock spans source/clone proof, mount, broker, install, test, uninstall, purge, restoration, all cleanup, unmount, source proof, marker clearance; exact replay restoration PASS."},
+  {"id":"R14-09","text":"Fresh disposable lifecycle proves uninstalling all produced packages restores every managed/shared/protected/original surface; no residue; authentic source exact."},
+  {"id":"R14-10","text":"Native activation/removal oracle remains exact links, graph membership/order, three-graph restoration; insserv -s diagnostic only; no direct graph edit."},
+  {"id":"R14-11","text":"Exact HW one reboot gives automatic module/guard/device and exactly +1, no duplicate/anomaly/new taint; ordinary purge restores target without force/reboot/credentials/residue."}
 ]}
