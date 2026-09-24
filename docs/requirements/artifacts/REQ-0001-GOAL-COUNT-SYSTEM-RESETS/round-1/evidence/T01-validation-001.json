@@ -1,0 +1,29 @@
+{
+  "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+  "attempt": 1,
+  "report": {
+    "acceptance": {
+      "R12-01": "pass"
+    },
+    "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+    "next": "T02 may implement package-owned recovery-only 1.0.4 migration using pinned report and canonical digest. Real recovery remains forbidden until T02 PASS.",
+    "result": "pass",
+    "task": "T01",
+    "verified": [
+      "Only exact quarantined state rF  1.0.2 accepted; report binds four installed hook hashes.",
+      "Exact allowed legacy layout, path keys, missing claims, parent state, records, graphs, tools, ownership claims, protected files, source, replay clone, failed copy, marker pair, and geometry authenticated.",
+      "Canonical digest 095b676cf9a723a6089757f88322e93a22498c52a7bec6d13046932d0b2aa006 binds path, type, uid, gid, mode, size, link count, second-resolution atime/mtime, and file content hash.",
+      "One quarantine-aware image lock covered both read-only mounts, inspection, clean unmounts, loop release, identity rehash, marker revalidation, report, and journal.",
+      "Report SHA-256 21ac1e3799183125c32a3fb96fd336e2578157a008f8c9db4c6636a688ee713b; journal SHA-256 6109df00bd8156f646b9641c18239fd885b638b362a5b17c33d4c35619a67e23; terminal phase inspected-quarantine-retained.",
+      "Source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6, replay clone 64f89f060afb05ade2d524d4dc0e80cc46465232e509e35a0079b34ee3c811e2, and failed copy ac5c738ac366e79dfa7313ceff7f6b682b3fe7b8103f8c02eee4e496cc2d0c13 remained exact.",
+      "Quarantine marker pair remains root-owned mode 0600 with original timestamps; no related mount or loop remains; no dpkg, image write, hardware action, or reboot occurred.",
+      "./bin/lets sdlc test passed 24/24; git diff --check passed."
+    ]
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "pass",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-24T08:07:14+00:00"
+}
