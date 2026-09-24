@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: draft-ready
+state: auto-approved
 round: 1
-sequence: 172
-approval: none
+sequence: 173
+approval: auto-approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T08:52:40+00:00
+updated: 2026-09-24T08:52:58+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3183,3 +3183,5 @@ Persist plan only through `./bin/lets sdlc section`; commit DRAFT before display
 - `2026-09-24T08:52:34+00:00` [drafting-plan] Updated round 1 solution-plan section
 
 - `2026-09-24T08:52:40+00:00` [draft-ready] Committed DRAFT revision 13 after revision-12 T03 host-dpkg incompatibility: preserve exact 1.0.4 package/migration/runtime behavior and all lock/restoration/quarantine/no-force/HW rules; replace host dpkg with pinned hermetic PRoot plus qemu-arm-static executing authentic target armhf dpkg/shell/NSS/tools. No binfmt/global install, host dpkg, target helper/copy/placeholder, direct edit, dirty rebaseline, or broader authority. Fresh inspection/rebuild precedes one recovery retry. Customer behavior, scope, risk, safety, and HW authority unchanged; continuation-policy next.
+
+- `2026-09-24T08:52:58+00:00` [auto-approved] Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: Revision 12 T03 failed before package transition. Run 292f25f1-12c2-495b-8c07-eff03001e714 journal 4e1497cc17c9495a0cbc0e73a6fa0e3d00e5de4b570d271dc5ac26a4b6397038 exposed host-NSS lookup; private read-only authenticated target group passed it. Fresh inspection 7d3f9ff3-f4b1-4d7e-8cef-e7d230c8cf8d report 428a838126f09c10ed432b37a579f26b50b27aa48a19e0437fd30006cdf6c2df preserved rF  1.0.2 and canonical digest 3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe. Run d4874ce1-94b0-4efe-82a9-7ac248726a4c journal e8178463267372df8d07a37e94b60413992c663d8253c3942dee932d1edbf372 then proved host amd64 dpkg rejects exact armhf DEB. No force allowed. Source cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6 unchanged; current copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2; protected files exact; marker SHA 3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae; quarantine retained; zero mounts/loops. Revision 13 changes development tooling only: pinned isolated PRoot/QEMU executes authentic target armhf dpkg without host dpkg, force, binfmt, target helper/copy/placeholder, image edit, safety relaxation, or broader HW authority. Customer behavior, scope, risk, safety rules, and hardware authority unchanged.
