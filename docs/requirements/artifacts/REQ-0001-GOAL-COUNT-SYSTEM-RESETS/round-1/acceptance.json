@@ -1,11 +1,12 @@
 {"criteria":[
-  {"id":"R12-01","text":"Read-only inspection authenticates exact legacy backup against replay/source evidence, emits pinned canonical digest/report, cleanly unmounts/releases, leaves quarantine unchanged."},
-  {"id":"R12-02","text":"1.0.4 preinst migration is recovery-only, source-attested, interruption-safe, package-owned, atomic/durable, and never modifies/recaptures legacy members."},
-  {"id":"R12-03","text":"Ordinary install/upgrade requires complete valid controls; missing/partial/wrong controls fail closed; fresh install remains reversible."},
-  {"id":"R12-04","text":"One armhf DEB builds twice identically; new DEB hash recorded; module hash retained or changed only with full reproducibility evidence; runtime behavior unchanged."},
-  {"id":"R12-05","text":"Exact failed copy upgrades 1.0.2 to 1.0.4, tests, removes, purges, matches authenticated baseline, releases mounts/loops, preserves source hash, clears only matched quarantine."},
-  {"id":"R12-06","text":"Fresh disposable install/test/remove/purge/restoration PASS under continuous lock; no managed/package/runtime/ownership residue; source exact."},
-  {"id":"R12-07","text":"Native registration/removal oracle remains command rc, exact links/graph membership/order and exact three-graph restoration; insserv -s diagnostic only; no graph content edit."},
-  {"id":"R12-08","text":"Exact target one reboot yields module, guard, device, exactly plus one record, no duplicate/anomaly/new taint."},
-  {"id":"R12-09","text":"Ordinary target remove/purge restores exact records, graphs, links, metadata, protected files, package namespace, connectivity; no force, cleanup reboot, credentials, residue."}
+  {"id":"R13-01","text":"Runtime pins authoritative QEMU/PRoot/closure by version, architecture, size, SHA-256, URL, license, ELF/dependency facts; safe atomic idempotent offline concurrent LETS-state-only install."},
+  {"id":"R13-02","text":"Private runner uses authentic target armhf dpkg/shell/NSS/database/tools; exact hashes, architecture, version/status and protected files proven; never host dpkg, force, binfmt, global install, network, host bind, target helper/copy/placeholder."},
+  {"id":"R13-03","text":"Runtime/translation/process/mapping failure leaves zero children, mounts, loops, mappings, target helper paths, unauthorized mutations; quarantine retained."},
+  {"id":"R13-04","text":"Fresh read-only inspection binds current copy 27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2 to exact protected hashes/canonical legacy digest and new report."},
+  {"id":"R13-05","text":"Two rebuilt armhf DEBs identical; new hash recorded; module hash retained; revision-12 migration/runtime behavior unchanged."},
+  {"id":"R13-06","text":"Existing copy upgrades 1.0.2 to 1.0.4 through ordinary target dpkg; hooks/legacy/controls/test verified; target remove/purge leaves status/info absent."},
+  {"id":"R13-07","text":"One lock covers source/clone proof, mount, target lifecycle, restoration, runtime cleanup, unmount/source proof, matched-marker clearance; replay-baseline restoration PASS."},
+  {"id":"R13-08","text":"Fresh disposable target-dpkg lifecycle PASS under one lock; removing all produced packages restores every image surface; no residue; source exact."},
+  {"id":"R13-09","text":"Native oracle remains rc, exact links, generated graph membership/order, exact graph restoration; insserv -s diagnostic only; no graph content edit."},
+  {"id":"R13-10","text":"Exact HW one reboot yields automatic module/guard/device and exactly +1, no duplicate/anomaly/new taint; ordinary remove/purge restores target without force/cleanup reboot/credentials/residue."}
 ]}

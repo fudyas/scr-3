@@ -1,44 +1,45 @@
 {
   "acceptance": "acceptance.json",
-  "acceptance_sha256": "270d21321a6398e128059e13df26fd982a90d224637b1398551721e9ff6ba392",
-  "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+  "acceptance_sha256": "382914a18bf81048498ac4871727206b1ee0af3e2f6812c48948e2c64dddea0f",
+  "approved_plan_sha256": "f37ab6291b7e6b8ef9e51691a44170028864fbf667d2e9454f65c7110e8ca027",
   "contract": "contract.md",
-  "contract_sha256": "39aa13df58413c052244af33574e568e7e6cf24f1c28786c9b2eb16c92748428",
-  "definitions_sha256": "9fe6e7928c6e1e3eacfd8bee73e9643ae02aaa9ecaab02618564cd2a04676241",
+  "contract_sha256": "f1d211b0eb008df2f99edd5ae4a680eabae984161a56555cd817b659b06ba5ec",
+  "definitions_sha256": "61e0c21e98c3547b86a73bb1050294a0249c95a502eeab284ec92f8c524f5d5c",
   "interfaces": "interfaces.md",
-  "interfaces_sha256": "a2a9994458dd96fcee1a839df6d2ec511de5662626919156c8558b7b5af9e9b6",
-  "plan_revision": 12,
+  "interfaces_sha256": "1f9acd133d4a9b6534463166f64643c59a5aaa860937fbcb390ead2c58990684",
+  "plan_revision": 13,
   "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
   "round": 1,
   "schema_version": 1,
   "tasks": [
     {
       "acceptance": [
-        "R12-01"
+        "R13-01",
+        "R13-02",
+        "R13-03"
       ],
       "depends_on": [],
       "file": "tasks/T01.md",
       "id": "T01",
-      "sha256": "b497a4969296316116b1968dc6c0422e90dad02f52fd67999e3d0b5c383dfee9"
+      "sha256": "462549e1ae93953bfd5d40b5a786f5ca700a8eacb07e22e6a1153b8b1f3e84b2"
     },
     {
       "acceptance": [
-        "R12-02",
-        "R12-03",
-        "R12-04",
-        "R12-07"
+        "R13-02",
+        "R13-03",
+        "R13-09"
       ],
       "depends_on": [
         "T01"
       ],
       "file": "tasks/T02.md",
       "id": "T02",
-      "sha256": "dbe8ebc950787a5b82a979965eb084b77170c1033316de0163237f8a3b856990"
+      "sha256": "50af1a4d2c2b52d3a290af1104ddecf768ade2a856e942d5cfdcf74abf3e73e2"
     },
     {
       "acceptance": [
-        "R12-05",
-        "R12-06"
+        "R13-04",
+        "R13-05"
       ],
       "depends_on": [
         "T01",
@@ -46,19 +47,34 @@
       ],
       "file": "tasks/T03.md",
       "id": "T03",
-      "sha256": "90d47c0cdb3352ec3aa5de885975b8a480456f8e749b1d167e045a5c294e53d0"
+      "sha256": "047562dd8df216771a0aec1b58401a7f75109eef1e6a4fa2bd9cbdbbc56fd2c9"
     },
     {
       "acceptance": [
-        "R12-08",
-        "R12-09"
+        "R13-06",
+        "R13-07",
+        "R13-08",
+        "R13-09"
       ],
       "depends_on": [
+        "T01",
+        "T02",
         "T03"
       ],
       "file": "tasks/T04.md",
       "id": "T04",
-      "sha256": "ca983090adf6bccc838e63332589e8112ce2fa254e82494dd672ae91b1c36318"
+      "sha256": "31957eb14732020a7fa2f1a8ff9b038c7539314e7f28f1379f6fe9e6cc010e25"
+    },
+    {
+      "acceptance": [
+        "R13-10"
+      ],
+      "depends_on": [
+        "T04"
+      ],
+      "file": "tasks/T05.md",
+      "id": "T05",
+      "sha256": "85303007bbf9c52bcf28936b88cd9741bfc1c8c8326f77c94e3953a5095b6241"
     }
   ]
 }
