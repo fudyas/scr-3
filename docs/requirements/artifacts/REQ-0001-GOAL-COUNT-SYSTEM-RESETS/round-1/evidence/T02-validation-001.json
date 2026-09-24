@@ -1,0 +1,33 @@
+{
+  "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+  "attempt": 1,
+  "report": {
+    "acceptance": {
+      "R12-02": "pass",
+      "R12-03": "pass",
+      "R12-04": "pass",
+      "R12-07": "pass for package/tooling gates; T03 owns real restoration"
+    },
+    "approved_plan_sha256": "88624339e939cb5b64c64dc703f7974754efb446a4141f52e3d3499ff4a912f7",
+    "next": "T03 may run one lock-held recovery with exact DEB 425217cd15e66ebcab3606a18f45d897ad0c5d5b9891ab95314c5c5c96691424, then fresh disposable lifecycle. Any failure retains quarantine and stops.",
+    "result": "pass",
+    "task": "T02",
+    "verified": [
+      "Canonical migration digest has one shell/Python algorithm: exact member set; path/type/uid/gid/mode/link count for all; size/second-atime/second-mtime/content for regular files. Container size/times are intentionally volatile under authorized control publication.",
+      "Only exact preinst upgrade old version 1.0.2 plus exact source, replay fingerprint, inspection-report, and canonical-digest values reaches migration.",
+      "Migration writes only new package-owned controls; no capture, replace, chmod, chown, touch, delete, or regeneration targets a legacy member.",
+      "Interrupted migration test regenerates exact package-owned controls only after unchanged canonical digest; changed legacy member and wrong binding/version refuse.",
+      "Integrity manifest covers legacy regular files, provenance, and native-tool controls; readiness/transient/integrity self-controls are excluded as designed; digest verifies before readiness.",
+      "Outer recovery independently binds report/hash, source/copy/replay identities, semantic fingerprint, state/version, canonical legacy digest, new controls, manifest, installed hooks, lifecycle restoration, cleanup, source proof, and matched-marker clearance.",
+      "Two clean builds produced byte-identical armhf DEB SHA-256 425217cd15e66ebcab3606a18f45d897ad0c5d5b9891ab95314c5c5c96691424; exactly one canonical DEB exists.",
+      "Module remains byte-identical SHA-256 f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc; runtime behavior and native graph rules unchanged.",
+      "./bin/lets sdlc test passed 25/25; git diff --check passed; no real image recovery/fresh lifecycle/hardware/reboot occurred; quarantine remains."
+    ]
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "pass",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T02",
+  "time": "2026-09-24T08:27:48+00:00"
+}
