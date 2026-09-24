@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 154
+sequence: 155
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-24T07:33:16+00:00
+updated: 2026-09-24T07:43:51+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -2531,6 +2531,144 @@ Deliver preserved corrected package/module plus narrowly amended tooling/tests/d
 
 Nontrivial facts: six retained payload files plus native shared graphs/links/runtime/storage, custom maintainer logic, privileged kernel/control surface, boot/service activation, shared-package overlap risk, bounded clone/replay/recovery tooling, approximate ABI, controlled reboot. Latest developer amendment authorizes this DRAFT preparation, never self-approval or waived safety gate. Persist via `./bin/lets sdlc section`; stage `draft-ready`; run deterministic `trivial-policy` with `--files 6 --tests --boot --service --storage --security --overlap --custom-maintainer-scripts`. Commit DRAFT before display. Only tooling's explicit trivial-policy PASS may waive approval. Otherwise wait developer approval/amendments bound to exact revision/hash. Never self-approve or implement during drafting.
 
+### Solution plan — DRAFT revision 12
+
+#### DRAFT revision 12 — source-attested migration of legacy package backup
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Supersedes approved DRAFT revision 11 SHA-256 `ca026e46c8bcdb138813cd727bfd8ef7fc142e6651d9e4abc3fb4cc748498d66` after T03 failure at sequence 152 and engineering-replan transition sequence 153. Earlier drafts, approvals, task evidence, failures, artifacts, and hardware evidence remain audit history. Preserve revision-11 behavior, scope, risk, safety rules, approximate-ABI waiver, native activation oracle, continuous lock, restoration, quarantine, and hardware authority. Sole amendment: authenticate and migrate preserved revision-9 package version `1.0.2` first-install backup, which predates revision-10 integrity controls, through package-owned version `1.0.4` before recovery removal.
+
+No customer-visible reset-counter behavior changes. Module, Bash frontend, observable-initialization boundary, filenames, CLI, SysV activation, storage semantics, exclusions, no-MMIO/no-reason boundary, and one-reboot hardware procedure remain revision-11 exact. No safety relaxation. No broader image or hardware authority. No unanswered policy question. Technical feasibility remains gated by read-only inspection, reproducible build, recovery, and restoration evidence.
+
+#### Exact blocker and preserved evidence
+
+- Revision-11 T01/T02 independently PASS. Retained package `scr-req-0001-goal-count-system-resets_1.0.3_armhf.deb` SHA-256 `8139e08b81216daf6ff9697ee8f9e60989cd830c8d3aad1a2b77bfe042b616f5`; module SHA-256 `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc`. Preserve both as historical evidence; `1.0.3` is not retry artifact after this revision.
+- Recovery run `f02bd479-7082-4401-9c7a-9c4d3abcb700` PASS through authentic-source identity, independent clone pre-hash, rw ext4 journal replay, clean unmount/loop release, ro semantic fingerprint, second clean release, and unchanged source. Authentic source `/home/fudya/devel/scr/var/image_8.26.0` stayed unmounted and SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6` before/after. Replayed clone hash `64f89f060afb05ade2d524d4dc0e80cc46465232e509e35a0079b34ee3c811e2`; authenticated semantic fingerprint `60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6`; baseline JSON file SHA-256 `af2ed68958a40c6f8f375e63275bf5d1839788735e8113ff92c39656e87725ad`.
+- T03 stopped before installed-package query and before any corrected dpkg transition. Exact error: `immutable backup control unavailable or unsafe: /home/fudya/devel/scr/.codex/sdlc/req-0001-offset-test/root/var/lib/scr-req-0001-goal-count-system-resets/sdlc-backup/integrity.manifest`. Journal SHA-256 `f7b528aa1bd05b12a0bc6b8410b50b8a762f52215cff492a2c7948fe9858a7ba`; failed-copy SHA-256 `f2bd5751e85b945390f8688354ecceedc3e0da55c143de25000fa957e2565c77`.
+- Quarantine marker run `ba9e92b3-e1ee-4407-833a-ae3899f0662e` independently inventories legacy backup: `baseline.ready`; nine managed-path `.path`/`.missing` pairs; parent `.path`/`.time`; `var-lib.atime`/`var-lib.mtime`; `log-scr.missing`; `records.list`, empty `records/`, `records.ready`; `native-init.ready`; three graph `.sha256`/`.metadata`/`.time` triples; empty `native-init/links`. It does not inventory `integrity.manifest`, `integrity.sha256`, or newer native-tool hash controls. Absence matches version `1.0.2` chronology; absence is not corruption proof or permission to trust unverified files.
+- Authenticated replay baseline proves original managed code/log paths absent; graph hashes: `.depend.start` `0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742`, `.depend.stop` `71cc8cdaea1f740a3b14dfa8faae9a9c5816b48b7e9b5b896274b2f802027797`, `.depend.boot` `21d1f1b0ab0f641d8e9b0b9d45a59b239f7cb4d197b78547343f6eabbe55827b`. Native tools: `/usr/sbin/update-rc.d` `aa5eda3f5b0eec0574faa6bad323766cbab3f851d13a75e81181e62a0285a99d`, `/sbin/insserv` `3049dd9aba7faefa0ef4428e1126c4ee3f26f9143c9052f554c42a265d0353eb`, `/etc/insserv.conf` `b6631a710efe7241001d99a220f15ae3ac9d2555d038dfc8053717703cdbfb3f`.
+- `/etc/group` SHA-256 `4f040bdc3ec55879e94efb96ca12c80f5f5b16bd07e055e0b82f951af0af1cc3`; `/var/lib/dpkg/statoverride` SHA-256 `6e5b3880a63bc3b41a72f71d0548e257b409dd519dcf6c047cedd70bf9c824ca`. Existing fixture files corroborate both.
+- Failed copy, failed-copy root, marker pair, historical fixtures, both prior recovery journals, replay clone, and authenticated baseline remain preserved. No active related loop or mount observed after failure. Quarantine remains mandatory.
+
+#### Package and ownership amendment
+
+Build exactly one replacement candidate: `scr-req-0001-goal-count-system-resets` version `1.0.4`, `Architecture: armhf`. Version `1.0.4` changes maintainer/recovery logic and embedded recovery attestation; therefore new DEB SHA-256 must come from two byte-identical clean builds. Preserve module bytes and expected SHA-256 `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc` unless a separately evidenced rebuild changes them. Runtime payload behavior stays byte-identical where technically possible. Bind package-state/RELEASE/task evidence to revision-12 plan SHA-256.
+
+Package owns every image mutation. `preinst` owns migration files under `/var/lib/scr-req-0001-goal-count-system-resets/sdlc-backup`; no recovery tool, agent, mount helper, or manual command writes backup content, graphs, fixtures, managed paths, dpkg state, or markers. Outer tooling only reads/authenticates, invokes ordinary dpkg, compares, journals, mounts/unmounts, and clears matched quarantine after all proof passes.
+
+Legacy members remain immutable. Migration may add only exact package-owned controls: atomic migration journal/staging files, authenticated source/fingerprint/digest provenance, missing native-tool hash controls, `integrity.manifest`, and `integrity.sha256`. Never replace, recapture, normalize, repair, delete, touch, chmod, chown, or regenerate a legacy member. Never derive original state from dirty current managed paths. Never add parent metadata/graph data by sampling dirty root. Authentic replay baseline remains restoration authority.
+
+#### Lock-held read-only legacy inspection
+
+Add explicit inspection mode to `./bin/lets sdlc recover-package`; no direct Python/module invocation. Inspection binds canonical state root, exact source/copy/root, marker pair/run, source/copy hashes, retained replay clone/baseline hashes, fixtures, offset `50331648`, size `3633315840`, package name, and expected installed legacy version. One real quarantine-aware image lock spans mount, inspection, unmount, loop/source proof, evidence publication, and release. Quarantine never clears in inspection mode.
+
+1. VERIFY every bound input, marker identity/metadata, source identity/hash, failed-copy identity/hash, replay-clone identity/hash, baseline JSON SHA-256/fingerprint, fixture hash, geometry, empty unmounted root, and zero conflicting loops
+2. MOUNT exact failed copy read-only with `noatime`; never allow rw fallback, `noload`, `fsck`, alternate geometry, copy overwrite, or journal mutation
+3. READ installed dpkg status/version and exact installed hook hashes
+4. ENUMERATE backup without following symlinks or crossing filesystems
+5. REQUIRE regular safe single-link controls, exact allowed legacy path set, no special objects, no unexpected entries, no partial newer controls, and exact version-`1.0.2` layout
+6. VALIDATE every `.path` key/name/content mapping against approved managed paths
+7. REQUIRE each `.missing` claim to match absence in authenticated replay baseline
+8. REQUIRE zero `.saved` members unless exact content/type/metadata independently matches authenticated replay baseline
+9. VALIDATE parent path/time, `/var/lib` time strings, record/log state, three graph hashes/metadata/times, empty link inventory, ownership claims, native tools, `/etc/group`, and `statoverride` against authenticated replay baseline
+10. COMPUTE deterministic canonical legacy-backup digest over exact allowed path, type, safe metadata, link target, and regular-file content hashes using same algorithm later embedded in `1.0.4`
+11. UNMOUNT failed copy cleanly
+12. VERIFY failed-copy/source/replay-clone loops released and source/replay artifacts unchanged
+13. STORE external read-only inspection report and digest in tooling recovery evidence
+14. ***if*** any check or cleanup fails ***then***
+   1. RETAIN quarantine, copy, clone, baseline, fixtures, report/journal, and exact failure
+   2. STOP before package build/recovery mutation
+
+Inspection must not claim immutable integrity merely because old controls are absent. PASS means every legacy member is independently source-attested and produces one pinned migration digest.
+
+#### `1.0.4` recovery-only migration
+
+Normal fresh install writes revision-12 integrity controls from first baseline as before. Ordinary upgrades with complete valid controls remain validation-only and never rewrite baseline. Missing controls fail ordinary upgrade. Only outer `recover-package` may authorize exact `1.0.2` legacy migration through bounded environment values containing approved source hash, replay fingerprint, inspection-report hash, and canonical legacy digest; environment never bypasses lock/quarantine and never by itself establishes trust.
+
+1. REQUIRE `preinst upgrade` old version exactly `1.0.2`, explicit recovery mode, exact compiled source/fingerprint/report/digest constants, `baseline.ready`, `native-init.ready`, `records.ready`, and absent `baseline.capturing`
+2. RECOMPUTE canonical legacy digest inside offline target using same audited algorithm
+3. REQUIRE recomputed digest equals both embedded candidate constant and outer recovery value
+4. REQUIRE graph/tool hashes and exact legacy layout equal embedded source-attested constants
+5. CREATE package-owned migration staging files with no-follow exclusive operations
+6. WRITE source SHA-256, replay fingerprint, inspection-report SHA-256, legacy digest, and required native-tool hash controls from embedded authenticated constants
+7. SYNCHRONIZE each staged regular file
+8. PUBLISH each new control atomically without replacing any legacy member
+9. BUILD `integrity.manifest` over every immutable legacy and migration control member, excluding only documented readiness/transient markers
+10. SYNCHRONIZE `integrity.manifest`
+11. WRITE and synchronize `integrity.sha256`
+12. SYNCHRONIZE backup directory
+13. VERIFY complete manifest/digest and every member
+14. MARK migration complete atomically and synchronize directory
+15. ***if*** migration is interrupted ***then***
+   1. RETAIN quarantine and original legacy members
+   2. ALLOW only same `1.0.4` recovery path to remove/regenerate exact package-owned partial migration controls after canonical legacy digest revalidates
+   3. NEVER let old or ordinary upgrade paths treat partial migration as complete
+
+After upgrade, outer recovery fingerprints original legacy-member subset and requires byte/type/metadata equality with read-only inspection. It separately verifies all new controls, installed hook hashes against DEB, package version/status, native tools, and migration provenance. Any legacy-member change fails and quarantines.
+
+#### Recovery and restoration sequence
+
+Run one new mutation attempt only after inspection PASS, `1.0.4` static/fault tests PASS, two reproducible builds, exact DEB/module hashes recorded, and independent prerequisite task validation PASS.
+
+1. ACQUIRE one real recovery image lock
+2. REVALIDATE source, failed copy/root, marker pair/run, fixtures, replay evidence, inspection report/digest, DEB identity/hash, geometry, and available capacity
+3. CREATE a new independent source clone or revalidate retained approved clone as specified by tooling
+4. REQUIRE approved rw journal replay, clean release, ro authentic fingerprint, second clean release, and unchanged authentic source before failed-copy mutation
+5. MOUNT exact failed copy rw with approved geometry and `noatime`; never overwrite it
+6. REVALIDATE legacy backup and canonical digest before dpkg
+7. INVOKE ordinary offline dpkg upgrade from installed `1.0.2` to exact `1.0.4`; package `preinst` alone performs source-attested migration
+8. VERIFY original legacy subset unchanged and new immutable controls complete
+9. VERIFY installed `1.0.4` hooks equal DEB controls
+10. RUN `/usr/lib/scr-resets-monitor/package-test`
+11. REMOVE package through ordinary dpkg
+12. PURGE package through ordinary dpkg
+13. REQUIRE dpkg status/info namespace absent
+14. COMPARE restored failed copy exactly with authenticated replay baseline, including managed paths, three graphs, all links, records, metadata, protected files, package/ownership/runtime namespaces, and parent state
+15. UNMOUNT failed copy cleanly
+16. VERIFY failed-copy/reference/source loops released
+17. VERIFY authentic source identity/hash unchanged
+18. CLEAR exact matched per-image marker then global dirty marker through outer tooling only
+19. ***if*** any migration, dpkg, package-test, restoration, unmount, loop, source, or clearance gate fails ***then***
+   1. ATTEMPT bounded unmount only
+   2. RETAIN quarantine, exact failed copy, reference clone, baseline, inspection, migration evidence, fixtures, and journals
+   3. STOP; never run fresh lifecycle or hardware
+
+After recovery PASS, run fresh disposable `1.0.4` install/test/remove/purge/restoration through `./bin/lets sdlc test-package`. One real lock spans copy, mount, baseline, install, test, remove, purge, restoration, unmount, source proof, unlock. Fresh install must create normal controls without legacy migration mode. Faulted uninstall/restoration/unmount/source proof quarantines and stops.
+
+#### Tests and evidence
+
+- Inspection unit tests: wrong run/root/package/version/hash/geometry; source/copy/clone alias; unsafe backup symlink/hard link/special file; unexpected/missing member; partial integrity controls; wrong path-key mapping; false `.missing`; altered `.saved`; graph/tool/parent/time/record/owner mismatch; mount/unmount/loop/source failure. Every case leaves markers and prevents package mutation.
+- Canonical digest tests: deterministic across enumeration order; changes for content, type, path, mode, uid/gid, link count, target, size, and approved timestamp fields; rejects newline/control names; outer/target algorithms match exact fixtures.
+- Package tests: ordinary upgrade without valid controls refuses; exact recovery migration PASS; wrong old version/source/fingerprint/report/digest refuses; changed legacy member refuses; partial migration resumes only after revalidation; fresh install unaffected; integrity manifest covers legacy plus migration controls; original legacy subset never changes.
+- Lifecycle tests: install/remove, purge, same-version configure, `1.0.2` fixture migration to `1.0.4`, failed/aborted migration at every publication/sync boundary, upgrade/postinst failure, removal retry, native registration/unregistration, loaded/absent module cleanup, record scope, conflicts, protected metadata, no direct graph content write.
+- Build tests: two clean byte-identical `armhf` DEBs; exact new DEB SHA-256; retained module SHA-256; six runtime payloads; package-state/RELEASE revision-12 binding; no target APT/network, force, kernel/U-Boot/MMIO/reason addition.
+- Real image evidence: inspection lock/journal/report; recovery lock/journal; source/clone/copy hashes; baseline and legacy digest; migration controls; installed hook hashes; graph/link evidence; package test; dpkg removal/purge; exact restoration; all loop/mount releases; matched-marker clearance; fresh lifecycle PASS.
+- Hardware remains revision-11 T04: exact target `192.168.68.55`; prerequisite PASS; preflight/recovery readiness; install exact artifact; manual lifecycle; one ordinary reboot; module/guard/device/exactly `+1` record/no duplicate/anomaly/taint change; ordinary remove/purge/exact target restoration. No force, cleanup reboot, target APT, persistent credentials, kernel/U-Boot change.
+
+#### Bounded task chain and acceptance
+
+- T01: implement inspection-only tooling/tests; execute one lock-held read-only legacy inspection; pin report hash and canonical digest. No image write, dpkg, marker clearance, fresh lifecycle, hardware, or reboot.
+- T02: implement `1.0.4` package-owned migration plus outer recovery verification; update docs/agent contracts; two reproducible builds; static/package/fault tests; record exact DEB/module hashes. No real recovery mutation.
+- T03: run one lock-held existing-copy recovery with exact `1.0.4`; require restoration/clearance PASS; then fresh disposable lifecycle PASS. Failure retains quarantine and stops.
+- T04: run unchanged exact-target hardware automatic-boot/cleanup acceptance only after T03 independent PASS.
+
+Acceptance IDs:
+
+- `R12-01`: read-only inspection authenticates exact legacy backup against replay/source evidence, emits pinned canonical digest/report, cleanly unmounts/releases, leaves quarantine unchanged.
+- `R12-02`: `1.0.4 preinst` migration is recovery-only, source-attested, idempotent after interruption, package-owned, atomic/durable, and never modifies/recaptures a legacy member.
+- `R12-03`: ordinary install/upgrade paths require complete valid controls; missing/partial/wrong controls fail closed; fresh install remains reversible.
+- `R12-04`: one `armhf` DEB builds twice identically; new DEB hash recorded; module hash retained or changed only with full reproducibility evidence; runtime behavior unchanged.
+- `R12-05`: exact existing failed copy upgrades `1.0.2` to `1.0.4`, tests, removes, purges, matches authenticated replay baseline, releases all mounts/loops, preserves source hash, and clears only matched quarantine through tooling.
+- `R12-06`: fresh disposable install/test/remove/purge/restoration PASS under continuous lock; no managed/package/runtime/ownership residue; source exact.
+- `R12-07`: native registration/unregistration still uses command rc, exact links, generated graph membership/order and exact three-graph restoration; `insserv -s` remains diagnostic only; no graph content edit.
+- `R12-08`: exact target one-reboot behavior yields module, guard, device, exactly `+1` record, no duplicate/anomaly/new taint.
+- `R12-09`: ordinary target remove/purge restores exact records, graphs, links, metadata, protected files, package namespace, connectivity; no force, cleanup reboot, credentials, residue.
+
+#### Continuation policy and deliverables
+
+This is bounded engineering continuation from approved revision 11. Customer behavior unchanged; scope unchanged; risk not expanded; safety rules strengthened by source-attested migration; no safety relaxation; hardware authority unchanged. Run `./bin/lets sdlc continuation-policy` with exact blocker/evidence and no material-change flags. Tooling decides inheritance; never self-classify outside command.
+
+After gates PASS, update Implementation with inspection report/digest, source/clone/copy/journal hashes, migration proof, exact `1.0.4` DEB/module hashes, two-build evidence, tests, restoration/clearance, fresh lifecycle, limitations, and deviations. Run `implementation-commit --deb` only after every non-hardware implementation gate and task validation PASS. Then auto-resume independent whole-requirement validation. No commit/release/HW/reboot before those gates.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -2840,3 +2978,5 @@ Nontrivial facts: six retained payload files plus native shared graphs/links/run
 - `2026-09-24T07:29:46+00:00` [implementing] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
 
 - `2026-09-24T07:33:16+00:00` [drafting-plan] Revision 11 T03 recovery FAIL run f02bd479-7082-4401-9c7a-9c4d3abcb700: clone replay/source immutability PASS; stopped before dpkg because preserved legacy 1.0.2 backup predates integrity.manifest/integrity.sha256. Read-only journal/quarantine/authentic-baseline diagnosis: marker run ba9e92b3-e1ee-4407-833a-ae3899f0662e inventories baseline.ready, native graph hashes/metadata/times, links, path/missing and parent/time records, but no integrity controls; authenticated replay fingerprint 60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6 proves original managed paths absent and exact source graphs/tools. Replan package-owned source-attested legacy-baseline migration; never dirty-rebaseline, weaken restoration, edit backup/marker/graph directly, overwrite failed copy, or retry before approved bounded plan. Quarantine retained.
+
+- `2026-09-24T07:43:51+00:00` [drafting-plan] Updated round 1 solution-plan section
