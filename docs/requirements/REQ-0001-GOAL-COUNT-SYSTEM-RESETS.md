@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: auto-approved
 round: 1
-sequence: 200
+sequence: 201
 approval: auto-approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-27T07:14:31+00:00
+updated: 2026-09-27T07:14:56+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3714,3 +3714,5 @@ Persist only through `./bin/lets sdlc ...`. Commit DRAFT before display. Run det
 - `2026-09-27T07:13:45+00:00` [draft-ready] $caveman full. Committed DRAFT revision 15 after revision-14 T02 sequencing FAIL. Preserve T01 validated broker/runtime and T02 code/static/fault readiness; T02 PASS means readiness only, no authentic-execution claim. T03 owns one lock-held read-only current-copy inspection plus artifact. T04 owns authentic CAP/target dpkg-shell-NSS-database proof, ordered hooks/native oracle, recovery, then fresh lifecycle. Every live phase has durable BaseException journal, quarantine, zero-residue gate. No T02 image mutation. Customer behavior, scope, risk, safety, restoration/quarantine, no-force rules, and one-reboot HW authority unchanged. No unanswered load-bearing question; no implementation/image/HW action.
 
 - `2026-09-27T07:14:31+00:00` [auto-approved] Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: $caveman full. Revision-14 T02 stopped before image mutation because approved task ordering made authentic execution proof impossible: T02 forbade quarantined-image mutation, T03 owned first current-copy inspection, T04 owned recovery and fresh live lifecycle. T02 result SHA-256 236c687ae4ecfa9e499c937b020d450c4b263be8318220050e573143555c19e4; validation SHA-256 5d55c476a96e016a371914f9597afc901e1a5aec02fe53ae889618af9d9b4068. Revision-15 DRAFT SHA-256 8801ca2266b6f90afd0e1a937926d3d3f88f4965a67c233be1e8ae5862533618 changes task ownership only: preserves validated T01 broker/runtime; T02 becomes code/static/fault readiness without authentic-execution claim; T03 remains one lock-held read-only current-copy inspection plus artifact; T04 owns authentic CAP, target dpkg/shell/NSS/database, ordered hooks/native oracle, recovery, then fresh lifecycle. Customer behavior, scope, risk, safety rules, reversible-package/restoration/quarantine/no-force invariants, and one-reboot hardware authority unchanged. Quarantine remains. No unanswered policy input, safety relaxation, broader hardware authority, direct image edit, or image/HW/reboot action.
+
+- `2026-09-27T07:14:56+00:00` [auto-approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
