@@ -1,0 +1,46 @@
+{
+  "approved_plan_sha256": "8801ca2266b6f90afd0e1a937926d3d3f88f4965a67c233be1e8ae5862533618",
+  "attempt": 1,
+  "report": {
+    "acceptance": {
+      "R15-01": "PASS: revision-14 broker/runtime proof remains exact. Prior result SHA-256 8e76655c9199771a80c40bf9a375c44ab670627d9f22fafc8a3a5474f5a14dc6, independent validation SHA-256 c8ea66e8c0e6a5b6133efc2c245d95abe0921509f508b5df9382635c4d369596, live journal SHA-256 86288736ac94759154f74f73de5750e6d87dda1c5530346796b159c5269c1be3. Journal proves exact two private QEMU/DEB self-bind mounts; QEMU ro,nosuid,nodev; DEB ro,nosuid,nodev,noexec; ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 expected/observed exit 42; capability effective/permitted/bounding mask 2 only, CAP_DAC_OVERRIDE sole, inheritable/ambient zero, no_new_privs=1; 10 host-global syscalls plus mount/remount/unshare/setns return EPERM under inherited seccomp; exactly 23 mutation families denied per QEMU and DEB; bytes/path/device/inode/link/uid/gid/mode/size/timestamps/xattrs exact; inherited FD closure and process-wide source-FD census evidence complete; namespace survivors before/after cleanup empty; cleanup scan/signals empty; parent namespace/binfmt/FD checks accepted; target residue zero. Current code preserves fail-closed PermissionError and malformed fdinfo handling, privileged exact mount-namespace census cleanup, broker-parent TERM/INT deferral, namespace-child default signals, bounded TERM/KILL cleanup, exact mount inventory, parent isolation validation, and zero-residue requirements."
+    },
+    "approved_plan_sha256": "8801ca2266b6f90afd0e1a937926d3d3f88f4965a67c233be1e8ae5862533618",
+    "claim_boundary": "PASS covers R15-01 only: exact revision-14 private immutable broker/runtime reuse. No authentic target dpkg/shell/NSS/database/CAP sufficiency for package operations, hook order, native oracle, image recovery, restoration, fresh lifecycle, package metadata, hardware, or reboot claim. Those remain T02-T05 per revision-15 plan.",
+    "definitions_sha256": "14f875c1fda4ff9e40919ceca2638592f79c9f8f4b755dd6c128d4c4a9469855",
+    "implementation_result_sha256": "39dd8109db464ee0e2d53389cf9c0da0f2568d8677824596d248c5956d09e200",
+    "independent_commands": [
+      "./bin/lets sdlc status REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+      "./bin/lets sdlc show REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+      "./bin/lets sdlc brief REQ-0001-GOAL-COUNT-SYSTEM-RESETS T01",
+      "./bin/lets sdlc test",
+      "./bin/lets sdlc target-runtime info",
+      "git --no-pager diff --check"
+    ],
+    "result": "pass",
+    "safety": {
+      "blockers": [],
+      "cleanup_failure": false,
+      "hardware_action": false,
+      "image_action": false,
+      "package_action": false,
+      "quarantine_changed": false,
+      "quarantine_retained": true,
+      "reboot": false
+    },
+    "task": "T01",
+    "task_mapping": {
+      "1_prior_artifacts": "PASS: all three required immutable artifact hashes recomputed from files and equal contract pins.",
+      "2_current_interfaces": "PASS: runtime manifest SHA-256 f92dd6c2525d57b2b50b92007fa4f3619e9c6b8abc412e6371a1d739a39da710; generation req-0001-target-armhf-dpkg-20260924-f92dd6c2525d57b2; PRoot 5.1.0; QEMU 8.2.2; QEMU SHA-256 47a63bcbdf3030cf42230a0521dae38ff9d62ba1268d5cafc7d8ccf7da7c761c; loader SHA-256 c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da; PRoot SHA-256 9f6fc9a29f9338aee2df61d16f84fb498d0c1c541c4e52bd648843108790853b. Read-only `./bin/lets sdlc target-runtime info` independently verified exact generation and versions. Current TargetExecBroker.CONFINED_CAPABILITY_MASK=2, HOST_GLOBAL_SYSCALLS count=10, MUTATION_FAMILIES count=23. Current source/interface hashes: tools/sdlc/src/sdlc.py 1cf41ea26d01dc8b66da659b96ac0f49dcaddd86033d12db4ea0f80d36e345b6; tests/sdlc/test_sdlc.py 76d00037e31987d3fc87c5cf8b1e9f9f809c65217e221cc5b23bf531e5ec63b8; tools/sdlc/target-exec-broker.sh a2a224d9bf9f9cd7d028b25539d96af471ea3580707969d0dfa0326fd12d0dc7; tools/sdlc/target-exec-probe.sh a5a7a3c26741a418079264ffe64bb4ddce29358b10dc6053f0d44b3a5a405db2; tools/sdlc/target-runtime.sh e224437d76dffd1ae94677d24fa59127990f79d046d41be0e6d2055ddd38064f.",
+      "3_regression": "PASS: independent `./bin/lets sdlc test` collected 71 and reported `71 passed in 3.44s`; `git --no-pager diff --check` rc 0. Suite includes exact runtime manifest/generation, bounded process timeout/crash/escaped-child cleanup, source swap/partial mount/mount race, exact private file mounts, capability/seccomp proof, mutation denials, unreadable/malformed full process-FD census failure, parent isolation, scratch cleanup, and no-residue cases.",
+      "4_reuse_evidence": "PASS: revision-15 result binds only R15-01, exact current hashes/interfaces, prior live proof, and no-image boundary. No stale authentic dpkg/hook/native claim imported.",
+      "5_stop_boundary": "PASS: validation performed no image open/mount/mutation, package transition, quarantine change, hardware mutation, or reboot. Current process scan found zero PRoot/QEMU/broker processes; mountinfo found zero target-exec/runtime mounts; target-exec scratch had zero entries. Quarantine remains retained by durable evidence."
+    }
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "pass",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-27T07:33:22+00:00"
+}
