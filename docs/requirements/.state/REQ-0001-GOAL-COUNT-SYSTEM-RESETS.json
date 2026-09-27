@@ -1224,6 +1224,12 @@
           "sequence": 198,
           "state": "drafting-plan",
           "time": "2026-09-27T07:13:40+00:00"
+        },
+        {
+          "message": "$caveman full. Committed DRAFT revision 15 after revision-14 T02 sequencing FAIL. Preserve T01 validated broker/runtime and T02 code/static/fault readiness; T02 PASS means readiness only, no authentic-execution claim. T03 owns one lock-held read-only current-copy inspection plus artifact. T04 owns authentic CAP/target dpkg-shell-NSS-database proof, ordered hooks/native oracle, recovery, then fresh lifecycle. Every live phase has durable BaseException journal, quarantine, zero-residue gate. No T02 image mutation. Customer behavior, scope, risk, safety, restoration/quarantine, no-force rules, and one-reboot HW authority unchanged. No unanswered load-bearing question; no implementation/image/HW action.",
+          "sequence": 199,
+          "state": "draft-ready",
+          "time": "2026-09-27T07:13:45+00:00"
         }
       ],
       "number": 1,
@@ -1231,8 +1237,8 @@
     }
   ],
   "schema_version": 1,
-  "sequence": 198,
-  "state": "drafting-plan",
+  "sequence": 199,
+  "state": "draft-ready",
   "superseded_task_workflows": [
     {
       "plan": {
@@ -1488,7 +1494,7 @@
     }
   ],
   "title": "Count system resets reliably",
-  "updated": "2026-09-27T07:13:40+00:00",
+  "updated": "2026-09-27T07:13:45+00:00",
   "validation": {
     "deb_sha256": "119b0c760bf76e8e765f92877f232f99170648c0562fc75d7092edb351be1f50",
     "implementation_commit": "7610f9249db5640e7db82fbed20d23ff1f3b6c6d",

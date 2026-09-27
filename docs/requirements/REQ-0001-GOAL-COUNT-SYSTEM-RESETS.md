@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: drafting-plan
+state: draft-ready
 round: 1
-sequence: 198
+sequence: 199
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-27T07:13:40+00:00
+updated: 2026-09-27T07:13:45+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3710,3 +3710,5 @@ Persist only through `./bin/lets sdlc ...`. Commit DRAFT before display. Run det
 - `2026-09-27T07:06:46+00:00` [drafting-plan] $caveman full. T02 independent FAIL: approved T02 requires authentic ordered dpkg-hook/native/CAP proof but forbids quarantined mutation; T03 owns first current-copy inspection and T04 owns recovery plus fresh lifecycle. Static/synthetic evidence cannot prove R14-05/R14-10; live T02 lifecycle would violate approved ordering. Replan task ownership only; customer behavior, scope, risk, safety, quarantine/restoration rules, and HW authority unchanged.
 
 - `2026-09-27T07:13:40+00:00` [drafting-plan] Updated round 1 solution-plan section
+
+- `2026-09-27T07:13:45+00:00` [draft-ready] $caveman full. Committed DRAFT revision 15 after revision-14 T02 sequencing FAIL. Preserve T01 validated broker/runtime and T02 code/static/fault readiness; T02 PASS means readiness only, no authentic-execution claim. T03 owns one lock-held read-only current-copy inspection plus artifact. T04 owns authentic CAP/target dpkg-shell-NSS-database proof, ordered hooks/native oracle, recovery, then fresh lifecycle. Every live phase has durable BaseException journal, quarantine, zero-residue gate. No T02 image mutation. Customer behavior, scope, risk, safety, restoration/quarantine, no-force rules, and one-reboot HW authority unchanged. No unanswered load-bearing question; no implementation/image/HW action.
