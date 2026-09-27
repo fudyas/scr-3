@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: auto-approved
+state: implementing
 round: 1
-sequence: 201
+sequence: 202
 approval: auto-approved
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-27T07:14:56+00:00
+updated: 2026-09-27T07:15:01+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3716,3 +3716,5 @@ Persist only through `./bin/lets sdlc ...`. Commit DRAFT before display. Run det
 - `2026-09-27T07:14:31+00:00` [auto-approved] Continuation policy passed: prior approval inherited for engineering-only replan; customer behavior, scope, risk, safety rules, and hardware authority unchanged. Evidence: $caveman full. Revision-14 T02 stopped before image mutation because approved task ordering made authentic execution proof impossible: T02 forbade quarantined-image mutation, T03 owned first current-copy inspection, T04 owned recovery and fresh live lifecycle. T02 result SHA-256 236c687ae4ecfa9e499c937b020d450c4b263be8318220050e573143555c19e4; validation SHA-256 5d55c476a96e016a371914f9597afc901e1a5aec02fe53ae889618af9d9b4068. Revision-15 DRAFT SHA-256 8801ca2266b6f90afd0e1a937926d3d3f88f4965a67c233be1e8ae5862533618 changes task ownership only: preserves validated T01 broker/runtime; T02 becomes code/static/fault readiness without authentic-execution claim; T03 remains one lock-held read-only current-copy inspection plus artifact; T04 owns authentic CAP, target dpkg/shell/NSS/database, ordered hooks/native oracle, recovery, then fresh lifecycle. Customer behavior, scope, risk, safety rules, reversible-package/restoration/quarantine/no-force invariants, and one-reboot hardware authority unchanged. Quarantine remains. No unanswered policy input, safety relaxation, broader hardware authority, direct image edit, or image/HW/reboot action.
 
 - `2026-09-27T07:14:56+00:00` [auto-approved] Prepared implementation worktree sdlc-req/req-0001-goal-count-system-resets
+
+- `2026-09-27T07:15:01+00:00` [implementing] Implementation started from the approved plan
