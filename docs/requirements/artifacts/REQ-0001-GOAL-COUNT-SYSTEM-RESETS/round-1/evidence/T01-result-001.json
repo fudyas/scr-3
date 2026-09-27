@@ -1,0 +1,63 @@
+{
+  "approved_plan_sha256": "8801ca2266b6f90afd0e1a937926d3d3f88f4965a67c233be1e8ae5862533618",
+  "attempt": 1,
+  "report": {
+    "acceptance": [
+      "R15-01"
+    ],
+    "approved_plan_sha256": "8801ca2266b6f90afd0e1a937926d3d3f88f4965a67c233be1e8ae5862533618",
+    "claim": "Revision-14 T01 exact broker/runtime PASS reused after current hash, interface, regression, cleanup, and diff audit. No image or package action.",
+    "current_audit": {
+      "active_related_mounts": 0,
+      "active_related_processes": 0,
+      "active_target_exec_scratch_entries": 0,
+      "diff_check": "pass",
+      "interface_drift": false,
+      "sdlc_py_sha256": "1cf41ea26d01dc8b66da659b96ac0f49dcaddd86033d12db4ea0f80d36e345b6",
+      "suite_command": "./bin/lets sdlc test",
+      "suite_result": "71 passed in 5.45s",
+      "target_exec_broker_sh_sha256": "a2a224d9bf9f9cd7d028b25539d96af471ea3580707969d0dfa0326fd12d0dc7",
+      "target_exec_probe_sh_sha256": "a5a7a3c26741a418079264ffe64bb4ddce29358b10dc6053f0d44b3a5a405db2",
+      "target_runtime_sh_sha256": "e224437d76dffd1ae94677d24fa59127990f79d046d41be0e6d2055ddd38064f",
+      "test_sdlc_py_sha256": "76d00037e31987d3fc87c5cf8b1e9f9f809c65217e221cc5b23bf531e5ec63b8"
+    },
+    "definitions_sha256": "14f875c1fda4ff9e40919ceca2638592f79c9f8f4b755dd6c128d4c4a9469855",
+    "next": "Independent T01 validation; then T02 integration readiness only. T02 must not open, mount, or mutate authentic source/current copy and must not claim authentic execution.",
+    "result": "pass",
+    "retained_evidence": {
+      "exact_capability_mask": 2,
+      "host_global_seccomp_denial_count": 10,
+      "live_journal_sha256": "86288736ac94759154f74f73de5750e6d87dda1c5530346796b159c5269c1be3",
+      "loader_sha256": "c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da",
+      "mutation_family_count_per_source": 23,
+      "no_new_privs": true,
+      "probe_expected_observed_exit": 42,
+      "probe_sha256": "faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8",
+      "qemu_sha256": "47a63bcbdf3030cf42230a0521dae38ff9d62ba1268d5cafc7d8ccf7da7c761c",
+      "revision_14_result_sha256": "8e76655c9199771a80c40bf9a375c44ab670627d9f22fafc8a3a5474f5a14dc6",
+      "revision_14_validation_sha256": "c8ea66e8c0e6a5b6133efc2c245d95abe0921509f508b5df9382635c4d369596",
+      "runtime_generation": "req-0001-target-armhf-dpkg-20260924-f92dd6c2525d57b2",
+      "runtime_manifest_sha256": "f92dd6c2525d57b2b50b92007fa4f3619e9c6b8abc412e6371a1d739a39da710",
+      "sole_capability": "CAP_DAC_OVERRIDE"
+    },
+    "safety": {
+      "failed_copy_sha256": "27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2",
+      "fresh_lifecycle_started": false,
+      "hardware_mutation": false,
+      "image_mutation": false,
+      "image_opened_or_mounted": false,
+      "package_transition_started": false,
+      "quarantine_changed": false,
+      "quarantine_marker_pair_sha256": "3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae",
+      "quarantine_retained": true,
+      "reboot": false,
+      "source_sha256": "cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6"
+    },
+    "task": "T01"
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-27T07:21:36+00:00"
+}
