@@ -1,0 +1,36 @@
+{
+  "approved_plan_sha256": "70415f436cfc2bbe4b4df38af2e02e6a56fd69950c718021143ea66662a74a58",
+  "attempt": 1,
+  "report": {
+    "acceptance": {
+      "R14-01": "PASS: retained runtime manifest f92dd6c2525d57b2b50b92007fa4f3619e9c6b8abc412e6371a1d739a39da710; pinned QEMU 47a63bcbdf3030cf42230a0521dae38ff9d62ba1268d5cafc7d8ccf7da7c761c; regression suite exact.",
+      "R14-02": "PASS: exact QEMU+DEB private mounts only; capability mask 2/CAP_DAC_OVERRIDE only; 10 host-global syscall probes EPERM; ARM probe faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8 exits 42.",
+      "R14-03": "PASS: 23 mutation families denied per source; source identity stable; writable FD aliases and unreadable/malformed FD census fail closed.",
+      "R14-04": "PASS: broker leader defers TERM/INT until privileged namespace cleanup; namespace child restores defaults; escaped setsid timeout cleanup test passes; live survivors/signals/residue zero."
+    },
+    "approved_plan_sha256": "70415f436cfc2bbe4b4df38af2e02e6a56fd69950c718021143ea66662a74a58",
+    "blockers": [],
+    "boundary": "CAP_DAC_OVERRIDE sufficiency for authentic dpkg/hooks is T02/R14-05; not T01 blocker.",
+    "implementation_report_sha256": "8e76655c9199771a80c40bf9a375c44ab670627d9f22fafc8a3a5474f5a14dc6",
+    "next": "Record T01 PASS; start T02 authentic target dpkg integration. Quarantined image remains forbidden.",
+    "result": "pass",
+    "safety": "No image, quarantine, package, hardware, or reboot mutation. Quarantine retained. Active related process/mount/scratch residue zero.",
+    "task": "T01",
+    "verification": {
+      "diff_check": "pass",
+      "live_arm_result": "exit 42",
+      "live_journal_sha256": "86288736ac94759154f74f73de5750e6d87dda1c5530346796b159c5269c1be3",
+      "probe_wrapper_sha256": "a5a7a3c26741a418079264ffe64bb4ddce29358b10dc6053f0d44b3a5a405db2",
+      "sdlc_py_sha256": "111895a8eacd6cd081d47dd2b33bcc81b9fbe014fe65ca3c532c9d3331ade07e",
+      "suite_command": "./bin/lets devenv python run -m pytest -c etc/pytest.ini tests/sdlc",
+      "suite_result": "68 passed",
+      "test_sdlc_py_sha256": "0927849dd4bc7168bf9980d68a2dbb7deeafad2ded8b8ffc71f6076f2a8921ed"
+    }
+  },
+  "requirement": "REQ-0001-GOAL-COUNT-SYSTEM-RESETS",
+  "result": "pass",
+  "round": 1,
+  "schema_version": 1,
+  "task": "T01",
+  "time": "2026-09-27T06:23:51+00:00"
+}
