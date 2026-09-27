@@ -4,11 +4,11 @@ id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
 state: drafting-plan
 round: 1
-sequence: 197
+sequence: 198
 approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-27T07:06:46+00:00
+updated: 2026-09-27T07:13:40+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3014,6 +3014,305 @@ Reason: revision-13 T02 stopped before image/package transition because pinned P
 
 Deliver exact feasibility journal, namespace/mountinfo identities, full QEMU hash, adversarial mutation results, FD/process cleanup proof, target dpkg evidence, new inspection report, two-build DEB hash, hook/native graph evidence, recovery/fresh fingerprints, marker clearance, HW logs/count/taint/restoration, revision-14 task artifacts, and updated `RELEASE.md`. No fabricated retrospective evidence. Persist only through `./bin/lets sdlc ...`; commit DRAFT before display; run deterministic continuation policy. Never self-approve. Implementation starts only after tooling reports inherited or explicit approval.
 
+### Solution plan — DRAFT revision 15
+
+#### DRAFT revision 15 — task-safe authentic lifecycle sequencing
+
+Round 1, `REQ-0001-GOAL-COUNT-SYSTEM-RESETS`. Complete replacement for approved revision 14 SHA-256 `70415f436cfc2bbe4b4df38af2e02e6a56fd69950c718021143ea66662a74a58` after T02 independent FAIL at durable sequence `196` and replan transition `197`. Earlier customer text, answers, drafts, approvals, task evidence, failures, artifacts, recovery journals, and hardware evidence remain audit history. Preserve revision-14 T01 validated broker/runtime, revision-14 T02 completed non-image code/static/fault work, revision-12 package behavior, source-attested legacy migration, native SysV oracle, exact restoration, continuous lock, quarantine, approximate-ABI waiver, no-force boundary, and one-reboot hardware authority. Change task ownership only: T02 proves integration readiness without authentic-execution claim; T03 performs sole fresh read-only current-copy inspection and artifact rebuild; T04 owns every authentic target execution, ordered hook/native proof, recovery, then fresh lifecycle.
+
+No customer-visible change. No scope/risk/safety relaxation. No broader image/HW authority. No T02 image mutation. No unanswered load-bearing developer question: coordinator supplied exact sequencing disposition. Technical PASS remains evidence-gated.
+
+##### Sources and exact replan cause
+
+Read complete durable REQ through sequence `197`; customer requirements; requirements/image analysis; planner answers; DRAFT revisions 1–14; full event history; approved revision-14 contract/interfaces/acceptance/tasks; revision-14 T01 result/independent PASS; T02 result/independent FAIL; current worktree diff; main/worktree `AGENTS.md`; `docs/SDLC-DEVELOPER-GUIDE.md`; applicable caveman, SDLC resume, LETS, documentation, git, and Structured English rules.
+
+Revision-14 T01 remains exact reusable PASS:
+
+- Approved plan SHA-256 `70415f436cfc2bbe4b4df38af2e02e6a56fd69950c718021143ea66662a74a58`.
+- Runtime manifest SHA-256 `f92dd6c2525d57b2b50b92007fa4f3619e9c6b8abc412e6371a1d739a39da710`; generation `req-0001-target-armhf-dpkg-20260924-f92dd6c2525d57b2`; PRoot `5.1.0`; QEMU `8.2.2`; QEMU SHA-256 `47a63bcbdf3030cf42230a0521dae38ff9d62ba1268d5cafc7d8ccf7da7c761c`; loader SHA-256 `c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da`.
+- Live ARM probe SHA-256 `faef115dbbfbf07356b21d016b80c9e9889634f71cab1ca8d67cf651d8d350e8`; expected/observed exit `42`; journal SHA-256 `86288736ac94759154f74f73de5750e6d87dda1c5530346796b159c5269c1be3`.
+- Exact per-file QEMU/DEB self-bind mounts inside propagation-private mount+network namespace; QEMU `ro,nosuid,nodev`; artifact `ro,nosuid,nodev,noexec`; no target inode/copy/placeholder, broad/global bind, binfmt, host dpkg, or network.
+- Twenty-three mutation families per source denied; bytes, path, device/inode, links, uid/gid/mode, size, timestamps, xattrs exact. Capability mask `2`, sole `CAP_DAC_OVERRIDE`; `no_new_privs=1`; inherited seccomp blocks mount/namespace and host-global operations. Privileged broker cleanup catches escaped process groups by exact mount-namespace census. Parent namespaces/binfmt/FDs unchanged; zero residue.
+- `68 passed`; `git diff --check` PASS. T01 result report SHA-256 `8e76655c9199771a80c40bf9a375c44ab670627d9f22fafc8a3a5474f5a14dc6` per independent validation.
+
+Revision-14 T02 implementation work remains retained, not relabeled authentic proof:
+
+- Recovery query/install/test/remove/purge routes through `TargetRunner`; initial unauthenticated query removed; exact identity preflight precedes target command.
+- Exact regular single-link identities cover target dpkg, dpkg-query, dash, getent, id, stat, flock, dpkg-statoverride, mkdir, mv, rm, chmod, chown, sync, false, update-rc.d, insserv, `insserv.conf`, group, and statoverride.
+- Static/model probes require `armhf`, target dpkg `1.17.27`, exact `rF  1.0.2`, target NSS rows, statoverride output, root shell, exec/fsync/rename/locking/uid/gid/mode/exit behavior, ordered query/install/test/remove/purge/final-query journal, native graph oracle.
+- Test result `71 passed`; `git diff --check` PASS; `tools/sdlc/src/sdlc.py` SHA-256 `1cf41ea26d01dc8b66da659b96ac0f49dcaddd86033d12db4ea0f80d36e345b6`; `tests/sdlc/test_sdlc.py` SHA-256 `76d00037e31987d3fc87c5cf8b1e9f9f809c65217e221cc5b23bf531e5ec63b8`; static package test SHA-256 `2c5742d14c0f1b27649849e73404fa80ecf08c1941fb9b00386a0382d4e2d553`.
+
+T02 independent FAIL is sequencing, not disproved code: approved T02 mapped full `R14-05`/`R14-10` authentic ordered-hook/native/CAP proof while also forbidding quarantined-image mutation; T03 owned first current-copy inspection; T04 owned recovery/fresh lifecycle. Static/synthetic evidence cannot prove authentic execution. Running lifecycle in T02 would violate ordering. Revision 15 resolves contradiction without weakening criteria: T02 accepts readiness only; T04 performs authentic proof.
+
+Safety state remains exact:
+
+- Authentic source `/home/fudya/devel/scr/var/image_8.26.0` SHA-256 `cce7577ce20aa4263a08dab9891bbf17e8471a385fbc4d0d050605b5a6de56f6`.
+- Existing failed copy SHA-256 `27ceb7e1b57c9f46e15c9cb1fe976ab5fef318339a419fdca9614e68417909b2`.
+- Quarantine marker-pair SHA-256 `3f76d69432243decfda0e57eaad03c93886bfa9572954839113c00c9338915ae`.
+- Revision-11 replay clone SHA-256 `64f89f060afb05ade2d524d4dc0e80cc46465232e509e35a0079b34ee3c811e2`; semantic fingerprint `60ab22bfb6586ef79d3b0ba1077203ba0fcffffc58b73f61d35fd024923974d6`; baseline JSON SHA-256 `af2ed68958a40c6f8f375e63275bf5d1839788735e8113ff92c39656e87725ad`.
+- Geometry offset `50331648`, size limit `3633315840`.
+- Protected `/etc/group` SHA-256 `4f040bdc3ec55879e94efb96ca12c80f5f5b16bd07e055e0b82f951af0af1cc3`; `/var/lib/dpkg/statoverride` SHA-256 `6e5b3880a63bc3b41a72f71d0548e257b409dd519dcf6c047cedd70bf9c824ca`; legacy canonical digest `3f1ce6872699264b302c406de94767b272966bc0a075169fef9e7df2062f0cfe`.
+- No revision-14 image/package transition, fresh lifecycle, HW mutation, or reboot. Quarantine unchanged.
+
+##### Customer behavior and immutable exclusions
+
+Counter = one durable empty `/var/log/scr/reset-<epochMs>-<suffix>` file per observable boot reaching accepted `scr_reset_monitor` module initialization. `epochMs` = signed UTC kernel-wall-clock milliseconds; `suffix` = exactly `[a-z]{4}`. File mode `0600 root:root`; new `/var/log/scr` mode `0755 root:root`. Same-boot repeated start/unload/reload adds zero. Boot/reset ending before module initialization remains uncounted. Invalid/backward clock records immediately; no synchronization wait. File count = counter; no numeric counter or reason payload.
+
+Module alone owns accepted event, guard, immutable event name/inode, exclusive creation, file+directory durability, bounded storage retry, count/filter/reset semantics, serialization, and cancellation. Bash frontend validates request shape, transports literal bounded protocol, displays result, maps status only. No userspace filesystem truth/fallback/implicit load. Actual guard path remains `/run/scr-resets-monitor.boot-guard`; endpoint `/dev/scr-resets-monitor`, mode `0600 root:root`.
+
+CLI remains `/usr/sbin/scr-resets-monitor --count [--since <timestamp>]`, `--reset`, help. Timestamp grammar exact `yyyy-mm-dd[ hh[:mm[:ss]]]` UTC; omitted fields zero; inclusive filename-time comparison. Reject `last`, timezone, leap second, invalid Gregorian/range/overflow/trailing/conflicting input. Count/reset scope: immediate, non-symlink, single-link, regular empty files with exact valid full name. Unsafe matches preserved and return nonzero. Reset cancels pending event, retains same-boot deduplication, deletes only safe generated scope, syncs directory, preserves baseline/unrelated data. Lost response never auto-replayed.
+
+Successful create fixes event name/inode. File or parent sync retry reuses exact identity, never creates second event. Guard write/inode/parent sync errors propagate and retain pending state. Storage read-only/full/EIO/unavailable triggers rate-limited delayed retry, maximum 60 seconds between attempts; boot continues; module never reboots. Crash before inode+directory durability or storage violating flush may lose event. `RELEASE.md` states limits.
+
+Forbidden throughout: i.MX6 SRC/register/MMIO/reset-reason work; retained reset-counter claim; physical-reset completeness claim; reset-loop detection/mitigation; kernel/U-Boot patch/replacement; boot-selector/DT/initramfs/module-index/`depmod` changes; force load/unload or vermagic/version bypass; unexported-symbol trick; target build/APT/network/dependency upgrade; host APT/global runtime install; host dpkg; `--force-architecture` or any `--force-*`; foreign architecture; binfmt/global mount; direct dpkg database/status/info or maintainer-script call; unpack shortcut; target helper/copy/placeholder; direct native graph or quarantine-marker edit; dirty rebaseline; authentic-source rw mount; cleanup reboot; monit/cron/watchdog/USB-counter change; credential persistence.
+
+Approximate ABI waiver remains exact: NXP commit `e35e57f24ef5851787812a18a38feeb9deb6ea46`, live config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`, LETS-managed Linaro GCC `4.8.3 20140401 (prerelease)`, binutils `2.24.0.20140311 Linaro 2014.03`; exact vendor build tree/generated headers/`Module.symvers`/recipe unavailable. Production module SHA-256 remains `f8243c125555df192c5441efdc167574d1865fb690d493f3e59cea4d110ed3cc` unless separately changed and rebuilt twice with full gates.
+
+##### One reversible Debian package and ownership
+
+Produce exactly one image-change package: `scr-req-0001-goal-count-system-resets`, version `1.0.4`, `Architecture: armhf`. Dpkg owns private payload below `/usr/lib/scr-req-0001-goal-count-system-resets/payload`; maintainer scripts publish only after durable first-baseline capture. No helper package, conffile seizure, or `Replaces`. Historical DEBs stay rejected. T03 fresh inspection binds new attestation; two clean package builds must be byte-identical; record sole canonical path/SHA-256.
+
+| Surface | Ownership and restoration |
+| --- | --- |
+| `/usr/lib/scr-resets-monitor/scr_reset_monitor.ko` | Package payload; `0644 root:root`; exact module hash/vermagic/provenance; ordinary private-path load only. |
+| `/usr/sbin/scr-resets-monitor` | Bash transport/help only; `0755 root:root`. |
+| `/etc/init.d/scr-resets-monitor` | SysV one-shot loader; `0755 root:root`; checks kernel/removal state; ordinary `insmod`/prepare/remove/`rmmod`; no event truth or reboot. |
+| `/usr/lib/scr-resets-monitor/package-test` | `0755 root:root`; static/lifecycle checks; never host-load ARM module. |
+| `/usr/share/doc/scr-resets-monitor/RELEASE.md` | `0644 root:root`; observable-init scope, exclusions, EOL/ABI waiver, clock/storage, native activation, recovery, uninstall limits. |
+| `/var/lib/scr-resets-monitor/package-state` | Sixth payload destination; first existence/content/metadata captured; compatible state retained across upgrade. |
+| `/etc/rc[0-6S].d/*scr-resets-monitor` | Native `update-rc.d`/`insserv` links; exact first absence/type/target/metadata captured/restored. |
+| `/etc/init.d/.depend.start`, `.depend.stop`, `.depend.boot` | Shared native-generated graphs; first bytes/hash/type/metadata retained. Content changed/restored only by native tools. |
+| `/var/log/scr` and valid immediate `reset-*` | Original directory/records archived; generated records removed; originals restored even after `--reset`; unrelated entries unchanged. |
+| `/run/scr-resets-monitor.boot-guard`, `/dev/scr-resets-monitor` | Runtime namespace; original absence/restoration only after confirmed module/worker/control absence. |
+| `/var/lib/scr-req-0001-goal-count-system-resets/sdlc-backup` plus journal/removal/migration controls | Root-only immutable first baseline and durable lifecycle state; retained through upgrade/failure/recovery; removed only after final restoration proof. |
+| `/var/lib/scr-sdlc/owners` entry and created parents | Exact code/runtime/record/shared-graph claim; preserve all other entries and parent metadata. |
+
+First baseline captures original absence, bytes/hash, type, symlink target, uid/gid/mode, atime/mtime precision, stable hard-link groups, ACLs/xattrs/capabilities, parent directories, reset-record inventory, graph/link state, native tool hashes, package state, capacity. Use `lstat`, no-follow, single-link and identity checks. Unsupported restoration, unsafe object, unexpected ownership/concurrent edit, insufficient space, missing backup, or ambiguous identity blocks before mutation. Never replace original backup with installed/dirty state. Baseline digest survives reinstall, reconfigure, upgrade, abort, removal retry, and recovery.
+
+Ownership registry refuses exact, parent/child, and dynamic-namespace overlap. Shared graph participation allowed only after serialized native install/remove-order proof preserves every participant and returns common baseline after all involved packages uninstall; otherwise install refuses. Unexpected participant during transaction stops. No last-writer-wins or graph exclusion.
+
+##### Maintainer scripts, migration, upgrades, rollback
+
+| Phase | Required behavior |
+| --- | --- |
+| `preinst install` | Verify `armhf`, kernel/dependencies/native tools, ownership conflicts, metadata support, capacity. Capture+sync complete first baseline and intent before any publish. No load/network/APT. |
+| recovery-only `preinst upgrade` from exact `1.0.2` | Require explicit outer recovery binding plus pinned source/replay/report/canonical legacy digest; recompute exact digest; add only package-owned integrity/tool/provenance controls atomically and durably. Never change, recapture, touch, normalize, or derive legacy members from dirty paths. |
+| `postinst configure` | Publish payload atomically; run native registration; verify exact links/graphs/order; never load module; idempotent. On failure, native unregister/rollback; preserve backup when cleanup incomplete. |
+| upgrade/failed upgrade | Preserve immutable first baseline, records, guard, removal state. Snapshot prior payload/registration separately. Never unload/reload resident module for upgrade. Reject incompatible state/control ABI. Restore prior compatible payload on abort; never promote broken/partial baseline. |
+| `prerm remove` | Durably mark removal pending; unregister natively while script exists; verify activation absent; if loaded, use fallible prepare/quiesce/reset as allowed then ordinary unload. No force/reboot. Failure returns nonzero, activation stays disabled, backup/journal retained. |
+| module-absent cleanup | Compare exact baseline record inventory. Delete only nonbaseline immediate regular empty single-link valid-name records after no-follow checks. Preserve unsafe/unrelated entries and fail nonzero. No Bash frontend fallback. |
+| `postrm remove/purge` | Require module, endpoint, worker, activation absent. Restore every baseline payload, record, link, graph metadata, parent, owner claim. Graph bytes must already equal baseline from native unregistration. Verify all; only then delete backup/journal. Remove and purge both restore fully. |
+| abort/retry | Resume/reverse exact durable phase idempotently. Never reactivate after removal request. Never erase sole usable baseline/evidence. |
+
+Partial migration controls may be removed/regenerated only by same recovery-only `1.0.4` path after legacy digest revalidation. Ordinary install/upgrade rejects missing/partial/wrong controls. Outer tooling fingerprints legacy subset before/after and requires byte/type/metadata equality. Package hooks alone own backup mutation; outer recovery reads/authenticates, invokes ordinary target dpkg, compares, journals, and clears matched quarantine only after final proof.
+
+Busy unload remains pending until unrelated natural reboot. Package never triggers reboot. Disabled activation + durable marker prevent next-boot activation. Pending removal, active module/endpoint/worker, generated event, backup/journal/claim, or restoration mismatch means uninstall FAIL.
+
+Rollback definitions:
+
+- Failed install: reverse published paths/native registration using journal; restore first baseline; verify; preserve quarantine/evidence on any failure.
+- Failed upgrade: restore immediately previous compatible payload/registration while retaining original first baseline/events/removal intent.
+- Requirement rollback: ordinary remove then purge of sole package; restore every requirement-managed/shared/protected/original surface. No success until exact comparison PASS.
+
+##### Native activation/removal oracle
+
+Keep exact LSB contract: `Provides: scr-resets-monitor`; `Required-Start: $local_fs`; `Required-Stop: $local_fs`; `Default-Start: 2`; `Default-Stop: 0 1 6`. Jessie tools remain `insserv 1.14.0-5`, `startpar 0.59-3`, `sysv-rc 2.88dsf-59`; `/etc/init.d/rc` uses `CONCURRENCY=makefile`. `insserv -s` = `--showall`, diagnostic only; never acceptance authority.
+
+Registration PASS requires target `/usr/sbin/update-rc.d scr-resets-monitor defaults` rc `0`; exactly one runlevel-2 `S[0-9][0-9]scr-resets-monitor`; exactly one runlevel 0/1/6 `K[0-9][0-9]scr-resets-monitor`; exact `../init.d/scr-resets-monitor` targets; no other runlevel/service activation; `.depend.start` exact token once plus `$local_fs` ordering; expected `.depend.stop`; no unintended `.depend.boot`; startpar-equivalent schedule exactly once; global concurrency/unrelated services unchanged.
+
+Unregistration PASS requires target `/usr/sbin/update-rc.d -f scr-resets-monitor remove` rc `0` while script exists; zero service links; exact original graph content/type/metadata. Historical graph SHA-256 values:
+
+- `.depend.start`: `0b28f45521b9ee190df2e85997d2023601119de6dd780629a6890ad628bf1742`
+- `.depend.stop`: `71cc8cdaea1f740a3b14dfa8faae9a9c5816b48b7e9b5b896274b2f802027797`
+- `.depend.boot`: `21d1f1b0ab0f641d8e9b0b9d45a59b239f7cb4d197b78547343f6eabbe55827b`
+
+Capture each environment's first baseline; historical hashes never replace live baseline. Never write/copy/rename backup over graph content, invoke `insserv -f`, or change `CONCURRENCY=makefile`. Native output mismatch retains backup/journal/quarantine and fails.
+
+##### Validated broker and target-runner readiness
+
+Retain revision-14 T01 broker verbatim unless affected interface regression forces proportional rerun. Shared runtime-generation and artifact-lifetime locks span command. Broker runs real root; verifies target root/runtime/QEMU/PRoot/loader/libs/artifact/scratch pins; enters mount+network namespace; recursively privatizes `/`; closes unrelated/writable FDs; binds exact QEMU/DEB files only; verifies mountinfo and 23 mutation families; applies capability/no-new-privs/seccomp confinement; runs pinned loader/PRoot/QEMU; journals exact identities/argv/output/status/time/process tree; cleans exact namespace survivors; requires parent snapshot equality and zero residue.
+
+T02 completes readiness only:
+
+1. RETAIN exact T01 broker evidence and regression PASS.
+2. INTEGRATE `recover-package`, package test, install/query/remove/purge, journal, phase cleanup, and native-oracle parsing through `TargetRunner`.
+3. VERIFY statically/modelled that no host dpkg, force, foreign architecture, direct database/script call, binfmt, network, target helper/copy/placeholder, broad/global bind, or fallback path exists.
+4. VERIFY exact target-file identity contract and expected authentic command sequence without asserting command execution on current image.
+5. TEST all phase transitions, `BaseException` paths, timeouts, signals, escaped children, partial journals, cleanup failures, quarantine retention, and retry rejection using synthetic fixture roots/mocks/no-image ARM probe only.
+6. REQUIRE zero local process/namespace/mount/mapping/scratch/FD residue after every synthetic/no-image test.
+7. RECORD PASS as **integration readiness**, explicitly deferring CAP sufficiency, target dpkg/shell/NSS/database behavior, hook ordering, and native activation/removal execution to T04.
+
+T02 never mounts or reads authentic source/current copy, never invokes authentic target dpkg, never changes image/quarantine/package state, and never claims `R15-05` through `R15-09`.
+
+##### T03 read-only inspection and artifact
+
+T03 owns exactly one current-copy action before recovery: quarantine-aware, lock-held, read-only inspection. No rw mount, dpkg, package transition, marker clearance, fresh lifecycle, HW, or reboot.
+
+1. ACQUIRE real canonical image lock with explicit recovery intent; quarantine remains.
+2. VERIFY exact source/copy/marker/replay/fixtures/geometry/root/zero-loop/zero-mount identities.
+3. VERIFY source SHA-256 exact and current copy SHA-256 exact.
+4. MOUNT exact failed copy read-only with `noatime`, offset `50331648`, size `3633315840`; no fallback, `noload`, fsck, alternate geometry, source mount, or overwrite.
+5. INSPECT installed `rF  1.0.2`, safe legacy backup layout, canonical digest, protected files, native tools/graphs/links, package status/hooks, absence of partial migration.
+6. CAPTURE new report/journal bound to current raw copy hash and revision-15 plan; keep exact quarantine.
+7. UNMOUNT and release loop; verify zero mounts/loops/processes/scratch, source/copy/replay/marker unchanged.
+8. ***if*** inspection or cleanup fails ***then*** RETAIN quarantine/evidence; STOP before build.
+9. UPDATE only declared package attestation/plan/RELEASE bindings.
+10. BUILD `1.0.4_armhf.deb` twice cleanly; require byte-identical sole artifact; record SHA-256; require module SHA-256 exact unless separately rebuilt twice.
+11. RUN package/static/runtime/broker/fault/reproducibility tests and diff check.
+12. INDEPENDENTLY VALIDATE inspection, artifact, package behavior, task binding. Stop before rw recovery.
+
+##### T04 authentic execution, recovery, and fresh lifecycle
+
+T04 owns all live authentic proofs previously misplaced in T02: effective CAP sufficiency; authentic target dpkg/shell/NSS/database/native tools; file operations; ordered `preinst`/`postinst`/`prerm`/`postrm`; native activation/removal oracle; existing-copy recovery; exact restoration/clearance; fresh lifecycle.
+
+Before any live action, implement durable phase journal with `BaseException` coverage. Every phase records immutable inputs, pre-state, intent, expected residue, cleanup owner, and sync completion before action. Catch `Exception`, `KeyboardInterrupt`, `SystemExit`, signals translated by bounded runner, timeout, broker/QEMU/PRoot crash, and journal write failure as failure; never convert to PASS. Secret values never journaled.
+
+Universal phase algorithm:
+
+1. WRITE and SYNCHRONIZE `phase-intent` with exact phase ID, source/copy/root/DEB/runtime/report/baseline/marker identities, lock identity, pre-process/pre-mount/pre-loop/pre-namespace/pre-scratch snapshots
+2. EXECUTE one bounded phase only
+3. ***if*** any `BaseException`, signal, timeout, nonzero status, identity drift, journal ambiguity, or expected-proof absence occurs ***then***
+   1. WRITE and SYNCHRONIZE failure class, safe exact message/status, last durable subphase, and mutation boundary
+   2. MARK or RETAIN quarantine before any clean-return claim
+   3. TERMINATE and REAP owned broker/PRoot/QEMU/target descendants with bounded TERM then KILL
+   4. REMOVE only verified owned mappings/scratch/guest aliases
+   5. ***if*** package transition may have begun ***then*** ATTEMPT only approved ordinary target-dpkg cleanup/restoration from durable journal under same lock
+   6. UNMOUNT and RELEASE only verified owned mounts/loops when safe
+   7. VERIFY and JOURNAL process, namespace, private-mount, loop, mapping, scratch, guest/helper, FD, and parent-snapshot residue
+   8. RETAIN image, backup, clone, baseline, report, artifact/runtime evidence, journal, and quarantine
+   9. STOP dependent action; never clear marker, start fresh lifecycle/HW, or record clean unlock
+4. ***else***
+   1. VERIFY zero phase-local process/namespace/private-mount/mapping/scratch/FD residue before next live action
+   2. VERIFY immutable input identities and parent snapshots unchanged except declared target mutation
+   3. WRITE and SYNCHRONIZE `phase-complete`
+   4. CONTINUE to next phase
+
+OS exit may release advisory lock after failure; journal must never record clean unlock, and persistent quarantine blocks reuse until tooling-reported recovery. Cleanup/restoration failure itself is quarantine condition. No later phase runs on nonzero or ambiguous cleanup.
+
+Authentic recovery sequence:
+
+1. VERIFY T01/T02/T03 independent PASS, exact revision-15 task binding, runtime offline, canonical DEB/report hashes, source/copy/marker/replay/fixtures/geometry/capacity, zero conflicting process/namespace/mount/loop
+2. ACQUIRE one real canonical recovery lock; JOURNAL lock identity
+3. CREATE or revalidate independent source clone; require pre-mount hash equality and distinct identity
+4. MOUNT clone rw only for approved ext4 journal replay; SYNCHRONIZE; UNMOUNT; RELEASE loop
+5. MOUNT same clone ro; CAPTURE authentic semantic fingerprint/protected/native baseline; UNMOUNT; RELEASE loop; verify clone/source hashes per contract
+6. MOUNT exact failed copy rw with approved geometry; never overwrite/rebase
+7. RUN private broker authentic preflight and REQUIRE effective CAP confinement suffices for target operations
+8. AUTHENTICATE target `/usr/bin/dpkg`, `/usr/bin/dpkg-query`, `/bin/sh`, NSS/group, dpkg database/statoverride, update-rc.d, insserv, dependencies, hashes/types/modes/owners
+9. REQUIRE target `dpkg --print-architecture` = `armhf`, target version `1.17.27`, status `rF  1.0.2`, exact `crontab`/`ssl-cert` resolution, unchanged group/statoverride
+10. RUN exact target behavior probe: exec, file+directory sync, rename, exclusive lock contention/release, uid/gid/mode, expected nonzero exit `37`; remove probe residue; verify identities
+11. INSTALL exact `1.0.4` through ordinary authentic target dpkg
+12. REQUIRE durable ordered journal proof of recovery `preinst upgrade 1.0.2`, applicable old/new dpkg fallback callbacks, `postinst configure`; installed hooks equal DEB; configured status exact
+13. REQUIRE source-attested migration leaves legacy subset unchanged and adds complete valid integrity/tool/provenance controls
+14. REQUIRE native registration oracle PASS; `insserv -s` remains diagnostic
+15. RUN package test through same authentic target root
+16. REMOVE through ordinary target dpkg; require ordered `prerm remove` before native unregister/quiescence and exact status transition
+17. PURGE through ordinary target dpkg; require ordered `postrm remove/purge`, final target query absence, dpkg info namespace absence
+18. REQUIRE native removal oracle PASS and exact three-graph restoration; no direct graph edit
+19. REQUIRE zero broker/PRoot/QEMU descendants, namespaces, private mounts, mappings, scratch, guest/helper paths, leaked FDs, parent changes
+20. COMPARE restored failed copy against authenticated replay baseline across every managed/shared/protected/original path, record, metadata, parent, package/owner/runtime namespace, link, graph, fixture
+21. UNMOUNT failed copy; RELEASE all loops; verify source exact
+22. CLEAR exact matched per-image marker, then global dirty marker through outer tooling only after every prior phase PASS; preserve unrelated markers
+23. RECORD recovery PASS and clean lock release
+
+Marker clearance is last mutation after restoration, cleanup, unmount, loop/source proof. Clearance failure restores/retains quarantine and fails. Current-copy recovery PASS never substitutes fresh install proof.
+
+Fresh lifecycle sequence begins only after independently validated recovery PASS:
+
+1. ACQUIRE one new real source-image lock
+2. VERIFY no quarantine/conflicting mount and exact source hash
+3. CREATE new tooling-owned disposable copy; verify distinct identity and pre-mount hash equality
+4. MOUNT copy rw with approved geometry under same lock; capture immutable fresh baseline before package mutation
+5. INSTALL exact DEB through authentic target dpkg; fresh path must create normal first baseline, never recovery migration
+6. TEST package, native registration, package status, records, static/runtime behavior, reconfigure, reinstall, supported upgrade, failed/aborted operations, native failures, unsafe records, overlap refusal, peer ordering, and repeated cleanup as bounded declared cases
+7. UNINSTALL every produced package after test PASS or functional failure
+8. PURGE residual requirement package state
+9. VERIFY original path/type/content/hash/link/record/metadata/parent/graph/package/owner/runtime state exactly restored; no package/module/device/guard/worker/event/claim/backup/journal/pending residue
+10. VERIFY zero target-runner process/namespace/private-mount/mapping/scratch/guest/helper/FD residue
+11. UNMOUNT copy; RELEASE loops
+12. VERIFY authentic source SHA-256 unchanged
+13. ***if*** any install, test, uninstall, purge, restoration, cleanup, unmount, loop, or source gate fails ***then*** QUARANTINE disposable identity; RETAIN baseline/journal; STOP without clean unlock/reuse authorization
+14. ***else*** RECORD fresh lifecycle/restoration PASS; RELEASE lock
+
+Lock scope exact: `lock → mount → baseline → install → test → uninstall → purge → restoration verification → target-runtime/process/namespace/private-mount cleanup → unmount → loop/source verification → unlock`. Separate phase locks forbidden. Requirement-managed paths/graphs/records/fixtures never exclusions. Normal dpkg/log/runtime bookkeeping exclusions must be explicit; prove package status/info absence separately. Source raw SHA equality proves authentic source unchanged. Never claim disposable raw-byte equality after ext4/dpkg activity.
+
+##### Tests and independent acceptance
+
+Preserve all prior validated broker/runtime/package/module/CLI/storage/native tests. Add or bind:
+
+- T02 readiness: exact command routing/order; full static forbidden-path scan; synthetic target identity/semantic probe; phase journal state machine; every `BaseException` boundary; partial/corrupt/missing journal; timeout/signal/escape; failed cleanup retains quarantine; zero residue after no-image tests. Tests must assert no authentic image path opened/mounted/mutated.
+- T03 inspection: wrong hash/run/root/marker/replay/geometry; alias/symlink/hardlink/special object; unsafe backup; protected/native mismatch; mount/unmount/loop/source failure; quarantine unchanged. Build twice; artifact/module/payload/attestation exact.
+- T04 authentic CAP/tool proof: target identity/version/architecture/status/NSS/statoverride; shell/exec/fsync/rename/flock/uid/gid/mode/exit; CAP denial/sufficiency; no host dpkg/force/direct database.
+- Hook order: real target dpkg `1.0.2→1.0.4`; old/new fallback order where applicable; installed hook hashes; migration journal; `postinst`, package test, `prerm`, `postrm remove/purge`; final status/info absence.
+- Native oracle: registration rc/links/startpar graphs/order; diagnostic-only `insserv -s`; unregister rc/zero links/exact three-graph restoration; no direct write/global concurrency edit.
+- Failure matrix: inject before/after every intent, target command, hook boundary, journal sync, broker cleanup, restoration compare, unmount, loop/source proof, marker clearance. Every failure leaves quarantine and zero verified owned residue or records explicit cleanup failure/quarantine; never advances.
+- Fresh lifecycle: install/remove, install/purge, reinstall, reconfigure, supported upgrade, failed upgrade/abort, unsafe records, loaded/absent/busy module model, overlap/peer order, repeated cleanup; uninstall all package-produced changes restores baseline.
+- Reproducibility/static: two clean DEBs exact; retained or twice-rebuilt module exact; ELF32 little-endian ARM EABI5, ARMv7, exact vermagic, relocation type `3` absent, expected exports, no instrumentation/FP/MMIO/reason/force/APT scope drift.
+
+Independent validation checks each task's bounded claim. Historical T01 remains reusable only after source/hash/interface/regression audit. Historical T02 FAIL remains history. No authentic execution criterion may PASS from mocks/static evidence.
+
+##### Hardware gate
+
+No HW until T04 recovery and fresh lifecycle independently PASS plus current acceptance binding PASS. Target authority unchanged: `192.168.68.55`, `SCR-7CCC91`, ADLINK LEC-iMX6, Debian 8 Jessie, ARMv7/`armhf`, SysV runlevel `2`, kernel `3.10.105-imx6 #5 SMP PREEMPT`; config SHA-256 `956615a914d7759eabaf653d53e19ee1f4e85c8852f526b44c312dfac1017f26`; uImage MD5 `9ab15ca7cf8f336c519d5b51f14c4c3c`; baseline taint `4096`, all rechecked.
+
+1. VERIFY exact target identity, recovery access, capacity, package/record/runtime/link/graph/protected baseline, boot ID, taint, bounded logs, no quarantine/conflict
+2. COPY exact DEB transiently; verify hash/mode
+3. INSTALL without target APT/network; require native graph/link oracle; install loads no module/event
+4. START manually; require module/guard/device and exactly `+1`; repeated start/unload/reload adds `+0`; CLI/sync-fault gates PASS
+5. RESTORE defined installed pre-reboot state; verify exact one activation and recovery readiness
+6. REBOOT once ordinarily; reconnect within bound; require boot ID change, exact identity/protected hashes, automatic module/guard/device and exactly `+1`, no duplicate/warning/oops/BUG/panic/hang/new unexplained taint
+7. REMOVE and PURGE ordinarily; no force or cleanup reboot
+8. REMOVE transient DEB; require exact records/graphs/links/metadata/protected/package/connectivity restoration and zero module/device/guard/worker/runtime/state/claim/backup/journal/activation residue
+9. ***if*** any boot, module, taint, native, cleanup, restoration, or connectivity gate fails ***then*** STOP, preserve evidence, quarantine affected device/image, retain disabled activation/backups when incomplete, require verified recovery
+
+Credentials remain ignored mode-`0600` `admin/hw.credentials`/askpass; secrets absent from command text, process listing, evidence, REQ, package, Git. No second reboot authorized by this replan.
+
+##### Revision-15 bounded tasks and acceptance
+
+- T01: reuse revision-14 T01 broker/runtime only after exact hash/interface/regression audit. No image action.
+- T02: finish/validate integration readiness, phase journal, static/fault/BaseException/zero-residue suite. No authentic image/source/copy mount or package lifecycle; no authentic-execution claim.
+- T03: one lock-held read-only current-copy inspection; pin report; rebuild `1.0.4` twice; validate exact artifact/module/package/runtime/task evidence. Quarantine stays; no rw recovery.
+- T04: authentic CAP/target-tool probe, ordered hooks/native oracle, one existing-copy recovery, exact restoration/clearance, then fresh disposable lifecycle; all phase journal/quarantine/zero-residue gates. Stop before HW.
+- T05: unchanged one-reboot target acceptance only after T04 independent PASS.
+
+Acceptance IDs:
+
+- `R15-01`: Revision-14 T01 runtime/broker pins, exact read-only mounts, 23-family immutability, CAP/seccomp confinement, ARM exit `42`, parent isolation, escaped-process cleanup, zero residue remain exact.
+- `R15-02`: T02 recovery/target-runner integration routes all intended commands through validated broker; exact identity/command/native-oracle contracts and forbidden-path scans PASS; claim limited to code/static/fault readiness.
+- `R15-03`: T02 phase journal handles every modelled `BaseException`, timeout, signal, partial journal, escaped child, and cleanup failure fail-closed; zero no-image residue; quarantine semantics retained; no image action.
+- `R15-04`: T03 lock-held read-only inspection binds current copy, source/marker/replay/geometry/protected/native/legacy facts and new report; quarantine unchanged; two `1.0.4_armhf` builds identical; exact DEB/module hashes recorded.
+- `R15-05`: T04 authentic broker execution proves CAP sufficiency plus target armhf dpkg `1.17.27`, shell, NSS, database/statoverride, native tools, exact hashes/status, and behavior probe; group/statoverride unchanged; no host dpkg/force/direct edit.
+- `R15-06`: Authentic target dpkg journal proves ordered recovery `preinst`/fallback/`postinst`/`prerm`/`postrm` execution, exact installed hooks/status transitions, package-owned legacy migration with unchanged legacy subset, complete controls, package test, final status/info absence.
+- `R15-07`: Authentic native registration/removal PASS by command rc, exact links, startpar graph membership/order, expected stop graph, zero links and exact three-graph restoration; `insserv -s` diagnostic only; no direct graph/global concurrency edit.
+- `R15-08`: One real recovery lock spans source/clone proof, mount, authentic probe, install/test/remove/purge, exact restoration, process/namespace/private-mount/mapping/scratch/FD cleanup, unmount, loop/source proof, marker clearance; failure at any phase retains quarantine/evidence and cannot advance.
+- `R15-09`: After recovery PASS, fresh disposable lifecycle under one continuous lock proves uninstalling all produced packages—exactly one DEB—restores every managed/shared/protected/original surface; zero residue; authentic source exact; cleanup failure quarantines.
+- `R15-10`: Phase-by-phase durable intent/completion/failure journals cover `BaseException` and prove zero residue before each next live action; ambiguous or failed cleanup/restoration blocks clean unlock/reuse until tooling-reported recovery.
+- `R15-11`: Exact HW one reboot gives automatic module/guard/device and exactly `+1`, no duplicate/anomaly/new taint; ordinary remove/purge restores target without force/cleanup reboot/credentials/residue.
+
+Task dependencies: T01 none; T02 depends T01; T03 depends T02; T04 depends T03; T05 depends T04. Suggested task acceptance: T01 `R15-01`; T02 `R15-02,R15-03`; T03 `R15-04`; T04 `R15-05,R15-06,R15-07,R15-08,R15-09,R15-10`; T05 `R15-11`. Regenerate manifest only through `./bin/lets sdlc task-plan` after approval inheritance. Preserve prior task reports as history; never relabel stale PASS.
+
+##### Deliverables, restoration proof, and continuation gate
+
+Deliver revision-15-bound task artifacts; exact source/runtime/broker/report/DEB/module hashes; package ownership and immutable backup manifest; maintainer/hook order; native before/installed/removed graph/link inventories; complete phase journals; CAP/target dpkg/NSS/database behavior; migration integrity; recovery/fresh fingerprints; process/namespace/mount/loop/mapping/scratch/FD/source cleanup; matched-marker clearance; unit/static/fault/reproducibility results; HW logs/count/taint/restoration; updated `RELEASE.md`.
+
+Proof that uninstalling all produced packages restores original image:
+
+1. CAPTURE immutable baseline before first package mutation under same real lock
+2. INSTALL sole exact package through authentic target dpkg
+3. TEST declared behavior
+4. REMOVE and PURGE same package through authentic target dpkg even after functional failure when safe
+5. REQUIRE module/control/worker/activation absent
+6. REQUIRE every original file/absence/type/content/hash/link/uid/gid/mode/time/hard-link/xattr/ACL/capability/record/parent/shared graph/owner claim restored
+7. REQUIRE every generated package/record/runtime/backup/journal/claim/link/info path absent
+8. REQUIRE target-runner descendants/namespaces/private mounts/mappings/scratch/guest/helper/FD residue zero
+9. UNMOUNT and release loops under lock
+10. REQUIRE authentic source SHA-256 unchanged
+11. ***if*** any comparison/cleanup fails ***then*** QUARANTINE, retain evidence, stop without clean reuse authorization
+
+Material-change flags: `customer_behavior=false`, `scope=false`, `risk=false`, `safety_relaxation=false`, `hardware_authority=false`. Reason: revision-14 T02 failed because task mapped authentic proof before approved first inspection/recovery. Revision 15 changes task ownership/evidence timing only. It retains validated broker, completed readiness code, same package/runtime/module/image surfaces, behavior, risk ceiling, no-force rule, lock/restoration/quarantine invariants, and one-reboot authority. Phase journaling strengthens failure handling.
+
+Persist only through `./bin/lets sdlc ...`. Commit DRAFT before display. Run deterministic continuation policy with exact T02 sequencing evidence and no material flags. Never self-approve. Implementation resumes only if tooling explicitly inherits approval; otherwise wait developer approval/amendment. `./bin/lets sdlc acceptance` must PASS every current non-HW criterion before implementation commit/whole-package validation. No merge/release/HW on FAIL, stale report/artifact, or quarantine.
+
 ### Event log
 
 - `2026-09-17T08:55:39+00:00` [requirements-analysis] Round 1 created from customer requirements
@@ -3409,3 +3708,5 @@ Deliver exact feasibility journal, namespace/mountinfo identities, full QEMU has
 - `2026-09-27T07:06:27+00:00` [implementing] Task T02 attempt 1 validation fail
 
 - `2026-09-27T07:06:46+00:00` [drafting-plan] $caveman full. T02 independent FAIL: approved T02 requires authentic ordered dpkg-hook/native/CAP proof but forbids quarantined mutation; T03 owns first current-copy inspection and T04 owns recovery plus fresh lifecycle. Static/synthetic evidence cannot prove R14-05/R14-10; live T02 lifecycle would violate approved ordering. Replan task ownership only; customer behavior, scope, risk, safety, quarantine/restoration rules, and HW authority unchanged.
+
+- `2026-09-27T07:13:40+00:00` [drafting-plan] Updated round 1 solution-plan section
