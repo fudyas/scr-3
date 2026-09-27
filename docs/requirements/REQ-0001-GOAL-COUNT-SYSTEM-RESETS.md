@@ -2,13 +2,13 @@
 schema: 1
 id: REQ-0001-GOAL-COUNT-SYSTEM-RESETS
 title: Count system resets reliably
-state: implementing
+state: drafting-plan
 round: 1
-sequence: 196
-approval: auto-approved
+sequence: 197
+approval: none
 implementation_branch: sdlc-req/req-0001-goal-count-system-resets
 implementation_commit: 7610f9249db5640e7db82fbed20d23ff1f3b6c6d
-updated: 2026-09-27T07:06:27+00:00
+updated: 2026-09-27T07:06:46+00:00
 ---
 
 # REQ-0001-GOAL-COUNT-SYSTEM-RESETS: Count system resets reliably
@@ -3407,3 +3407,5 @@ Deliver exact feasibility journal, namespace/mountinfo identities, full QEMU has
 - `2026-09-27T07:06:22+00:00` [implementing] Recorded task T02 attempt 1 result
 
 - `2026-09-27T07:06:27+00:00` [implementing] Task T02 attempt 1 validation fail
+
+- `2026-09-27T07:06:46+00:00` [drafting-plan] $caveman full. T02 independent FAIL: approved T02 requires authentic ordered dpkg-hook/native/CAP proof but forbids quarantined mutation; T03 owns first current-copy inspection and T04 owns recovery plus fresh lifecycle. Static/synthetic evidence cannot prove R14-05/R14-10; live T02 lifecycle would violate approved ordering. Replan task ownership only; customer behavior, scope, risk, safety, quarantine/restoration rules, and HW authority unchanged.
