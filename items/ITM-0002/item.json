@@ -90,10 +90,16 @@
       "host": "983cd43e212d",
       "event": "task_rework",
       "detail": "TSK-0002 after validate: D-01 independent validation: default unit384 PASS and style0 PASS; deterministic scaffold fixture fails under umask077 (0600 vs0644). Fix fixture-scoped umask/LC_TIME and restore in finally; preserve all hashes/modes, production unchanged. Bounded authorized fix."
+    },
+    {
+      "at": "2026-11-11T11:22:18.051Z",
+      "host": "983cd43e212d",
+      "event": "task_status",
+      "detail": "TSK-0002, TSK-0003 -> VALIDATED"
     }
   ],
   "created_at": "2026-11-11T10:03:57.520Z",
-  "updated_at": "2026-11-11T11:17:33.423Z",
+  "updated_at": "2026-11-11T11:22:18.051Z",
   "kind": "fix",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
   "status": "IN PROGRESS",
@@ -118,7 +124,7 @@
       "title": "DEFINE SUPPORTED MODEL AND EFFORT ROUTING",
       "depends_on": [],
       "model": "high",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     },
     "TSK-0003": {
       "block": "BLK-0002",
@@ -127,7 +133,7 @@
         "TSK-0002"
       ],
       "model": "default",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     }
   }
 }
