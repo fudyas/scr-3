@@ -11,3 +11,8 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 
 1. **Overrides:** `TSK-0001` scope extends to project review IDE default and its public-command regression.
 2. **Decision:** User reports `./bin/lets sdlc ide ITM-0002` fails with `no IDE given; pass --ide or set SCR_SDLC_IDE in etc/proj.conf` and selects “open vscode by default”. Project configuration must default to `code`, while explicit `--ide` overrides remain supported.
+
+## D-03 — Manage stage artifacts under the SDLC root
+
+1. **Overrides:** `TSK-0001`, `TSK-0002`, and `TSK-0003` stage-artifact locations, including working-branch `contracts/` and `evidence/` paths.
+2. **Decision:** User ruling: “All these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)”. Manage these stage artifacts under `.codex/sdlc`, preserving historical bytes, hash provenance, and existing protected image state.
