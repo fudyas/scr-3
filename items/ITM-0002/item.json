@@ -78,10 +78,16 @@
       "host": "983cd43e212d",
       "event": "task_rework",
       "detail": "TSK-0002 after validate: Independent validation: unit PASS367; candidate style FAIL219 vs BASE220, zero introduced findings. Approved scope limits engine edits to cmd_models; unchanged-baseline exception or broader cleanup requires developer ruling. No functional routing defect found."
+    },
+    {
+      "at": "2026-11-11T10:52:37.116Z",
+      "host": "983cd43e212d",
+      "event": "review_committed",
+      "detail": "1 decisions"
     }
   ],
   "created_at": "2026-11-11T10:03:57.520Z",
-  "updated_at": "2026-11-11T10:42:24.609Z",
+  "updated_at": "2026-11-11T10:52:37.116Z",
   "kind": "fix",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
   "status": "IN PROGRESS",
