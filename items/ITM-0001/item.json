@@ -30,14 +30,22 @@
         "idea": "The var/ folder now contains the kernel sources of the exact HW platform. I want you to build the module against the kernel sources there. Create and run such SDLC item",
         "description": "Build existing SCR observable-boot reset module against platform kernel source archive supplied under var/. Independently inspect vendor source, configuration, generated headers, symbol versions, build artifacts, and toolchain evidence. Pin selected module source and all build inputs. Build in disposable workspace outside var/ through managed LETS tooling. Deliver reproducible scr_reset_monitor.ko with compiler, source, ELF, release/vermagic, relocation, exported-symbol, and SHA-256 evidence. State any difference from previously observed running kernel without claiming hardware compatibility from offline evidence. Preserve original var/ bytes and metadata, unrelated main/legacy edits, prior REQ history, packages, and image quarantine. Scope excludes package/image installation, quarantine recovery, hardware access, module loading, reboot, reset-cause changes, and legacy requirement resumption."
       }
+    },
+    {
+      "at": "2026-11-11T10:14:12.418Z",
+      "host": "983cd43e212d",
+      "event": "depends",
+      "detail": "ITM-0006"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
-  "updated_at": "2026-11-11T10:14:05.153Z",
+  "updated_at": "2026-11-11T10:14:12.418Z",
   "kind": "task",
   "idea": "The var/ folder now contains the kernel sources of the exact HW platform. I want you to build the module against the kernel sources there. Create and run such SDLC item\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
   "status": "BACKLOG",
-  "depends_on": [],
+  "depends_on": [
+    "ITM-0006"
+  ],
   "host": null,
   "queue_rank": null,
   "plan": {
