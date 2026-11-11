@@ -14,10 +14,16 @@
       "host": "983cd43e212d",
       "event": "minted",
       "detail": "BACKLOG"
+    },
+    {
+      "at": "2026-11-11T09:58:00.969Z",
+      "host": "983cd43e212d",
+      "event": "plan_committed",
+      "detail": "revision 1, 3 tasks"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
-  "updated_at": "2026-11-11T09:53:02.952Z",
+  "updated_at": "2026-11-11T09:58:00.969Z",
   "kind": "task",
   "idea": "The var/ folder now contains the kernel sources of the exact HW platform. I want you to build the module against the kernel sources there. Create and run such SDLC item",
   "status": "BACKLOG",
@@ -25,9 +31,35 @@
   "host": null,
   "queue_rank": null,
   "plan": {
-    "revision": 0,
+    "revision": 1,
     "approved_revision": null,
     "approved_at": null
   },
-  "tasks": {}
+  "tasks": {
+    "TSK-0001": {
+      "block": "BLK-0001",
+      "title": "RESTORE MANAGED TOOLCHAIN PREFLIGHT",
+      "depends_on": [],
+      "model": "default",
+      "status": "TODO"
+    },
+    "TSK-0002": {
+      "block": "BLK-0001",
+      "title": "PIN INPUTS AND BUILD MODULE TWICE",
+      "depends_on": [
+        "TSK-0001"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0003": {
+      "block": "BLK-0001",
+      "title": "RECORD STATIC ACCEPTANCE AND DELIVERY LIMITS",
+      "depends_on": [
+        "TSK-0002"
+      ],
+      "model": "default",
+      "status": "TODO"
+    }
+  }
 }
