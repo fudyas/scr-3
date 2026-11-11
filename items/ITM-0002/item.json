@@ -1,0 +1,33 @@
+{
+  "prefix": "ITM",
+  "number": 2,
+  "desc": "SDLC-LEGACY-INSTRUCTION-CLEANUP",
+  "description": "Remove stale active instructions left by previous SCR SDLC and copied project configuration. Correct .claude/skills/lets-scr/SKILL.md: it advertises nonexistent stack/web/database commands and retired sdlc tasks/briefs/stack/maintree groups. Remove instructions in .codex/agents/swe.toml and verifier.toml that direct writes to /home/fudya/devel/physical/mitme/.codex/agent-memory/; use SCR-local instructions and retain role purpose. Audit stale CLAUDE.md references and automatic transcript/hook claims against actual Codex capabilities. Correct obsolete registry comments and duplicate ignore rules only where proven stale; retain ignore coverage. Acceptance: live guidance uses real LETS commands, SCR-local paths, current SDLC ceremonies, and accurate attribution claims. Preserve optional Claude tooling, active protection hooks, legitimate general skills, Codex configuration, historical snapshots, and model configuration. Independent of ITM-0001; no module, image, package, hardware, or external-repository operations.",
+  "tags": [
+    "cleanup",
+    "sdlc",
+    "instructions"
+  ],
+  "history": [
+    {
+      "at": "2026-11-11T10:03:57.520Z",
+      "host": "983cd43e212d",
+      "event": "minted",
+      "detail": "BACKLOG"
+    }
+  ],
+  "created_at": "2026-11-11T10:03:57.520Z",
+  "updated_at": "2026-11-11T10:03:57.520Z",
+  "kind": "fix",
+  "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed",
+  "status": "BACKLOG",
+  "depends_on": [],
+  "host": null,
+  "queue_rank": null,
+  "plan": {
+    "revision": 0,
+    "approved_revision": null,
+    "approved_at": null
+  },
+  "tasks": {}
+}
