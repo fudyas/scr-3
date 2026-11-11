@@ -1,0 +1,37 @@
+{
+  "prefix": "ITM",
+  "number": 6,
+  "desc": "SDLC-LEGACY-WORKSPACE-RETIREMENT",
+  "description": "Archive and safely retire legacy SCR workspace and verified duplicate scratch after module-input preservation and residue assessment. Primary checkout: .codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS on sdlc-req/req-0001-goal-count-system-resets, currently dirty with staged renames, unstaged source/tooling fixes, unique revision-8 through revision-15 evidence, and package artifacts; about 1.9 GiB allocated. Orphan .codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS-round-1/payload is about 44 KiB and is not a registered worktree. Inventory exact ownership and dependencies before classifying removals. Preserve Git history, complete staged/unstaged/untracked content and staging distinctions, metadata, packages/hashes, source snapshots, build/recovery tooling, and hardware evidence in independently verified durable archive with reproducible restoration. Wait for ITM-0001 to retain current module inputs and build evidence; honor image-residue assessment and historical index. Remove only proven redundant scratch and clean unclaimed legacy worktrees after preservation, resolution of all dirty edits, dependency checks, and approved concrete retirement plan. Do not force removal, stash/reset, erase sole artifacts, silently obsolete/resume REQ, copy unrelated edits into item worktrees, or delete legacy implementation branch/history. Keep .codex/worktrees/sdlc because sdlc branch is current ledger, keep .lets/sdlc active state and managed toolchains, and retain .codex/sdlc active lock/quarantine/recovery state. Acceptance: exact retained inventory is recoverable, live module/build references work, no required evidence disappears, and every retired path has verified redundant/archived disposition. This intake authorizes task creation only; protected image or hardware operations remain excluded.",
+  "tags": [
+    "cleanup",
+    "sdlc",
+    "archive"
+  ],
+  "history": [
+    {
+      "at": "2026-11-11T10:05:03.691Z",
+      "host": "983cd43e212d",
+      "event": "minted",
+      "detail": "BACKLOG"
+    }
+  ],
+  "created_at": "2026-11-11T10:05:03.691Z",
+  "updated_at": "2026-11-11T10:05:03.691Z",
+  "kind": "task",
+  "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed",
+  "status": "BACKLOG",
+  "depends_on": [
+    "ITM-0001",
+    "ITM-0003",
+    "ITM-0005"
+  ],
+  "host": null,
+  "queue_rank": null,
+  "plan": {
+    "revision": 0,
+    "approved_revision": null,
+    "approved_at": null
+  },
+  "tasks": {}
+}
