@@ -6,3 +6,8 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 
 1. **Overrides:** `TSK-0002 To do 5`, `TSK-0002 Done when 7`, and `Design Fit` restriction to QA-only model-list changes.
 2. **Decision:** User ruling “Cleanup everything” authorizes full style cleanup in `tools/sdlc/src/sdlc.py` and `tests/sdlc/test_sdlc.py`, plus directly required callers. Cleanup must preserve behavior, safety checks, and meaningful coverage, and require zero style findings without waivers.
+
+## D-02 — Open VS Code by default for review
+
+1. **Overrides:** `TSK-0001` scope extends to project review IDE default and its public-command regression.
+2. **Decision:** User reports `./bin/lets sdlc ide ITM-0002` fails with `no IDE given; pass --ide or set SCR_SDLC_IDE in etc/proj.conf` and selects “open vscode by default”. Project configuration must default to `code`, while explicit `--ide` overrides remain supported.

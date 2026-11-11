@@ -108,10 +108,16 @@
       "host": "983cd43e212d",
       "event": "status",
       "detail": "TESTING -> REVIEW"
+    },
+    {
+      "at": "2026-11-11T11:42:20.463Z",
+      "host": "983cd43e212d",
+      "event": "review_committed",
+      "detail": "2 decisions"
     }
   ],
   "created_at": "2026-11-11T10:03:57.520Z",
-  "updated_at": "2026-11-11T11:35:16.398Z",
+  "updated_at": "2026-11-11T11:42:20.463Z",
   "kind": "fix",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
   "status": "REVIEW",
