@@ -14,15 +14,21 @@
       "host": "983cd43e212d",
       "event": "minted",
       "detail": "BACKLOG"
+    },
+    {
+      "at": "2026-11-11T10:12:07.961Z",
+      "host": "983cd43e212d",
+      "event": "depends",
+      "detail": "ITM-0002, ITM-0003, ITM-0005"
     }
   ],
   "created_at": "2026-11-11T10:05:03.691Z",
-  "updated_at": "2026-11-11T10:05:03.691Z",
+  "updated_at": "2026-11-11T10:12:07.961Z",
   "kind": "task",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed",
   "status": "BACKLOG",
   "depends_on": [
-    "ITM-0001",
+    "ITM-0002",
     "ITM-0003",
     "ITM-0005"
   ],
