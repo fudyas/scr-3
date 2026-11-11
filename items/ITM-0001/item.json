@@ -1,0 +1,33 @@
+{
+  "prefix": "ITM",
+  "number": 1,
+  "desc": "KERNEL-RESET-MODULE-VENDOR-BUILD",
+  "description": "Build existing SCR observable-boot reset module against platform kernel source archive supplied under var/. Independently inspect vendor source, configuration, generated headers, symbol versions, build artifacts, and toolchain evidence. Pin selected module source and all build inputs. Build in disposable workspace outside var/ through managed LETS tooling. Deliver reproducible scr_reset_monitor.ko with compiler, source, ELF, release/vermagic, relocation, exported-symbol, and SHA-256 evidence. State any difference from previously observed running kernel without claiming hardware compatibility from offline evidence. Preserve original var/ bytes and metadata, unrelated main/legacy edits, prior REQ history, packages, and image quarantine. Scope excludes package/image installation, quarantine recovery, hardware access, module loading, reboot, reset-cause changes, and legacy requirement resumption.",
+  "tags": [
+    "kernel",
+    "reset-monitor",
+    "offline-build"
+  ],
+  "history": [
+    {
+      "at": "2026-11-11T09:53:02.952Z",
+      "host": "983cd43e212d",
+      "event": "minted",
+      "detail": "BACKLOG"
+    }
+  ],
+  "created_at": "2026-11-11T09:53:02.952Z",
+  "updated_at": "2026-11-11T09:53:02.952Z",
+  "kind": "task",
+  "idea": "The var/ folder now contains the kernel sources of the exact HW platform. I want you to build the module against the kernel sources there. Create and run such SDLC item",
+  "status": "BACKLOG",
+  "depends_on": [],
+  "host": null,
+  "queue_rank": null,
+  "plan": {
+    "revision": 0,
+    "approved_revision": null,
+    "approved_at": null
+  },
+  "tasks": {}
+}
