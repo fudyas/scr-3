@@ -1,0 +1,33 @@
+{
+  "prefix": "ITM",
+  "number": 3,
+  "desc": "SDLC-LEGACY-DOCUMENTATION-CLEANUP",
+  "description": "Reconcile historical reset-module documentation and current developer image guidance after SCR SDLC migration. Add clear current-versus-historical index linking root RELEASE.md, contracts/, evidence/feasibility/, evidence/revision-*, retained legacy REQ, dirty legacy workspace evidence, and active ITM-0001. Root RELEASE.md stops at revision 6/no DEB; later legacy workspace contains production source and package work. Old contracts still prescribe SRC/reset reasons superseded by observable-boot scope. Preserve original historical bytes, hashes, canonical paths, and references; prefer additive index/supersession records over deleting or rewriting hashed evidence. Update docs/DEVELOPER-GUIDE.md procedures to current lock-held disposable-image rules; remove guidance that can imply original raw-image mutation and include current Codex entry points while retaining supported Claude tooling. Inventory tracked .codex/REQ-0001-revision-15-solution-plan.tmp.md and .codex/task-plan-rev15/ as historical artifacts; identify exact duplicates and retain unique material through explicit archive/index before any removal from active-looking paths. Acceptance: current module scope, actual acceptance limits, pending plan, safe image procedures, and authoritative locations are unambiguous; historical evidence remains intact and linked. No approval of ITM-0001, legacy resumption, hardware access, image mutation, or quarantine change.",
+  "tags": [
+    "cleanup",
+    "sdlc",
+    "documentation"
+  ],
+  "history": [
+    {
+      "at": "2026-11-11T10:04:21.597Z",
+      "host": "983cd43e212d",
+      "event": "minted",
+      "detail": "BACKLOG"
+    }
+  ],
+  "created_at": "2026-11-11T10:04:21.597Z",
+  "updated_at": "2026-11-11T10:04:21.597Z",
+  "kind": "improve",
+  "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed",
+  "status": "BACKLOG",
+  "depends_on": [],
+  "host": null,
+  "queue_rank": null,
+  "plan": {
+    "revision": 0,
+    "approved_revision": null,
+    "approved_at": null
+  },
+  "tasks": {}
+}
