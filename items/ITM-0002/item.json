@@ -156,13 +156,19 @@
       "host": "983cd43e212d",
       "event": "task_rework",
       "detail": "TSK-0001 after qa: D-03 user requires contracts/evidence and planning/implementation/QA artifacts managed under .codex/sdlc. Implement ledger-backed byte-preserving artifacts and immutable review binding; relocate all96 files, preserve protectedruntime. Existing reviewedtree superseded; integration only."
+    },
+    {
+      "at": "2026-11-11T13:15:45.493Z",
+      "host": "983cd43e212d",
+      "event": "status",
+      "detail": "REVIEW -> IN PROGRESS"
     }
   ],
   "created_at": "2026-11-11T10:03:57.520Z",
-  "updated_at": "2026-11-11T13:10:49.823Z",
+  "updated_at": "2026-11-11T13:15:45.493Z",
   "kind": "fix",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
-  "status": "REVIEW",
+  "status": "IN PROGRESS",
   "depends_on": [],
   "host": "983cd43e212d",
   "queue_rank": 1.0,
