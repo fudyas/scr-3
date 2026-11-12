@@ -95,10 +95,16 @@
       "host": "983cd43e212d",
       "event": "task_status",
       "detail": "TSK-0002 -> VALIDATED"
+    },
+    {
+      "at": "2026-11-12T06:06:51.755Z",
+      "host": "983cd43e212d",
+      "event": "task_status",
+      "detail": "TSK-0003 -> VALIDATED"
     }
   ],
   "created_at": "2026-11-11T10:04:45.500Z",
-  "updated_at": "2026-11-12T05:57:56.469Z",
+  "updated_at": "2026-11-12T06:06:51.755Z",
   "kind": "task",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
   "status": "IN PROGRESS",
@@ -136,7 +142,7 @@
         "TSK-0002"
       ],
       "model": "default",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     }
   }
 }
