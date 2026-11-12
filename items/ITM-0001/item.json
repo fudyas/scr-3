@@ -61,6 +61,12 @@
       "host": "66b12fcdeac8",
       "event": "tags",
       "detail": "reset-monitor, bmc, monit, userspace, debian-package"
+    },
+    {
+      "at": "2026-11-12T07:46:53.719Z",
+      "host": "66b12fcdeac8",
+      "event": "hardware",
+      "detail": "{\"required\":true,\"result\":null,\"package_path\":null,\"promotion_commit\":null,\"package_sha256\":null,\"image_identity\":null,\"notes\":null,\"confirmed_at\":null}"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
@@ -104,5 +110,15 @@
       "model": "default",
       "status": "TODO"
     }
+  },
+  "hardware": {
+    "required": true,
+    "result": null,
+    "package_path": null,
+    "promotion_commit": null,
+    "package_sha256": null,
+    "image_identity": null,
+    "notes": null,
+    "confirmed_at": null
   }
 }
