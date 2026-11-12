@@ -115,10 +115,16 @@
       "previous": {
         "description": "Confirmed decision-only and required-CLI policy (2026-11-12): item covers RAOM tracking plus decision API; no boot gating or entering RAOM. Check requires explicit max-resets and window CLI arguments without defaults. Earlier SysV observation startup remains, without mode control or global monit delay. Missing/invalid arguments and unavailable evidence return explicit error; no fabricated healthy count. This ruling resolves prior pending boundary/default questions. Source: items/ITM-0001/planning/raom-step12-20261112/decision-api-ruling.md.\n\nConfirmed startup ruling (2026-11-12): developer agreed existing SysV integration after writable /var/log, preserving early watchdog/monit servicing. This resolves earlier systemd conflict; no systemd migration. Developer requested explanation of decision API and threshold/window; those policy/boundary choices remain pending, not approved. Source: items/ITM-0001/planning/raom-step12-20261112/startup-decision.md.\n\nCurrent RAOM steps 1+2 planning INPUT: 1de089f67f4fb655224d26d677e6b26478da41ca4aebbc6543704281a9777029. Locator: artifacts/bundles/1de089f67f4fb655224d26d677e6b26478da41ca4aebbc6543704281a9777029.json. Includes source emails, scope ruling, independent planner questions/verdict and image facts, plus retained prior brief and hardware logs. Replacement plan is not drafted; required developer policy answers remain pending.\n\nLatest scope ruling — RAOM steps 1 and 2 (2026-11-12).\n\n# ITM-0001 RAOM steps 1 and 2 — scope ruling\n\nCustomer source, verbatim: \"Update the item's brief to mention it is step 1+2 of the ROAM. Then run $sdlc-plan on this item\"\n\n1. Name: source email calls mode RAOM (remote-access-only mode). Customer's latest message spells ROAM; retain both spellings in provenance.\n2. Item delivers RAOM step 1 (BMC-based global reset tracking, durable observations/logs and API) and step 2 (user-space logic deciding whether reset frequency requires RAOM).\n3. Step 2 includes configured reset-window evaluation and explicit decision interface for monit/boot consumer. Earlier wording assigning all step-2 decision logic to future work is superseded. Mere historical data collection cannot close both steps.\n4. Preserve agreed 21 utility responsibilities, corrected validation/storage behavior, existing system log rotation policy, reversible Debian packaging, exact-package installation and developer real-HW tests.\n5. Source email ties normal boot/monit behavior to reset-loop-protection service output. Replacement planner must resolve whether actual startup gating belongs to this item or subsequent step-3 orchestration. No unsafe implicit gating while essential watchdog/remote services still depend on monit.\n6. RAOM step 3 (independent remote-access service orchestration and watchdog ownership) and step 4 (technician repair, exit/re-entry behavior) remain separate unless developer explicitly changes boundary.\n7. Reset threshold/window are product parameters. Email's more-than-five resets within fifteen minutes is illustrative, not approved production default. Ask required policy questions before drafting.\n8. RAOM uses independent BMC observations/history; monit's historical state is diagnostic only. BMC lifetime counters must never be cleared to reset recovery budget.\n9. Earlier systemd wording conflicts with observed SysV target. Resolve native startup integration in planning; no implicit init migration.\n10. Preserve ITM-0006 migration dependency and chain membership. Flag stale kernel-build handoff for reconciliation; no silent edits to other items. Existing plan r1/kernel tasks remain historical and superseded for execution.\n11. Authorized action now: brief amendment plus independent planning. No implementation/plan/SHOW approval, device operation, package install, reset, watchdog change or firmware write follows.\n\n\nEarlier reviewed BMC utility brief and preserved evidence follow. Latest ruling overrides conflicting scope boundaries only.\n\nAuthorized replacement brief — 2026-11-12.\n\nDeliver packaged user-space BMC reset monitor for monit. This brief replaces prior offline kernel-module build scope. BMC supplies authoritative totals; utility supplies durable observation/history and stable API. Developer authorized this brief amendment only.\n\nIndependent requirements audit PASS. Durable planning INPUT bundle: e21116fcd56f1830ee3e1fe37f070457fe4ce21958fb77de5ca9ed813980aacf. Ledger locator: artifacts/bundles/e21116fcd56f1830ee3e1fe37f070457fe4ce21958fb77de5ca9ed813980aacf.json. Canonical managed brief: items/ITM-0001/planning/brief-20261112/utility-responsibilities.md. Bundle also retains verbatim customer source, requirements audit, prior item record and seven original hardware observation logs. Source tree is not bound and no QA RESULT or delivered-package acceptance is claimed.\n\n# ITM-0001 BMC reset utility responsibilities\n\nScope brief only. Independent replacement plan and explicit plan approval remain required.\n\n## Purpose and context\n\nDeliver `/usr/sbin/scr-resets-monitor` as user-space interface between existing ADLINK SEMA BMC and monit. BMC owns authoritative boot/power-cycle counters and last restart cause. Utility owns validated observations, persistent history, and monit API. Existing installed `sema` 2.5 R4 supplies access. Custom kernel module and vendor-kernel rebuild are excluded.\n\nProblem: monit recovery can cause recurring unit reboots while existing USB counter and monit state lose history. This item supplies reliable observation and reporting. It does not change monit reboot/recovery policy without separate decision.\n\nTarget observed: SCR-7CCC91, ADLINK LEC-iMX6 Quad/Dual, `192.168.68.58`, Linux `3.10.105-imx6 #5`, native SysV init. BMC firmware `BMC LEC-iMX6 0v13 Jun 25 2015`, bootloader `bl_LiMX6 3v2 Aug 5 2014`, capability mask `0x38ebf`, boot-counter capability enabled. Device declared at I2C `2-0028`. Existing `sema` binary SHA-256 `b9fbc6b88c3a2e382d9566dcd7573c2abd6bd38f194d5be2d7466bd910c3e383`.\n\n## Responsibilities\n\n1. START early during boot. Native init service starts utility after storage containing `/var/log` becomes writable. Earlier systemd request must be reconciled against observed SysV target during replacement planning; do not migrate init system implicitly.\n2. QUERY BMC on startup. Read boot count, power-cycle count, last restart cause, controller identity, and firmware version through installed SEMA interface.\n3. VALIDATE readings. Command must finish within timeout and return success. Required fields must exist and parse correctly. Counters must be non-negative integers within documented firmware range. Malformed/incomplete response means unavailable, never zero. Preserve previous valid observation. Counter decrease triggers responsibility 15.\n4. BOUND device access. Apply timeouts and limited retries. Persistent failure must not block boot indefinitely.\n5. CREATE owned log directory `/var/log/scr/` with root ownership and restricted permissions. Preserve unrelated existing files.\n6. MANAGE `/var/log/scr/resets.jsonl` for durable observation/history records, `/var/log/scr/resets-state.json` for latest committed observation/baseline, and `/var/log/scr/resets-monitor.log` for diagnostics/failure/recovery messages.\n7. RECORD observation context: observation time, Linux boot identity, uptime, BMC identity, firmware, counters, last restart cause, and calculated changes.\n8. ESTABLISH initial baseline. First valid observation retains existing totals without reporting lifetime total as new resets since installation.\n9. DETECT counter changes against previous committed observation. Record boot-count and power-cycle changes separately.\n10. HANDLE missed observations. Delta greater than one creates aggregate record with actual delta. Invent no individual reset timestamps or causes.\n11. DISTINGUISH observation time from reset time. Last restart cause describes latest event only. Mark unreliable system time explicitly.\n12. PREVENT duplicate records across repeated queries, service restarts, concurrent monit calls, and recovery after interrupted operation.\n13. COMMIT history reliably. Synchronize durable records before advancing committed baseline. Recover interrupted log/state updates without losing committed observations or duplicating records.\n14. REPORT storage failures explicitly. Full/read-only storage, permissions, and synchronization errors return monit error code 2. Keep last committed baseline. Example: committed 146, BMC 147, failed log write means baseline stays 146; later successful observation captures accumulated delta. Use stderr/system logging when own diagnostic log is unavailable. Never report failed persistence as healthy or advance baseline past missing durable record.\n15. DETECT discontinuities: unexpected decrease, controller replacement, and firmware change. Preserve diagnostic evidence; never silently treat them as normal increments. Resolve documented rollover and rebaseline behavior in plan.\n16. PROVIDE stable CLI/API: `scr-resets-monitor record` queries/commits at boot; `scr-resets-monitor status --json` returns latest committed observation, age, and validity; `scr-resets-monitor check --max-resets N --window SECONDS` refreshes observation and evaluates monit-configured threshold. Define schema and precise threshold/window boundary rules in plan without inventing product defaults.\n17. PROVIDE predictable `check` exits: 0 healthy, 1 configured reset threshold exceeded, 2 unavailable/insufficient evidence including read and persistence failures. Never convert failed read into zero resets. Monit must distinguish threshold from unavailable data.\n18. HANDLE incomplete history. Missing observations or unreliable time that prevent valid window decision return unavailable. Do not infer event times from aggregate delta.\n19. INTEGRATE with system log rotation policy. Existing system mechanism owns schedule, size limits, compression, and retention. Package supplies integration for utility logs with correct ownership/permissions. Utility opens current log path per invocation; read retained rotated history where needed. Exclude `resets-state.json` from rotation. Retention must cover configured monit window; missing required history returns unavailable. Do not introduce private rotation scheduler.\n20. PRESERVE committed baseline and history across package upgrades. Keep startup retries idempotent.\n21. KEEP hardware access read-only. Utility never clears BMC counters, writes flash/firmware, changes watchdog, or reboots. Monit recovery-policy changes remain separately agreed scope.\n\n## Delivery and acceptance\n\n1. Deliver reversible Debian package with utility, boot integration, monit API integration, system log-rotation integration, operator documentation, configuration, and tests. Preserve existing SEMA installation and unrelated system files. Package owns declared paths only.\n2. Include package install, upgrade, uninstall, rollback, ownership-overlap, architecture, original-image preservation, metadata/xattr, and whole-tree restoration evidence. Mutate disposable image copies only under shared LETS image lock. Preserve existing quarantine; no recovery implied.\n3. Include installation of exact reviewed package on identified real hardware and developer-operated reset tests. Record package version/SHA-256, device/image identity, procedure, expected/observed values, logs, rollback, and verbatim developer report. Obtain operation-specific authority; brief amendment grants no hardware actions.\n4. Existing exploration proves capability and one manual reset only: BMC boot count 146 to 147, power cycles 51 to 51, boot identity changed, restart cause reported Watchdog. Developer stated manual reset; do not relabel it as proven watchdog-trigger procedure. Existing observation is not acceptance of undelivered package.\n5. Qualify complete power-loss retention, repeated resets, software/watchdog reset coverage as separately authorized, Linux-fails-before-utility behavior, delayed/missing readings, malformed/timeout/device errors, disk full/read-only/sync failures, concurrency/crash recovery, clock/history gaps, rotation/compression/retention, discontinuities, and upgrade preservation. State documented limits. Automated tests alone never establish hardware success.\n6. Preserve ITM-0001 identity, prior plans/tasks/history, retired REQ artifacts, original `var/` files, user edits, active leases, and image quarantine. Keep existing ITM-0006 migration dependency and chain membership unchanged. Kernel-specific ITM-0006 source/toolchain/rebuild handoff is historical context, not design authority for new utility. Reconcile stale cross-item handoff during planning without silently rewriting other item scope.\n7. Existing unapproved plan r1 and its kernel tasks are superseded for execution. Do not approve, schedule, or execute them. Prepare fresh independently checked utility plan; explicit approval remains required. No implementation or SHOW approval follows from this scope amendment.\n\n## Pending planning decisions\n\n1. Exact early boot ordering and native init integration, resolving prior systemd wording against SysV target.\n2. Exact monit threshold/window semantics, JSON schema, timeout/retry bounds, and system rotation/retention values.\n3. Counter-width/rollover, discontinuity/rebaseline policy, and BMC firmware retention/reset-coverage guarantees.\n4. Read-only filesystem fallback for diagnostics, durable record/checkpoint recovery, and real-device acceptance/rollback procedure."
       }
+    },
+    {
+      "at": "2026-11-12T08:50:04.180Z",
+      "host": "66b12fcdeac8",
+      "event": "plan_committed",
+      "detail": "revision 2, 9 tasks"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
-  "updated_at": "2026-11-12T08:44:20.080Z",
+  "updated_at": "2026-11-12T08:50:04.180Z",
   "kind": "task",
   "idea": "The var/ folder now contains the kernel sources of the exact HW platform. I want you to build the module against the kernel sources there. Create and run such SDLC item\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater customer review and authorized replacement brief (2026-11-12):\n\n1. \"In this session we review SDLC item 1 definitions and purpose against the monit issues and kernel module solution. Present the problem item 1 needs to solve first w.r.t. monit\"\n2. Earlier scope request:\n\n   > The scope of the item needs to include\n   > - Building in-tree kernel module that counts resets (the fact it loads means the system was reset)\n   > - The user-space systemd service that records the resets number - starts first after the rootfs is ready to persist the counters\n   > - The scope of the item nneds to include the packaging, installation on the real HW and real HW tests (I will manually reset the system).\n\n3. \"I didn't change any design yet. I only ask how the module counts resets and remembers the counter across the resets ?\"\n4. \"I want you to explore the ADLINK kernel source and see what mechanism can guarantee the counter survives resets (for example direct write into uboot flash somewhere)\"\n5. \"What needs to be done to ensure BMC can be used in a robust way ?\"\n6. \"Now that we have access to the HW with the ssh key, how can you check the BMC support ?\"\n7. \"Nope, I'll reset myself and tell you when the system is back. You check the counters\"\n8. \"The machine is back, check the counters\"\n9. \"So we now have a working BMC mechanism for resets tracking. Do we really need the kernel module now ?\"\n10. \"So we ship a user space utility that wraps BMC and will serve as source of truth for monit ?\"\n11. \"The utility alsow manages a log under /var/log for the resets\"\n12. \"Write down what exactlly the utility does: on boot queries BMC, creates all the logs under /var/log, provides API to monit. Make a compelte list of responsibilities\"\n13. Clarification request:\n\n    > Explain:\n    > - what  VALIDATE readings exactly means?\n    > - what point 14 does ?\n    > - 19 - need to be part of the system's logs rotation policy\n\n14. \"So now we are ready with item 1 brief - update the item now\"\n\nLater user ruling (2026-11-12), verbatim:\nUpdate the item's brief to mention it is step 1+2 of the ROAM. Then run $sdlc-plan on this item\n\nLater user clarification and startup decision, verbatim:\n- Explain step 2 - what is the decision API\n- Explain  threshold/window question\n-  Startup: use existing SysV - agreed\n\nLater user decision, verbatim:\n1. Decision only, no boot or entering RAOM in the scope of this item\n2. Require explicit values as CLI arguments, no defaults",
   "status": "BACKLOG",
@@ -128,21 +134,21 @@
   "host": null,
   "queue_rank": null,
   "plan": {
-    "revision": 1,
+    "revision": 2,
     "approved_revision": null,
     "approved_at": null
   },
   "tasks": {
     "TSK-0001": {
       "block": "BLK-0001",
-      "title": "RESTORE MANAGED TOOLCHAIN PREFLIGHT",
+      "title": "QUALIFY TARGET CONTRACT AND BUILD INPUTS",
       "depends_on": [],
-      "model": "default",
+      "model": "high",
       "status": "TODO"
     },
     "TSK-0002": {
       "block": "BLK-0001",
-      "title": "PIN INPUTS AND BUILD MODULE TWICE",
+      "title": "IMPLEMENT BOUNDED READ-ONLY BMC ADAPTER",
       "depends_on": [
         "TSK-0001"
       ],
@@ -151,9 +157,63 @@
     },
     "TSK-0003": {
       "block": "BLK-0001",
-      "title": "RECORD STATIC ACCEPTANCE AND DELIVERY LIMITS",
+      "title": "IMPLEMENT DURABLE OBSERVATION STORE",
       "depends_on": [
         "TSK-0002"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0004": {
+      "block": "BLK-0001",
+      "title": "IMPLEMENT DECISION CLI AND WINDOW CONTRACT",
+      "depends_on": [
+        "TSK-0003"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0005": {
+      "block": "BLK-0001",
+      "title": "INTEGRATE SYSV OBSERVATION AND MONIT EXAMPLES",
+      "depends_on": [
+        "TSK-0004"
+      ],
+      "model": "default",
+      "status": "TODO"
+    },
+    "TSK-0006": {
+      "block": "BLK-0001",
+      "title": "INTEGRATE SYSTEM ROTATION AND COVERAGE",
+      "depends_on": [
+        "TSK-0005"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0007": {
+      "block": "BLK-0001",
+      "title": "BUILD REVERSIBLE DEBIAN DELIVERY",
+      "depends_on": [
+        "TSK-0006"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0008": {
+      "block": "BLK-0001",
+      "title": "VERIFY RUNTIME AND LOCKED IMAGE RESTORATION",
+      "depends_on": [
+        "TSK-0007"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0009": {
+      "block": "BLK-0001",
+      "title": "COMPLETE OPERATOR CONTRACT AND HARDWARE HANDOFF",
+      "depends_on": [
+        "TSK-0008"
       ],
       "model": "default",
       "status": "TODO"
