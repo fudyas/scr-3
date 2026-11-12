@@ -106,18 +106,24 @@
       "host": "983cd43e212d",
       "event": "task_status",
       "detail": "TSK-0001, TSK-0002, TSK-0003 -> DONE"
+    },
+    {
+      "at": "2026-11-12T08:10:42.663Z",
+      "host": "983cd43e212d",
+      "event": "status",
+      "detail": "REVIEW -> DONE"
     }
   ],
   "created_at": "2026-11-11T10:04:21.597Z",
-  "updated_at": "2026-11-12T08:10:33.374Z",
+  "updated_at": "2026-11-12T08:10:42.663Z",
   "kind": "improve",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
-  "status": "REVIEW",
+  "status": "DONE",
   "depends_on": [
     "ITM-0004"
   ],
   "host": "983cd43e212d",
-  "queue_rank": 1.0,
+  "queue_rank": null,
   "plan": {
     "revision": 1,
     "approved_revision": 1,
