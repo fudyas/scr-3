@@ -15,3 +15,11 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 3. **Decision:** Developer correction: "Correction: the dance around old SDLC is taking too long. Just proceed to the next task". Proceed with TSK-0008 implementation and fresh verification. Do not spend task execution on retired SDLC recovery ceremonies.
 4. **Boundary:** Original image/kernel bytes and metadata under var/ remain preserved. Mutable verification uses disposable copies. Historical records remain evidence, never fabricated restoration or runtime success.
 5. **Boundary:** Current source-integrity, package ownership, reversibility, isolated execution, cleanup, independent validation, and truthful result reporting remain. D-01 remains effective. Device operations and exact-revision SHOW approval remain separate.
+
+## D-03 — Verify item deliverables, not global OS inventory
+
+1. **Overrides:** Plan r3 global complete-dpkg-inventory prerequisite in Safety 10/23 and TSK-0008 To do 6.2/6.3. Corresponding package preflight and tests must follow item scope. Approved PLAN.md stays unchanged.
+2. **Decision:** Developer: "Again you try to test the target OS instead of the deliverables of this item."
+3. **Scope:** Verify paths and behavior delivered by this item. Missing file lists for unrelated OS packages do not require OS repair or prevent item testing.
+4. **Boundary:** Retain checks for known package conflicts and SDLC ownership overlaps on managed paths, unsafe path types, backups, upgrade preservation, and exact restoration. Missing records never establish that a path is unowned.
+5. **Boundary:** Preserve original var/ images and metadata. Use disposable copies under shared image lock. Retain source checks, architecture, cleanup, independent validation, exact-revision SHOW, and separate hardware acceptance.
