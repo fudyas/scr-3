@@ -41,10 +41,16 @@
         "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
         "description": "Finish old-to-new SCR SDLC migration with independently verified repository state ready for OFFLINE kernel-module rebuild, before any reset-module compilation. This is final migration-chain outcome; replaces prior dependency on already-completed ITM-0001. Consume ITM-0002 current instructions, ITM-0003 valid historical/current guide, ITM-0004 verified retained safety interfaces, and ITM-0005 residue dispositions. ITM-0001 stays outside chain and consumes this result.\n\nPreserve/retire workspace: inventory .codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS, its sdlc-req branch/history, unique staged/unstaged/untracked contents and staging distinctions, revision-8..15 evidence, existing packages/hashes, source/build/recovery tooling, hardware evidence, and orphan .codex/worktrees/REQ-0001-GOAL-COUNT-SYSTEM-RESETS-round-1/payload. Create independently verified durable archive with exact metadata/content and restoration evidence before removing any redundant scratch. Remove only clean, unclaimed, fully preserved worktrees. No force, stash, reset, loss of sole artifacts, silent REQ resumption/obsoletion, or copying unrelated dirty edits into item worktrees. Unresolved dirty material stays intact with explicit dormant historical disposition and zero build dependency; unexplained leftovers cannot count as retirement. Keep sdlc ledger/current checkout, branch history, .lets/sdlc active state, managed toolchains, .codex/sdlc shared locks, quarantine, failed image, required clones, journals/baselines and original var/ bytes/metadata. Implement no quarantine recovery or protected artifact deletion. Publish final archive/provenance manifest with stable links preserving ITM-0003 historical index.\n\nCanonical source handoff: before retirement, copy ONLY current relevant scr_reset_monitor.c and Makefile from legacy sdlc/requirements/REQ-0001-GOAL-COUNT-SYSTEM-RESETS/src/scr_reset_monitor/ into project src/scr_reset_monitor/. C SHA-256 must remain 3377a2ca4fa77f29958234282d1d1ce0d6eaccb5526475ce0a6517df18c7fb5e; Makefile SHA-256 a4d90d460a003f43d60e7d479615b2f61c81e6cd0c3d31fa82b0c68d777f9e3d. Preserve current sync-retry fixes and record exact source origin/hash/review limitations; import no legacy package or unrelated code. Input snapshot needs no prior module rebuild. Record preserved kernel archive a786b745424c93946c2e1bbcabae8325e3f95c58c3308c5e0160478860b01a3c and README 7f6ddc8643e043f12029ed40549a219237a5d6aa0a56c25dc20b8a2da40b6eac, config/provenance evidence and build #4 versus prior hardware #5 distinction. Source/header extraction must use safe no-atime reads outside var/; no reset-module build or kernel changes.\n\nToolchain readiness ownership transferred from ITM-0001 unapproved plan r1 TSK-0001: fix absent host file utility prerequisite through equivalent locale-stable native readelf validation in lets/lib/devenv/toolchain.sh. Preserve genuine ELF32 little-endian Intel80386 runtime/compiler checks, hashes/manifests, compiler banner, allowlists, link/ownership containment and environment sanitation. Extend tests/toolchain/run.sh with actual wrong-class/machine, malformed-file and missing-reader rejection. Managed ./bin/lets toolchain info --json and existing functional/smoke checks must pass without host/global dependency install or compiler replacement. Tiny unrelated ARM smoke object is permitted as preflight; scr_reset_monitor.ko compilation is excluded.\n\nFinal readiness acceptance: current instructions/docs and active new LETS item/chain commands match new ceremonies; applicable independent unit/system/style/safety and toolchain checks pass; canonical two module inputs match pins outside legacy paths; original var sources and archived history remain preserved; no conflicting ordinary leases/claims, mounts/loops or build references; every legacy leftover has verified retained/archived/removed disposition. Remaining image quarantine remains explicitly held and isolated from offline rebuild, never waived. Publish machine-readable readiness evidence and handoff with checks/commit/tree/paths/hashes, retained exceptions and rollback/archive locations. Preserve unrelated main edits and all exact-revision SHOW/promotion gates.\n\nRebuild handoff: use independent sdlc_planner to prepare/check/commit replacement UNAPPROVED ITM-0001 plan against migration result and canonical source paths. Preserve existing unapproved plan r1 as history; remove duplicated source-import/compiler-fix ownership from replacement. Actual ITM-0001 scope is two clean vendor-tree module builds, static validation and artifact delivery after explicit current-plan approval. At chain completion engineering prerequisites are ready and fresh rebuild plan awaits explicit approval. Never infer approval, PLANNED status, module build, module load, device access, image mutation, package installation or reboot from chain agreement."
       }
+    },
+    {
+      "at": "2026-11-12T08:13:58.521Z",
+      "host": "983cd43e212d",
+      "event": "plan_committed",
+      "detail": "revision 1, 6 tasks"
     }
   ],
   "created_at": "2026-11-11T10:05:03.691Z",
-  "updated_at": "2026-11-12T04:37:58.591Z",
+  "updated_at": "2026-11-12T08:13:58.521Z",
   "kind": "task",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
   "status": "BACKLOG",
@@ -56,9 +62,60 @@
   "host": null,
   "queue_rank": null,
   "plan": {
-    "revision": 0,
+    "revision": 1,
     "approved_revision": null,
     "approved_at": null
   },
-  "tasks": {}
+  "tasks": {
+    "TSK-0001": {
+      "block": "BLK-0001",
+      "title": "CAPTURE BOUNDED LEGACY ARCHIVE AND HISTORY",
+      "depends_on": [],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0002": {
+      "block": "BLK-0001",
+      "title": "RESTORE NATIVE TOOLCHAIN PREFLIGHT",
+      "depends_on": [],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0003": {
+      "block": "BLK-0001",
+      "title": "IMPORT CANONICAL INPUTS AND VERIFY VENDOR PROVENANCE",
+      "depends_on": [],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0004": {
+      "block": "BLK-0001",
+      "title": "PROVE ARCHIVE RESTORATION AND RESOLVE LEGACY REFERENCES",
+      "depends_on": [
+        "TSK-0001",
+        "TSK-0003"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0005": {
+      "block": "BLK-0001",
+      "title": "VERIFY READINESS AND PREPARE UNAPPROVED REBUILD PLAN",
+      "depends_on": [
+        "TSK-0002",
+        "TSK-0004"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0006": {
+      "block": "BLK-0001",
+      "title": "PUBLISH COMPLETE READINESS INPUT AND CONSUMER HANDOFF",
+      "depends_on": [
+        "TSK-0005"
+      ],
+      "model": "high",
+      "status": "TODO"
+    }
+  }
 }
