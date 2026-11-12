@@ -100,10 +100,16 @@
       "host": "983cd43e212d",
       "event": "status",
       "detail": "TESTING -> REVIEW"
+    },
+    {
+      "at": "2026-11-12T07:22:35.586Z",
+      "host": "983cd43e212d",
+      "event": "task_status",
+      "detail": "TSK-0001, TSK-0002 -> DONE"
     }
   ],
   "created_at": "2026-11-11T10:04:33.738Z",
-  "updated_at": "2026-11-12T07:20:19.501Z",
+  "updated_at": "2026-11-12T07:22:35.586Z",
   "kind": "refactor",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
   "status": "REVIEW",
@@ -123,7 +129,7 @@
       "title": "REMOVE PROVEN RETIRED CEREMONY IMPLEMENTATION",
       "depends_on": [],
       "model": "high",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0002": {
       "block": "BLK-0001",
@@ -132,7 +138,7 @@
         "TSK-0001"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "DONE"
     }
   }
 }
