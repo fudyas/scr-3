@@ -23,3 +23,14 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 3. **Scope:** Verify paths and behavior delivered by this item. Missing file lists for unrelated OS packages do not require OS repair or prevent item testing.
 4. **Boundary:** Retain checks for known package conflicts and SDLC ownership overlaps on managed paths, unsafe path types, backups, upgrade preservation, and exact restoration. Missing records never establish that a path is unowned.
 5. **Boundary:** Preserve original var/ images and metadata. Use disposable copies under shared image lock. Retain source checks, architecture, cleanup, independent validation, exact-revision SHOW, and separate hardware acceptance.
+
+## D-04 — Discard implementation and restart in Bash
+
+1. **Overrides:** Entire plan r3 implementation design, C/kernel sources, toolchain dependency, scattered source/package layout, completed task results, and prior SHOW candidacy. Old approval does not approve replacement plan.
+2. **Decision:** Developer: "The entire item was wrongly implemented and needs to be discarded." Source request retained verbatim in planning/bash-restart-20261112/customer-source.txt.
+3. **Decision:** Simple Bash scripts under `src/resets-monitor/src`; SysV and Debian control/pre/post scripts under `src/resets-monitor/scripts`; item configuration under `src/resets-monitor/etc`.
+4. **Decision:** `./bin/lets deb build src/resets-monitor/etc/deb.conf` copies configured `INCLUDE_FILES` mappings with rsync semantics and `EXCLUDE_FILES` into `build/resets-monitor/`. Debian archive stays under ignored `build/`.
+5. **Decision:** Remove current implementation and tracked `docs/audits`, `docs/RESET-MODULE*`; clean rejected item history; rewrite item title/brief and plan again.
+6. **Clarification:** Developer: "Retain API, the scope of the item is the same - 1+2 of RAOM". Functional scope, decision-only behavior, explicit threshold/window, and exits 0/1/2 remain.
+7. **Boundary:** D-01 and D-03 remain effective. No compiler/toolchain or broad OS qualification in replacement. Original `var/` files remain intact. New plan and package need their own acceptance.
+8. **Cleanup:** Rejected ITM-0001 worktrees/branches removed. Main cleanup commit removes old kernel source and requested documentation. Fresh empty integration supersedes previous verified context through public tooling. Historical ledger/artifacts remain rejected history.
