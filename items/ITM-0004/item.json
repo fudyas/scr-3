@@ -40,10 +40,16 @@
         "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
         "description": "Audit and remove unreachable retired REQ ceremony implementation remaining in tools/sdlc/src/sdlc.py and obsolete-only tests or command helpers. Establish actual imports, callers, wrappers, and safety dependencies before deleting code. Current item-engine safety_cli.py imports this module for package/image safeguards; old direct CLI already rejects retired commands. Remove only proven-unused workflow states, plan/task/round orchestration, and legacy dispatch surfaces. Keep or separate shared safety functions with simplest justified design; no wholesale safety-engine deletion or unnecessary rewrite. Preserve source-hash, architecture, package ownership/overlap, upgrade, whole-tree payload/metadata/xattr restoration, cleanup, lock, quarantine, and recovery checks plus their meaningful regression coverage. Keep historical transcript import support, REQ ledger/history, retired snapshots, package artifacts, and hardware evidence. Acceptance: active LETS item/chain workflow and safety commands retain behavior; retired ceremonies remain inaccessible; relevant unit/system/safety regressions pass with no weakened safety evidence. No image/HW action, dependency installation, quarantine recovery, or kernel-module changes authorized by intake.\n\nMigration-chain prerequisite: consume ITM-0005 disposition/reference report before removing any function potentially required by retained recovery evidence or live image-safety tooling. Record import/caller/command ownership and keep required recovery functionality available despite obsolete REQ workflow removal. This item independently proves its active safety interfaces and regressions before completion; ITM-0003 documents those finished interfaces and ITM-0006 consumes their verified result. No module-input import, compiler prerequisite fix, or actual reset-module build belongs here."
       }
+    },
+    {
+      "at": "2026-11-12T06:24:27.121Z",
+      "host": "983cd43e212d",
+      "event": "plan_committed",
+      "detail": "revision 1, 2 tasks"
     }
   ],
   "created_at": "2026-11-11T10:04:33.738Z",
-  "updated_at": "2026-11-12T04:37:40.807Z",
+  "updated_at": "2026-11-12T06:24:27.121Z",
   "kind": "refactor",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
   "status": "BACKLOG",
@@ -53,9 +59,26 @@
   "host": null,
   "queue_rank": null,
   "plan": {
-    "revision": 0,
+    "revision": 1,
     "approved_revision": null,
     "approved_at": null
   },
-  "tasks": {}
+  "tasks": {
+    "TSK-0001": {
+      "block": "BLK-0001",
+      "title": "REMOVE PROVEN RETIRED CEREMONY IMPLEMENTATION",
+      "depends_on": [],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0002": {
+      "block": "BLK-0001",
+      "title": "DOCUMENT AND BIND RETAINED INTERFACES",
+      "depends_on": [
+        "TSK-0001"
+      ],
+      "model": "default",
+      "status": "TODO"
+    }
+  }
 }
