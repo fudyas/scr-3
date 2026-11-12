@@ -247,10 +247,16 @@
       "host": "66b12fcdeac8",
       "event": "task_status",
       "detail": "TSK-0004 -> VALIDATED"
+    },
+    {
+      "at": "2026-11-12T11:18:12.923Z",
+      "host": "66b12fcdeac8",
+      "event": "task_status",
+      "detail": "TSK-0005 -> IN PROGRESS"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
-  "updated_at": "2026-11-12T11:18:04.380Z",
+  "updated_at": "2026-11-12T11:18:12.923Z",
   "kind": "task",
   "idea": "The var/ folder now contains the kernel sources of the exact HW platform. I want you to build the module against the kernel sources there. Create and run such SDLC item\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater customer review and authorized replacement brief (2026-11-12):\n\n1. \"In this session we review SDLC item 1 definitions and purpose against the monit issues and kernel module solution. Present the problem item 1 needs to solve first w.r.t. monit\"\n2. Earlier scope request:\n\n   > The scope of the item needs to include\n   > - Building in-tree kernel module that counts resets (the fact it loads means the system was reset)\n   > - The user-space systemd service that records the resets number - starts first after the rootfs is ready to persist the counters\n   > - The scope of the item nneds to include the packaging, installation on the real HW and real HW tests (I will manually reset the system).\n\n3. \"I didn't change any design yet. I only ask how the module counts resets and remembers the counter across the resets ?\"\n4. \"I want you to explore the ADLINK kernel source and see what mechanism can guarantee the counter survives resets (for example direct write into uboot flash somewhere)\"\n5. \"What needs to be done to ensure BMC can be used in a robust way ?\"\n6. \"Now that we have access to the HW with the ssh key, how can you check the BMC support ?\"\n7. \"Nope, I'll reset myself and tell you when the system is back. You check the counters\"\n8. \"The machine is back, check the counters\"\n9. \"So we now have a working BMC mechanism for resets tracking. Do we really need the kernel module now ?\"\n10. \"So we ship a user space utility that wraps BMC and will serve as source of truth for monit ?\"\n11. \"The utility alsow manages a log under /var/log for the resets\"\n12. \"Write down what exactlly the utility does: on boot queries BMC, creates all the logs under /var/log, provides API to monit. Make a compelte list of responsibilities\"\n13. Clarification request:\n\n    > Explain:\n    > - what  VALIDATE readings exactly means?\n    > - what point 14 does ?\n    > - 19 - need to be part of the system's logs rotation policy\n\n14. \"So now we are ready with item 1 brief - update the item now\"\n\nLater user ruling (2026-11-12), verbatim:\nUpdate the item's brief to mention it is step 1+2 of the ROAM. Then run $sdlc-plan on this item\n\nLater user clarification and startup decision, verbatim:\n- Explain step 2 - what is the decision API\n- Explain  threshold/window question\n-  Startup: use existing SysV - agreed\n\nLater user decision, verbatim:\n1. Decision only, no boot or entering RAOM in the scope of this item\n2. Require explicit values as CLI arguments, no defaults",
   "status": "IN PROGRESS",
@@ -306,7 +312,7 @@
         "TSK-0004"
       ],
       "model": "default",
-      "status": "TODO"
+      "status": "IN PROGRESS"
     },
     "TSK-0006": {
       "block": "BLK-0001",
