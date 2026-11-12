@@ -35,14 +35,22 @@
         "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
         "description": "Assess host-side image-test and recovery residue from legacy REQ-0001 before cleanup. Read-only inventory of .codex/sdlc/recovery/REQ-0001-GOAL-COUNT-SYSTEM-RESETS/ (about 7.3 GiB allocated across four baseline-clone.img copies plus journals/baselines) and .codex/sdlc/req-0001-offset-test/ (about 1.9 GiB allocated, includes failed image_8.26.0 and saved baselines). Match exact source/copy/replay/marker identities and references from retained recovery journals and legacy plan. Record file ownership, sizes, hashes/metadata as authorized, active mounts/loops/processes, archive locations, retention rationale, and clone references. Two quarantine markers remain present and root-owned; contents were unreadable under current permissions, so unknown evidence must fail closed rather than imply safe deletion. etc/sdlc.conf still selects .codex/sdlc as active runtime/shared-lock root; never treat whole directory as obsolete. Deliver per-path KEEP, ARCHIVE, SAFE-CANDIDATE, or RECOVERY-REQUIRED classification and concrete later cleanup/recovery proposal with verification, rollback, access needs, and exact authority boundaries. Preserve original var/ image/kernel files, quarantine markers, failed copy, referenced clones, journals, baselines, active locks, and source hashes. This item performs no deletion, image mount/mutation, restoration, marker clearing, device access, or legacy-workflow resumption. Recovery or reclamation of protected residue needs separately approved procedure proving restoration under existing image-lock/quarantine rules. Actual reclaimable bytes remain unproven.\n\nMigration-chain consumer contract: provide stable inventory/disposition evidence for ITM-0004 shared-safety dependency audit and ITM-0006 archival/readiness. Inspect host metadata and accessible retained evidence only; any image access remains subject to existing shared image-lock and quarantine rules. Root-owned unreadable entries stay UNKNOWN/RECOVERY-REQUIRED with explicit missing evidence and access needs; no successful complete-hash inventory or deletion claim. Completion requires honest coverage of candidate roots and precise retention boundaries, not recovery or release of quarantine. Any later required mutation/recovery remains separate approved scope. Final offline build must not consume failed image or these protected clones."
       }
+    },
+    {
+      "at": "2026-11-12T04:38:05.349Z",
+      "host": "983cd43e212d",
+      "event": "depends",
+      "detail": "ITM-0002"
     }
   ],
   "created_at": "2026-11-11T10:04:45.500Z",
-  "updated_at": "2026-11-12T04:37:50.026Z",
+  "updated_at": "2026-11-12T04:38:05.349Z",
   "kind": "task",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
   "status": "BACKLOG",
-  "depends_on": [],
+  "depends_on": [
+    "ITM-0002"
+  ],
   "host": null,
   "queue_rank": null,
   "plan": {
