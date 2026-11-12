@@ -40,10 +40,16 @@
         "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies",
         "description": "Reconcile historical reset-module documentation and current developer image guidance after SCR SDLC migration. Add clear current-versus-historical index linking root RELEASE.md, contracts/, evidence/feasibility/, evidence/revision-*, retained legacy REQ, dirty legacy workspace evidence, and active ITM-0001. Root RELEASE.md stops at revision 6/no DEB; later legacy workspace contains production source and package work. Old contracts still prescribe SRC/reset reasons superseded by observable-boot scope. Preserve original historical bytes, hashes, canonical paths, and references; prefer additive index/supersession records over deleting or rewriting hashed evidence. Update docs/DEVELOPER-GUIDE.md procedures to current lock-held disposable-image rules; remove guidance that can imply original raw-image mutation and include current Codex entry points while retaining supported Claude tooling. Inventory tracked .codex/REQ-0001-revision-15-solution-plan.tmp.md and .codex/task-plan-rev15/ as historical artifacts; identify exact duplicates and retain unique material through explicit archive/index before any removal from active-looking paths. Acceptance: current module scope, actual acceptance limits, pending plan, safe image procedures, and authoritative locations are unambiguous; historical evidence remains intact and linked. No approval of ITM-0001, legacy resumption, hardware access, image mutation, or quarantine change.\n\nMigration-chain ownership: depend on ITM-0004 actual retained command/safety interfaces and use ITM-0005 evidence/disposition references. Own independently useful historical index and current developer guidance; every link must resolve at this item's completion. Use stable archive/provenance entry points so later ITM-0006 can publish its final manifest without breaking this index. ITM-0006 owns final workspace archive, canonical module source handoff, compiler prerequisite fix, and readiness evidence; do not split this item's promised documentation acceptance into that later item. Document offline rebuild readiness separately from pending hardware/image acceptance. Do not rewrite hashed historical contracts or claim migration completion before later readiness verification."
       }
+    },
+    {
+      "at": "2026-11-12T07:25:54.910Z",
+      "host": "983cd43e212d",
+      "event": "plan_committed",
+      "detail": "revision 1, 3 tasks"
     }
   ],
   "created_at": "2026-11-11T10:04:21.597Z",
-  "updated_at": "2026-11-12T04:37:29.464Z",
+  "updated_at": "2026-11-12T07:25:54.910Z",
   "kind": "improve",
   "idea": "Issue tasks cleanup where needed suggest what leftovers of the previous SCR SDLC need to be removed\n\nLater user ruling:\nCreate a new SDLC chain that transits from old to new SDLC. Add all items to it (except rebuilding the module). The state of the repo after the chain must be \"ready for kernel module rebuild\" according to the new ceremonies\n\nLater user ruling:\nAll these folders belong to the planning, implementation and QA stage and should be managed under .codex/sdlc as in Specz (with claude)",
   "status": "BACKLOG",
@@ -53,9 +59,35 @@
   "host": null,
   "queue_rank": null,
   "plan": {
-    "revision": 0,
+    "revision": 1,
     "approved_revision": null,
     "approved_at": null
   },
-  "tasks": {}
+  "tasks": {
+    "TSK-0001": {
+      "block": "BLK-0001",
+      "title": "PRESERVE REVISION-15 PLANNING BYTES",
+      "depends_on": [],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0002": {
+      "block": "BLK-0001",
+      "title": "INDEX CURRENT SCOPE AND HISTORICAL EVIDENCE",
+      "depends_on": [
+        "TSK-0001"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0003": {
+      "block": "BLK-0001",
+      "title": "DOCUMENT SAFE IMAGE PROCEDURES AND VERIFY CONSUMERS",
+      "depends_on": [
+        "TSK-0002"
+      ],
+      "model": "default",
+      "status": "TODO"
+    }
+  }
 }
