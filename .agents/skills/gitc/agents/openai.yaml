@@ -1,0 +1,6 @@
+interface:
+  display_name: "Git Commit"
+  short_description: "Commit currently staged changes with a clear message"
+  default_prompt: "Use $gitc to review and commit the currently staged changes."
+policy:
+  allow_implicit_invocation: false

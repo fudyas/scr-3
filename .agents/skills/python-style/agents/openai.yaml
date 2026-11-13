@@ -1,0 +1,6 @@
+interface:
+  display_name: "Python Style Audit"
+  short_description: "Audit Python files against project conventions"
+  default_prompt: "Use $python-style to audit the changed Python files."
+policy:
+  allow_implicit_invocation: false

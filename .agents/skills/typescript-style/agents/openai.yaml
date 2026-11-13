@@ -1,0 +1,6 @@
+interface:
+  display_name: "TypeScript Style Audit"
+  short_description: "Audit TypeScript against project conventions"
+  default_prompt: "Use $typescript-style to audit the changed TypeScript files."
+policy:
+  allow_implicit_invocation: false

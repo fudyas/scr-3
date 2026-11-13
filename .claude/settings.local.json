@@ -1,0 +1,20 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read",
+      "Write",
+      "Edit",
+      "LS",
+      "WebFetch",
+      "WebSearch",
+      "Agent(*)",
+      "Skill(claude-api)",
+      "Bash(docker compose *)"
+    ]
+  }
+}

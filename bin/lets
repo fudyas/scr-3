@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# If this script is linked from somewhere check its actual location
+SCRIPT="${BASH_SOURCE[0]}"
+if [[ -L "$SCRIPT" ]]; then
+	SCRIPT="$(readlink $SCRIPT)"
+fi
+
+# Locate LETS home directory
+export LETS_HOME="$(dirname $(cd "$(dirname "$SCRIPT")" &>/dev/null && pwd))/lets"
+export SCRIPT="${LETS_HOME}/bin/$(basename $SCRIPT)"
+
+# Set the LETS project directory
+export LETS_PROJ_DIR=$(pwd)
+
+# No tool specified, or top-level -h|--help: list all tools (lets_info per script)
+if [[ $# -eq 0 ]] || [[ "$1" == "--help" || "$1" == "-h" ]]; then
+	source "${LETS_HOME}/lets.sh"
+	lets_bootstrap_for_help "$@"
+	lets_print_available_tools
+	exit 0
+fi
+
+# Initiate the LETS build system
+source ${LETS_HOME}/lets.sh
+lets_init "$@" || exit 1
+
+# Run the requested command
+lets_tool "${LETS_ARGS[@]}" || exit 1

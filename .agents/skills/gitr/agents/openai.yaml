@@ -1,0 +1,6 @@
+interface:
+  display_name: "Git Review and Commit"
+  short_description: "Group pending changes into reviewed commits"
+  default_prompt: "Use $gitr to propose a commit grouping for all pending changes."
+policy:
+  allow_implicit_invocation: false
