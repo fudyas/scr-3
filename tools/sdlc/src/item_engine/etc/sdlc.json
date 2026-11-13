@@ -1,0 +1,27 @@
+{
+  "ledger_remote": "origin",
+  "ledger_branch": "sdlc",
+  "work_branch_prefix": "work",
+  "item_prefix": "ITM",
+  "chain_prefix": "CHN",
+  "push_retry_limit": 5,
+  "ledger_network_timeout_seconds": 60,
+  "lock_names": [
+    "maintree",
+    "stack"
+  ],
+  "lock_poll_seconds": 10,
+  "worktree_links": [
+    ".lets"
+  ],
+  "worktree_data_dirs": [],
+  "telemetry_blacklist": [],
+  "ssh_key_path": "admin/github",
+  "ssh_config_path": "admin/config",
+  "system_tests": {
+    "root": "tests/system",
+    "domains": {},
+    "shared_globs": [],
+    "ignored_globs": []
+  }
+}
