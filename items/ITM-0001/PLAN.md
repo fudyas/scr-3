@@ -1,394 +1,266 @@
-# ITM-0001-BMC-RESET-MONITOR-UTILITY — Plan
+# ITM-0001-BASH-RESET-MONITOR-DEBIAN-PACKAGE — Plan
 
 ## Goal
 
-Deliver RAOM steps 1 and 2: validated BMC reset tracking and user-space decision API. Package `/usr/sbin/scr-resets-monitor`, durable history, SysV observation hook, and system rotation integration. Require explicit threshold/window arguments. Return decision only. Preserve exact-package hardware acceptance as separate gate.
+Deliver RAOM steps 1 and 2: Bash BMC reader, durable history, decision API, reversible Debian package. Explicit threshold/window arguments; exits 0/1/2.
 
 ## Context
 
-1. Customer: "Update the item's brief to mention it is step 1+2 of the ROAM. Then run $sdlc-plan on this item". Email calls mode RAOM.
-2. Latest decisions: "Decision only, no boot or entering RAOM in the scope of this item". "Require explicit values as CLI arguments, no defaults". "Startup: use existing SysV - agreed".
-3. Agreed observation hook remains. "No boot" excludes mode/startup gating. All 21 responsibilities in `brief-consolidated.md` remain acceptance anchors.
-4. Canonical inputs: `.codex/sdlc/artifacts/items/ITM-0001/planning/raom-step12-20261112/`: emails, rulings, `brief-consolidated.md`, `image-facts.md`, and `target-runtime-storage.log`.
-5. Latest request: "Rerun the planning". INPUT `9484028def2a287194e3c26706fb2fa9f9ca0a685b517eb7616c74577261cb54` preserves r2 FAIL, partial source, and gate correction. Approved r2 stays immutable.
-6. Observed SCR-7CCC91: `armhf`, Linux `3.10.105-imx6 #5`, glibc `2.19`, SEMA `2.5 R4`, SysV, logrotate `3.8.7`. `/var/log` resides on writable ext4 root. Power-loss persistence remains unqualified.
-7. `ITM-0006` is DONE. Keep dependency and original plan/task history. Fresh read-only transcripts reside under managed `planning/replan-20261112/`.
-8. Resume existing block `/home/fudya/devel/scr/.codex/worktrees/ITM-0001/BLK-0001`, commit `5e922e57766d27dc439d6f5c1449b7e7ab561a5b`. Only documentation/constants exist. Preserve other workers' edits.
+1. Developer: "Retain API, the scope of the item is the same - 1+2 of RAOM". All 21 responsibilities remain.
+2. D-04 replaces rejected implementation. D-01 removes rotation-specific tests. D-03 excludes global OS inventory work.
+
+## Deliverables
+
+| # | Deliverable | Source requirement | Observable result, owned changes, and supported conditions |
+| --- | --- | --- | --- |
+| 1 | D1 — Observation/history | Brief responsibilities 2–15, 20–21 | Bash `/usr/sbin/scr-resets-monitor record` reads `/usr/bin/sema cap all`, validates observations, commits JSONL history and latest state, reports failures without false resets. |
+| 2 | D2 — Decision API | Brief responsibilities 16–18 | `status --json` reports committed observation, age, validity. `check --max-resets N --window SECONDS` refreshes and returns 0/1/2 with explicit arguments and conservative history evidence. |
+| 3 | D3 — Native integration | Brief responsibilities 1, 5–6, 19, 21 | SysV observation after writable log storage, owned restricted logs, disabled monit example, system rotation stanza, concise operator contract. No service-control policy. |
+| 4 | D4 — Debian delivery | D-04 and brief Delivery 1–6 | Small LETS build command plus `src/resets-monitor/{scripts,etc,src}` sources. Ignored `build/resets-monitor/` staging and `.deb` output. Reversible install, upgrade, rollback, removal. |
+
+## Dependencies
+
+1. ITM-0006 supplies completed workflow prerequisite. Consume public SDLC package/image/artifact commands. Do not redesign their internals.
+2. Existing SEMA supplies fixed read-only `/usr/bin/sema cap all` output. Retained `planning/replan-20261112/target-*.log` supplies command/profile facts. Actual delivered execution remains later acceptance.
+3. Existing Bash, GNU coreutils, util-linux `flock`, gzip, and `/usr/bin/ntpq` supply runtime interfaces. No target LETS, Python, compiler, toolchain, jq, or new compiled helper.
+4. Existing `ntpq -c 'rv 0'` supplies clock-health fields. Retained successful output proves interface existed. Missing or unreliable current health invalidates time decisions.
+5. GNU `dd conv=fsync` supplies checked file synchronization. Directory-descriptor synchronization requires actual target-compatible execution before package acceptance. Host-only probe proves no target result.
+6. Native SysV and system logrotate own startup ordering and rotation policy. Consume observed `S16bootmisc.sh` boundary and existing rotation configuration. Do not qualify unrelated services or scheduler internals.
+7. Build host consumes LETS command discovery, rsync, and `dpkg-deb`. Target package consumes existing dpkg. Missing required interface blocks affected delivery, never authorizes dependency repair.
+8. Exact source-image identity, available safe disposable execution, and operation-specific hardware authority remain later acceptance prerequisites. No image/device work occurs during planning.
+
+### Planning facts
+
+1. Developer: "The userspace utility is a bash script that parses the BMC output, no C code needed, no toolchain".
+2. Canonical source: `.codex/sdlc/artifacts/items/ITM-0001/planning/bash-restart-20261112/{customer-source.txt,brief.md}`. Customer source stays verbatim. Brief's 21 responsibilities remain acceptance anchors.
+3. Effective REVIEW D-04 discards previous implementation and approval. D-01 removes rotation-specific tests. D-03 excludes global OS inventory repair/qualification.
+4. Retained target evidence identifies Bash 4.3, SEMA 2.5 R4, SysV, `flock`, `timeout`, `ntpq`, gzip, and logrotate 3.8.7. Evidence describes SCR-7CCC91, not new-package acceptance.
+5. Base checkout: `/home/fudya/devel/scr`, `feature/monit-stability`, `f66ffbda7e0f14618e044ddde2047dfc36980302`. Source tree: `fc33411eafea319e4dbeda49bd7ea2a02137875c`. ITM-0006 remains DONE dependency.
+6. Existing source has no reset-monitor implementation or `tools/deb/build.sh`. Rejected plans/packages/tests remain historical evidence only. Current modified SDLC guide supplies contract.
+7. Build command: `./bin/lets deb build src/resets-monitor/etc/deb.conf`. Separate hardware acceptance remains required.
+8. Developer: "Since you have a full ssh access, you can automate the test and don't wait for me. I'll give the machine IP when you're ready". Agent owns authorized target execution once IP arrives.
 
 ## Design
 
-1. **Fit:** Native C99/POSIX utility uses existing SEMA through fixed read-only commands. Qualified managed ARM toolchain targets installed libc. No Python installation.
-2. **Patterns:** Separate pure parsing/window rules, observation use cases, SEMA/storage adapters, and CLI. Reuse SysV, monit program checks, system logrotate, LETS package scaffold, and restoration gates.
-3. **Context:** `docs/MONIT.md` supplies service relationships. Current SDLC contract governs evidence/safety. Monit state remains diagnostic only. BMC totals remain authoritative.
-4. **Decision:** `check --max-resets N --window SECONDS` returns 0 at/below limit, 1 above limit, 2 unavailable. Interval evidence prevents invented reset timestamps.
-5. **Revised bounds:** Strict `uint64_t` parser capacity replaces unavailable vendor maximum as implementation prerequisite. Every decrease is discontinuity. No rollover or physical-retention guarantee follows.
+1. **Fit:** One Bash utility; SysV calls `record`, disabled monit example calls `check`.
+2. **Patterns:** Reuse LETS shell style, native SysV, system rotation, `flock`, and reversible-package principles.
+3. **Context:** Brief/REVIEW define behavior; `docs/MONIT.md` supplies service context; SDLC guide governs acceptance.
+4. **Necessity:** Journal, state cache, lock, and checked synchronization protect committed observations. Interval decisions avoid invented reset times. Small rotation marker prevents races; backups restore originals.
 
 ## Out of scope
 
-1. Entering/leaving RAOM, normal-boot gating, service suppression, monit recovery actions, latches, healthy-reset budgets, and caller action on unavailable.
-2. Kernel modules/rebuilds, init migration, watchdog changes, BMC writes, counter clearing, firmware/flash changes, and agent-operated reboots.
-3. Private rotation scheduler, production threshold defaults, unrelated monit fixes, other-item edits, and quarantine recovery.
+1. C/kernel/toolchain work, compiled helpers, target development runtime, and separate transaction framework.
+2. RAOM activation, boot/service/watchdog control, BMC writes, firmware changes, and agent-operated reboots.
+3. Private rotation scheduler, production defaults, global OS qualification, unrelated monit changes, and retired SDLC recovery.
+4. Source-image mutation, implicit hardware authority, and acceptance of rejected implementation.
 
-## Proposed revision changes
+## Runtime contract
 
-1. Amend responsibility 3's unavailable documented-firmware-range requirement: accept decimal counters representable in `uint64_t`. Reject negatives, syntax errors, and overflow.
-2. Preserve responsibility 15: every decrease invalidates continuity. Firmware width, maximum, rollover, and complete reset retention remain unknown, never inferred from parser capacity.
-3. Replace broad r2 qualification gate with recorded command/runtime facts and concrete clock/startup rules below. Physical persistence/reset-mode acceptance remains later hardware gate.
-4. Permit offline tasks 1–7 and 9 before source-image recovery. TSK-0008 requires cleared quarantine, qualified source image, complete ownership evidence, and full restoration.
-5. Execute documentation TSK-0009 before final image task TSK-0008. Stable task IDs remain. No end-to-end delivery or installation is unblocked by this revision alone.
-6. These changes require new explicit approval. Historical r2 FAIL and corrected header-probe evidence remain valid records of their original criteria.
+1. Source utility: `src/resets-monitor/src/scr-resets-monitor`. Use LETS shell conventions: clear functions, `main`, explicit failures, quoted arguments. Runtime never sources development LETS.
+2. Commands remain exactly `record`, `status --json`, and `check --max-resets N --window SECONDS`. Reject duplicate, missing, unknown, or malformed arguments before device access.
+3. Counter capacity: decimal `0..4294967295`. This is parser capacity, not claimed firmware width. Reject larger values, signs, fractions, and arithmetic overflow.
+4. CLI capacity: `N` is decimal `0..2147483647`; `SECONDS` is decimal `1..2147483647`. Normalize decimal safely. Guard arithmetic; saturate decision sums above N.
+5. Query only `/usr/bin/sema cap all` under `LC_ALL=C`. Two attempts maximum, two seconds each, bounded termination handling. Limit captured output to 64 KiB and text fields to 256 bytes.
+6. Require success and complete unique observation fields. Distinguish capability `Boot counter`/`Restart event` from observation `Boot count`/`Restart event`. Unknown cause text remains diagnostic data.
+7. Record schema version, sequence, observation time, time validity/reason, uncertainty, Linux boot ID, uptime, BMC serial/identity, firmware, both counters, both deltas, and latest cause.
+8. JSON uses explicit escaping and fixed versioned schema. Parse own records as data, never `source` or `eval`. Reject malformed/truncated records and unsupported schema.
+9. Initial record establishes baseline with zero new resets. Changed boot count and power cycles produce separate deltas. Decision count uses boot-count delta only; never double-count power cycles.
+10. Delta greater than one remains one aggregate interval. Latest cause describes latest event only. Unchanged counters create no reset event; repeated identical observation creates no duplicate record.
+11. Counter decrease, changed BMC identity, or changed firmware commits explicit discontinuity and fresh baseline epoch. Preserve previous history. Infer no rollover. Windows crossing discontinuity return 2.
+12. Root-owned `/var/log/scr/` uses mode 0700; owned history/state/diagnostic files use 0600. Preserve unrelated files. Reject unsafe path types and symlink traversal.
+13. `/var/log/scr/resets.jsonl` is authoritative history. `/var/log/scr/resets-state.json` caches latest committed observation. `/var/log/scr/resets-monitor.log` records failures and recovery.
+14. Stable `/run/lock/scr-resets-monitor.lock` serializes reads, commits, and recovery. Bound lock wait to two seconds. Open current paths each invocation.
+    14.1. Shipped stanza uses small Bash `rotation_begin`/`rotation_end` hooks under same lock. Begin durably creates `/var/log/scr/.rotation-pending` before any rename/compression.
+    14.2. Marker records rotating logrotate process identity (boot ID, PID, start time) and last committed sequence. Existing marker or failed marker synchronization aborts rotation.
+    14.3. Every utility invocation checks marker under lock before journal access. Marker present means exit 2 and stderr diagnostic. No journal replacement during rotation.
+    14.4. End clears marker only for matching invocation after rotation/compression completes, retained history preserves committed sequence, and changed history/directory synchronization succeeds.
+    14.5. Interrupted or uncertain completion leaves marker intact. Never clear by elapsed time, PID absence, or automatic reboot recovery. Document explicit operator recovery under lock after proving quiescence and valid durable history.
+15. Hold lock from marker check and history read through complete journal publication and cache update. Publish via same-directory temporary file, checked file synchronization, rename, then checked directory synchronization. Update state cache only after journal commit.
+16. Rebuild missing/stale state from validated durable journal. Interrupted pre-rename files never advance baseline. Uncertain post-rename state requires successful synchronization before adoption.
+17. Cache failure after durable journal commit returns 2. Journal remains last committed truth; retry rebuilds cache without repeating delta. Failure before durable history leaves earlier baseline authoritative.
+18. Torn/corrupt/conflicting history fails closed with evidence preserved. Never overwrite unexplained corruption or advance baseline past missing durable records.
+19. Full/read-only storage, permission errors, failed writes/renames/synchronization, and lock timeout return 2. Use stderr and existing system logger when diagnostic log cannot accept writes.
+20. `record` returns 0 after successful commit/cache recovery, otherwise 2. `status --json` does not query BMC. Return valid JSON, latest committed data, age or null, validity/reason, and 0 or 2.
+21. Read wall time, `/proc/uptime`, boot ID, and bounded local `ntpq -c 'rv 0'` around acquisition. Missing/malformed/unsynchronized clock health marks time invalid but does not discard valid counters.
+22. Require `leap_none`, `sync_ntp`, finite valid uncertainty fields, and current reference age within four reported poll intervals. No clock setting, NTP wait, or daemon-presence inference.
+23. Round uncertainty upward from root dispersion, half absolute root delay, absolute offset, acquisition duration, and clock resolution. Same-boot wall/uptime disagreement invalidates continuity.
+24. Cross-boot intervals require trustworthy time anchors on both sides. Invalid-time intermediate records can use valid outer anchors within same BMC epoch. Current synchronization never validates old timestamps retroactively.
+25. Window is `(now - SECONDS, now]`. Compute lower/upper reset counts from complete observation intervals and uncertainty. Partial intervals contribute only to upper count; never assign individual event times.
+26. `check` returns 1 only when reliable lower count exceeds N; returns 0 only when complete valid coverage proves upper count at most N. Otherwise return 2.
+27. Read/persistence failure always returns 2, even with earlier threshold evidence. Missing history, retention gaps, corruption, discontinuity, and unusable time cannot produce healthy result.
+28. Consume retained plain/gzip history when needed. Collapse identical sequence records across files; reject missing/conflicting sequence evidence. System rotation owns retention; state cache and rotation marker are never rotated.
+29. Production runtime accepts no arbitrary command/backend override. Focused checks source named functions or use isolated installed roots with controlled dependency fixtures.
 
 ## Safety
 
-1. Item already has `hardware.required=true`. Device operations require separate authority and exact device/image/package identity. Plan approval grants no device action.
-2. Existing quarantine remains. Approved recovery with restoration proof must precede blocked image reuse. Missing source-image identity blocks package image acceptance.
-3. PRESERVE original `var/image_8.26.0`, kernel archive, README, metadata, previous packages, historical ledgers, and unrelated edits.
-4. DELIVER one reversible `scr-resets-monitor` Debian package, architecture `armhf`. Declare qualified libc/helper dependencies. Preserve installed SEMA bytes and ownership.
-5. DECLARE payload paths: `/usr/sbin/scr-resets-monitor`, `/etc/init.d/scr-resets-monitor`, `/etc/logrotate.d/scr-resets-monitor`, and `/usr/share/doc/scr-resets-monitor/`.
-6. DECLARE generated paths: qualified SysV links, `/run/lock/scr-resets-monitor.lock`, `/var/log/scr/`, logs/state/journal, and utility rotation generations.
-7. DECLARE utility-owned `.resets-rotation.json` barrier and stanza hooks. Preserve global `/etc/cron.daily/logrotate` unchanged. Introduce no diversion.
-8. DECLARE private package payload/backups, `/var/lib/scr-sdlc/owners` records, affected parents, and shared logrotate-state changes. Inventory every touched path.
-9. BACK UP pre-existing managed paths before mutation. Preserve bytes, type, uid/gid, mode, links, hardlink relationships, timestamps, and xattrs. Record originally absent paths.
-10. REJECT unexpected dpkg owners, overlaps, symlinks, and path types. Missing package file lists make ownership inventory incomplete, not unowned. Preserve unrelated files/SEMA.
-11. RETAIN initial restoration baseline across upgrades. Preserve committed utility data. Cover failed install, interrupted configure, upgrade, abort-upgrade, remove, purge, and rollback.
-12. REQUIRE uninstall of all delivered packages to restore original payload/metadata. Remove package-created files, rotation generations, barriers, links, directories, and ownership markers.
-13. EXPORT new logs as managed evidence before uninstall. Export grants no exception to whole-image restoration.
-14. HOLD shared image lock through source checks, disposable copy, mount, install, tests, upgrades, rollback, uninstall, restoration, unmount, and cleanup.
-15. RETAIN source hashes, architecture, root-scoped dpkg, overlap, whole-tree fingerprints, xattrs, mount/loop, and cleanup checks. Ordinary leases never replace image lock.
-16. QUARANTINE after restoration/cleanup failure. Preserve evidence and logical quarantine. Stop image work until separately approved recovery succeeds.
-17. PUBLISH explicit INPUT manifests from `.codex/sdlc/artifacts/items/ITM-0001/` through `./bin/lets sdlc artifacts publish`. Preserve bytes, modes, paths, and hashes.
-18. REQUIRE independent validation and detached QA against exact source tree/INPUT pair. QA publishes separate RESULT. Historical exploration is INPUT, never delivered-package acceptance.
-19. REQUIRE `--expected-artifacts DIGEST` on bound verified/approve/settle/prepare-promotion/promote commands. Missing index cannot imply source-only acceptance.
-20. STOP after three same-stage failures, safety failure, unavailable required evidence, or material contract change. Retain exact error and resume prerequisite.
-21. CAPTURE separate exact before/after manifest for `/var/log/scr/` and affected `/var/log` parent metadata under same full image lock. Existing `SDLC_VERIFY_EXCLUDES` excludes `/var/log`.
-22. INCLUDE bytes, path absence/type, uid/gid, modes, timestamps, symlink/hardlink topology, and xattrs in supplementary manifest. Ordinary `test-package` fingerprint alone proves no log restoration.
-23. REQUIRE complete ownership inventory before actual installation on image or hardware. Current target's missing dpkg `.list` files block installation until separately authorized repair/proof.
-24. KEEP image and device package gates independent from offline source/build/tests. Never access quarantined image to qualify offline code, and never mark final delivery complete without those gates.
+1. Hardware-required marker remains mandatory before approval. Developer separately authorized agent SSH package testing once IP arrives. No repeated permission for listed target checks. Historical SCR-7CCC91 identity does not select target. Reboots, physical resets/power cuts, firmware, and watchdog actions remain outside this authority.
+2. Package owns utility, `/etc/init.d/scr-resets-monitor`, `/etc/rcS.d/S17scr-resets-monitor`, `/etc/logrotate.d/scr-resets-monitor`, disabled example, and `/usr/share/doc/scr-resets-monitor/`.
+3. Disabled example source remains `src/resets-monitor/etc/monit-example.conf`; install under `/usr/share/doc/scr-resets-monitor/`. No `/etc/monit` changes, enabled link, reload, service start/stop, watchdog change, or reboot command.
+4. Inventory every touched path: private payload, backups, owner markers, runtime files, rotation marker/helper, temporary files, SysV link, created directories, and affected parents. Preserve SEMA and unrelated files.
+5. Reuse compatible backup/restoration principles and helpers from `SdlcPackageHelper.cmd_package_init`. Author required `src/resets-monitor/scripts/` layout directly. Do not generate legacy central package tree or parallel packaging sources.
+6. `scripts/{control,preinst,postinst,prerm,postrm}` provide package metadata and lifecycle. Keep runtime payload under private package path until originals are preserved.
+7. `preinst` rejects known dpkg conflicts, other SDLC owners, unsafe types/ancestors, and unresolved ownership of affected existing paths. Missing unrelated package lists do not require global inventory repair.
+8. Preserve first-install originals and absence markers before mutation. Retain bytes, type, uid/gid, permissions, symlinks, hardlinks, timestamps, and xattrs. Preserve parent metadata.
+9. `postinst` installs only declared payload and hook. Create owned runtime paths with saved original metadata. Never start observation during package configuration.
+10. Upgrade preserves committed history, baseline, original backups, and idempotent startup. Failed/interrupted configuration and abort-upgrade must leave recoverable old or new package state.
+11. `prerm` prevents new item invocations during removal. `postrm` restores original managed paths and removes package-created paths/markers on remove/purge/abort-install. Upgrade callbacks must not restore originals prematurely.
+12. Uninstall all delivered packages restores original image payload and metadata. Export new logs as managed evidence before removal. Runtime data preservation applies across upgrades, not an exception to uninstall restoration.
+13. Hold shared SDLC image lock across source checks, disposable copy, mount, install, functional checks, upgrade, rollback, uninstall, restoration, unmount, cleanup, and unlock.
+14. Preserve original `var/` image, kernel archive, README, bytes, and metadata. Ordinary leases never replace image lock. No source-image mutation or protected sibling scans.
+15. Retain architecture, root-scoped dpkg, ownership overlap, source hashes, whole-tree fingerprints, xattrs, active-mount, and cleanup checks. Package `Architecture: all` contains scripts only; target helper compatibility still requires proof.
+16. Existing fingerprint excludes `/var/log`; capture separate exact before/after manifest for owned logs and affected parents under same lock. Do not broaden exclusions.
+17. Cleanup/restoration failure quarantines image and halts reuse until approved recovery proves restoration. Three failures at same stage, tooling blocker, or safety failure halt affected work.
+
+## Verification
+
+D-01 excludes rotation-specific tests and old harnesses. Review shipped stanza, shared-lock/marker protocol, interruption refusal, ownership, state exclusion, current-path opening, and retained-history code directly. Do not claim removed tests passed.
+
+| # | Deliverable criterion | Test and expected result | Defect detected or affected regression | Acceptance stage |
+| --- | --- | --- | --- | --- |
+| 1 | D1 valid read, R2–4/R7/R21 | Captured SEMA fixture parses correct fields; missing/duplicate/negative/overflow/oversized/nonzero/timeout inputs return 2, previous baseline intact. | Capability/observation confusion, false zero, command injection, unbounded boot work. | TSK-0001 |
+| 2 | D1 durable history, R5–15/R20 | Initial totals produce zero delta; 146→147 produces one; aggregate 146→150 produces four; unchanged/repeated/concurrent calls do not duplicate reset delta. | Lifetime-count inflation, lost/duplicate reset events, mistaken rollover. | TSK-0001 |
+| 3 | D1 persistence, R12–14 | Inject failure before journal publication, during synchronization, and after journal commit before cache. Retry preserves committed record exactly once. | Cache ahead of durable history, ignored I/O failure, crash duplication. | TSK-0001 |
+| 4 | D1 failures, R14–15 | ENOSPC/read-only/permission errors return 2 with stderr fallback. Identity/firmware/decrease records break continuity and preserve evidence. | False healthy status, silent rebaseline, lost diagnostic evidence. | TSK-0001 |
+| 5 | D2 CLI, R16–17 | Missing/duplicate/invalid flags rejected; JSON parses; explicit N/window required; exact N yields 0, N+1 yields 1 with complete evidence. | Argument defaults, off-by-one threshold, invalid JSON, status/device side effects. | TSK-0002 |
+| 6 | D2 evidence, R11/R18 | Complete intervals prove 0/1; boundary-straddling delta, insufficient coverage, failed refresh, clock jump/unsync, or discontinuity yields 2 when decision unprovable. | Invented event times, stale read accepted, history gap treated as zero. | TSK-0002 |
+| 7 | D3 startup, R1/R21 | Isolated SysV invocation launches bounded observation after declared storage boundary and returns without waiting. No service/reboot/watchdog commands. | Boot gating, delayed watchdog servicing, accidental recovery policy. | TSK-0003 |
+| 8 | D3 integration, R5–6/R12–13/R19 | Source/config review confirms shared-lock/marker protocol, refusal on interrupted rotation, restricted logs, state/marker exclusion, documentation-only monit example, and history consumer. No rotation test. | Journal/rotation race, lost or duplicate committed delta, active monit policy change, private scheduler, retention promise without coverage. | TSK-0003 |
+| 9 | D4 build | Actual LETS build with rsync fixtures preserves file/directory trailing-slash mapping, exclusion, modes; outputs valid script-only `.deb` under build/. | Wrong package layout, stale staging, glob expansion, unintended source copy. | TSK-0003 |
+| 10 | D4 lifecycle | Controlled disposable-root install/reconfigure/upgrade/failed-upgrade/rollback/remove/purge checks preserve history during upgrade and exact original payload on removal. | Backup replacement, ownership collision, unsafe path traversal, upgrade callback deletion, metadata loss. | TSK-0004 |
+| 11 | D1–D4 consumed target interfaces | Execute delivered Bash with target-compatible timeout/flock/dd file+directory synchronization and retained SEMA profile. Device values remain fixture-driven outside authorized hardware. | Host-only assumptions, unsupported shell/helper options, false durability claim. | Final independent QA, locked disposable image |
+| 12 | D4 whole-image safety | Locked exact-package install/use/upgrade/rollback/uninstall produces matching original fingerprints plus log manifest and unchanged source hashes. | Undeclared path writes, restoration gaps, xattr loss, unsafe cleanup. | Final independent QA, locked disposable image |
+| 13 | D1–D4 actual target behavior | Agent runs exact-package SSH stage on supplied IP: real BMC reads, API/log checks, upgrade, rollback, removal, and original-path restoration. Report actual exits and pending physical cases separately. | Target-only incompatibility, lost upgrade history, failed rollback/restoration. | Automated target test after SHOW |
+| 14 | D4 target runner | Focused simulated SSH outcomes prove hash/identity mismatch refusal, timeout/connection-loss stop, evidence capture, and no blind mutation retry. | Wrong package/device, duplicate install after uncertain result, unsupported success claim. | TSK-0004 |
+
+### Mandatory gates
+
+1. Current SDLC guide requires independent task validation, final `./bin/lets sdlc gate unit`, and `./bin/lets sdlc gate system --holder ID`. Run changed Python style gate only if Python changes exist.
+2. Item checks stay under `src/resets-monitor/scripts/`; expose via small `tools/deb/test.sh` LETS wrapper. Use fixtures and shell checks, not new test framework or compiled helper.
+3. Final QA retains `./bin/lets sdlc test-package` and applicable `verify-package` checks, including source preservation, architecture, ownership, restoration, and cleanup.
+4. Lifecycle tests supplement existing package helper; base install/remove check does not prove upgrades. Full image-lock window and supplementary log manifest remain mandatory.
+5. Task checks prove assigned criteria only. No task Done-when depends on final QA, RESULT, SHOW, promotion, hardware authority, or physical success.
 
 ### Post-task item acceptance
 
-1. VALIDATE completed task/block criteria independently before final item ceremonies.
-2. ASSEMBLE integration and capture exact source tree plus immutable INPUT. Run independent detached QA and publish separate bound RESULT.
-3. PRESENT exact source/INPUT/RESULT pair, package hashes, tests, rollback, and hardware obligations for explicit SHOW approval.
-4. PROMOTE only exact approved verified revision through bound LETS commands. Preserve integration ownership across fixes and repeat affected verification.
-5. KEEP hardware-required item in REVIEW until separately authorized exact-package developer acceptance passes. Final QA/RESULT/SHOW/promotion are not task prerequisites.
+1. Independently validate block, assemble integration, and retain exact final `.deb` version/hash. Rebuild and repeat affected checks after payload/documentation changes.
+2. Stage evidence belongs under `.codex/sdlc/artifacts/items/ITM-0001/`, with explicit purpose/stage. Coordinator publishes selected INPUT manifests through public artifacts commands.
+3. Restore/verify immutable bundles with exact bytes/modes/paths/historical hashes. Old QA can be INPUT; it never accepts replacement Bash implementation.
+4. Independent detached QA verifies exact source tree and INPUT digest, including mandatory repository and locked image gates. QA publishes separate bound RESULT without self-reference.
+5. SHOW presents source tree, INPUT/RESULT digests, full diff, final package hash, evidence, rollback, and pending hardware acceptance. Explicit approval binds exact pair.
+6. Verified/approve/settle/prepare-promotion/promote use explicit `--expected-artifacts DIGEST`. Missing index cannot downgrade existing bundles to source-only.
+7. Agent prepares target execution with supplied IP, verified device/image identity, BMC/firmware, exact package version/hash, expected results, logs, and rollback package/path.
+8. Agent executes automated target stage below under existing SSH test authorization. Do not wait for developer to run installation, BMC/API/log checks, upgrade, rollback, or removal.
+9. Developer-operated resets/power loss require explicit procedure and authority. Record before/after counters, boot IDs, expected/observed output, persistence, and supported reset modes.
+10. Actual SSH evidence proves only observed device behavior; injected fixtures prove software cases only. Missing boot/reset/power-loss evidence stays pending. Final hardware acceptance requires developer confirmation, retained verbatim through `hardware pass|fail` with exact package.
+11. Item remains REVIEW until required developer confirmation. Changed package requires fresh affected QA, SHOW, and hardware acceptance.
 
-### Hardware acceptance after exact-revision SHOW
+### Automated target test — agent execution
 
-1. IDENTIFY SCR-7CCC91 or approved replacement, actual image/version/hash, BMC identity/firmware, exact package version/SHA-256, and rollback artifact.
-2. OBTAIN explicit installation/test authority. Separate developer-operated resets/power loss from read-only agent observations.
-3. RECORD pre-install counters, boot identity, time quality, package inventory, and original managed-path metadata.
-4. INSTALL exact reviewed package under approved procedure. Verify actual runtime, boot observation, CLI exits, logs, and system rotation.
-5. REQUEST agreed developer resets. Record before/after values, boot IDs, intervals, expected/observed decisions, logs, and verbatim developer report.
-6. QUALIFY repeated resets, full power-loss retention, and Linux-fails-before-utility coverage through separately authorized procedures. Record unsupported modes explicitly.
-7. KEEP software/watchdog reset tests separately authorized. Historical manual reset reporting `Watchdog` does not prove watchdog-trigger coverage.
-8. VERIFY upgrade preservation and approved rollback/uninstall. Export logs before restoration. Retain working remote/recovery path.
-9. RECORD exact-package result through `./bin/lets sdlc hardware pass|fail`. Missing authority/evidence leaves item REVIEW, never DONE.
-10. REQUIRE fresh SHOW and hardware acceptance after package bytes change. Automated tests never establish hardware success.
+1. **Owner:** Agent. Execute after exact-package local/image checks and SHOW, once developer supplies machine IP. Existing authorization covers listed SSH checks without another permission request.
+2. VERIFY SSH host identity, device/image identity, exact package hashes, privileges, and retained rollback package/backups. Scope inspection to delivered paths and consumed interfaces.
+3. CAPTURE original managed-path bytes/metadata, package state, BMC identity/counters, boot ID, clock validity, and logs. Preserve unrelated target files and local `var/` originals.
+4. TRANSFER checked packages and small Bash runner payload through SSH. Compare remote hashes before installation. Identify every upgrade/rollback version; use no rejected C package.
+5. INSTALL package and execute actual `/usr/bin/sema cap all`, `record`, `status --json`, repeated/concurrent reads, and `check` with explicit N/window. Compare logs and observed counters; expect no duplicate reset delta.
+6. EXECUTE observation hook directly and inspect installed startup ordering without reboot. This proves hook execution, not boot-time or reset persistence.
+7. EXERCISE upgrade, rollback, removal, and cleanup with previously checked package versions. Expect preserved committed history across upgrades and restored original owned payload/metadata after removal.
+8. RECORD commands, stdout/stderr, exits, times, source/package hashes, expected/observed results, and before/after manifests. Export evidence under `.codex/sdlc/artifacts/items/ITM-0001/` before cleanup.
+9. KEEP fixture failures/threshold scenarios separate from real BMC observations. Never inject invented counters into live history or claim exits 0/1/2 physically exercised without observations.
+10. BOUND SSH connection and command waits. Retain remote operation identity/status and backups across disconnect. ***if*** timeout or SSH loss occurs ***then*** stop dependent mutations and inspect operation/package state after reconnect. Never blindly retry install or kill package manager.
+11. RESTORE through recorded item rollback/removal once operation state is known. Verify original managed paths, metadata, package state, and cleanup. ***if*** connection or restoration remains unavailable ***then*** retain evidence/backups and report blocked recovery; never claim restoration.
+12. KEEP D-01 rotation-test exclusion. Physical reset/power-cut cases require separate procedure/authority and developer action. No firmware/watchdog change or reboot. Final developer confirmation remains after automated results.
 
-## BLK-0001 — DELIVER BMC TRACKING AND DECISION UTILITY
+## BLK-0001 — DELIVER BASH RESET MONITOR PACKAGE
 
-Single block owns utility, package, tests, and product documentation. Dependencies reference earlier tasks in this block only.
+One block owns runtime, small checks, package, and operator documentation. No cross-block dependencies. Paths below are relative to assigned implementation worktree.
 
-### TSK-0001 — RECONCILE OBSERVED PROFILE AND BUILD CONTRACT
+### TSK-0001 — IMPLEMENT BMC OBSERVATION AND DURABLE HISTORY
 
 | # | Field | Value |
 | --- | --- | --- |
 | 1 | depends_on | — |
-| 2 | model | high |
+| 2 | model | default |
 
 **To do**
 
-1. UPDATE existing `docs/RESET-MONITOR.md` and `src/scr_resets_monitor/platform.h` in preserved block commit, not a new empty worktree.
-2. RECONCILE historical BLOCKED text against this approved revision. Preserve original reports, source hashes, commit, and correction in immutable evidence.
-3. PIN fixed argv `/usr/bin/sema cap all` from `target-elf.log`, with exact help/output/exit evidence from `target-readonly.log`.
-4. DEFINE capability and observation parsing sections separately. Capability `Restart event: 1` and observation `Restart event: Watchdog` are different fields.
-5. RETAIN SEMA `2.5 R4`, capability `0x38ebf`, firmware `BMC LEC-iMX6 0v13 Jun 25 2015`, and raw bootloader `bl_LiMX6 3v2 Aug  5 2014`.
-6. RETAIN binary SHA-256 `b9fbc6b88c3a2e382d9566dcd7573c2abd6bd38f194d5be2d7466bd910c3e383` and library SHA-256 `09cf935188b2ca31792ff99ec7ecaf95855b4824572b4a3945eb898022a9b159`.
-7. DEFINE decimal parser capacity `0..UINT64_MAX`, including overflow-safe conversion/arithmetic. Label firmware maximum/width unknown. Map no wrap modulus.
-8. RECORD observed restart-cause text verbatim. Required field must be nonempty, bounded, and structurally valid. Unrecognized cause stays unknown diagnostic text, never zero resets.
-9. REUSE retained managed GCC `4.8.3` compile/equivalent link through actual assigned-checkout LETS wrapper. Preserve original `collect2: error: ld returned 255 exit status` evidence.
-9.1. KEEP existing block's working `./bin/lets toolchain` route. Requalify routing after integration with later committed changes. Copy no concurrent uncommitted route edits.
-10. COMPARE build contract with `target-elf.log` and `target-librt-scheduler.log`: ELF32 ARM EABI5 hard-float, VFP register arguments, `/lib/ld-linux-armhf.so.3`, supported GLIBC versions.
-11. RECORD live target storage/init/clock/helper facts from `target-readonly.log` and `target-time-helpers.log`. These are implementation inputs, not source-image equivalence.
-12. KEEP `SCR_RESETS_PROFILE_QUALIFIED=0` until TSK-0002 implements/tests observed-profile validation. Replacement support flag must not claim image or hardware qualification.
-13. DOCUMENT exact task-specific readiness: code/build contract now, real ARM execution/rotation before TSK-0008 completion, physical retention at hardware acceptance.
-14. RETAIN source-image quarantine and incomplete target dpkg inventory as installation/restoration prerequisites, not offline code prerequisites.
+1. ADD `src/resets-monitor/src/scr-resets-monitor` functions `main`, `read_bmc`, `parse_bmc`, `read_clock`, `load_history`, `commit_observation`, and `write_diagnostic` for D1.
+2. IMPLEMENT Runtime contract 3, 5–19, 21–24 and responsibility 20 upgrade-readable schema. Use fixed versioned JSON records and one authoritative journal.
+3. ADD `src/resets-monitor/scripts/check-runtime.sh` and small captured-output fixtures under `scripts/fixtures/`. Map cases to Verification 1–4.
+4. DOCUMENT schema, numeric capacity, commit/recovery rules, and clock limits in `src/resets-monitor/README.md`. Mark unverified target synchronization explicitly.
 
 **Done when**
 
-1. Existing files describe fixed command, parser capacity, observed profile, build contract, concrete clock/startup rules, and stage-specific limits without broad prerequisite ambiguity.
-2. Independent audit can trace each fact to captured command/output/status. Current NTP sync never claims historical/next-boot trust or power-loss persistence.
-3. Header compiles through nonempty include probe with checked exit status. Historical failed standalone-header probe and correction both remain intact.
-4. No source-image/device access or runtime installation occurs. Counter-range policy change is explicit and approved before task execution.
+1. Verification 1–4 pass with real Bash/shell file operations and focused injected failures. Source review confirms fixed read-only SEMA command and bounded access.
+2. Failure at baseline 146 with reading 147 leaves no lost increment. Successful retry records one delta and repairs cache without duplicate committed record.
+3. Host file/directory synchronization behavior is exercised through delivered code. Report distinguishes host evidence from pending target-compatible acceptance.
+4. Source/check scripts pass `bash -n`; README matches actual schema/recovery behavior. No compiler, target Python, or new runtime framework.
 
-### TSK-0002 — IMPLEMENT BOUNDED READ-ONLY BMC ADAPTER
+### TSK-0002 — IMPLEMENT STATUS AND WINDOW DECISIONS
 
 | # | Field | Value |
 | --- | --- | --- |
 | 1 | depends_on | TSK-0001 |
-| 2 | model | high |
+| 2 | model | default |
 
 **To do**
 
-1. ADD `src/scr_resets_monitor/{types.h,sema.c,sema.h,clock.c,clock.h,Makefile}` and `tests/reset_monitor/test_reader.py`.
-2. IMPLEMENT `read_bmc_observation`, `parse_sema_output`, and `read_clock_context` with explicit success/unavailable results.
-3. EXECUTE only `/usr/bin/sema cap all` directly under stable locale. Reject arbitrary command injection and production test-backend overrides.
-4. REQUIRE successful exit, complete/unique fields per section, strict decimal `uint64_t` counters, supported profile/identity, and nonempty bounded cause text.
-5. BOUND each SEMA attempt to two seconds. Permit one retry. Bound total acquisition to five seconds including termination handling.
-6. LIMIT output/field lengths. Reject truncation, overflow, conflicting fields, timeout, missing device, unsupported profile, and malformed output.
-7. RECORD UTC observation time, monotonic/boot uptime, Linux boot ID, clock quality, board identity, firmware, counters, and latest cause.
-8. BRACKET complete SEMA acquisition with realtime, `CLOCK_BOOTTIME`, and read-only `adjtimex(modes=0)` samples. Never set clock or wait for synchronization.
-9. ACCEPT clock quality only with successful `TIME_OK`, `STA_UNSYNC` clear, and valid nonnegative uncertainty fields. Otherwise persist counters with invalid-time reason.
-10. SET timestamp uncertainty from maximum endpoint error plus complete acquisition-bracket duration and clock resolution. Reject overflow or inconsistent samples. Claim no atomic multi-field snapshot.
-11. COMPARE same-boot realtime elapsed against boot-clock elapsed using combined uncertainty intervals. Nonoverlap marks clock discontinuity and breaks time coverage.
-12. REQUIRE independently valid UTC anchors on both sides of cross-boot intervals. Current sync never retroactively validates boot-time timestamps.
-13. BRACKET intermediate invalid-time observations only through trustworthy outer anchors and unchanged controller epoch. Otherwise window decision remains unavailable.
-14. LABEL uncertainty as clock-health evidence, not a threshold/window default. Missing kernel time status fails closed. Infer no synchronization from ntpd process presence.
-15. PROVIDE injected reader/clock seams in test binaries only. Keep production hardware commands read-only and allowlisted.
-16. REPLACE disabled profile flag only after supported schema/identity/binary checks pass their tests. Name support as observed-profile compatibility, never full hardware qualification.
+1. EXTEND `src/resets-monitor/src/scr-resets-monitor` with `parse_args`, `show_status`, and `check_window` for D2 and Runtime contract 2, 4, 20, 25–29.
+2. ADD focused API/history fixtures to `src/resets-monitor/scripts/check-runtime.sh`. Map cases to Verification 5–6, including boot-count-only thresholds and separate power-cycle diagnostics.
+3. UPDATE `src/resets-monitor/README.md` with exact arguments, JSON fields, 0/1/2 meanings, age/validity, uncertainty, and unavailable examples.
 
 **Done when**
 
-1. Retained SEMA fixtures produce exact totals/identity. Zero means returned valid value, never substituted error.
-2. Tests cover section-specific duplicate labels, missing fields, negative/UINT64 overflow, unknown diagnostic cause, oversized output, failed exit, timeout, and device errors.
-3. Host-native compiled test binary exercises actual parser/process/time adapters with fixture commands. Deadline/retry tests include child cleanup failure as explicit unavailable.
-4. ARM build passes static ELF/ABI/symbol audit against captured target runtime. Real ARM execution remains mandatory TSK-0008 criterion, not claimed from host tests.
-5. Clock tests cover unsynced startup, unavailable status, leap/error states, uncertainty overflow, steps/regressions, reboot, and conservative interval widening.
-6. Hardware argv contains no writes, counter clearing, watchdog, reboot, or firmware commands. Responsibilities 2–4, 7, and 21 have direct evidence.
+1. Verification 5–6 pass; prior Verification 1–4 still pass for shared runtime functions.
+2. No explicit threshold/window means rejection. Complete exact-boundary fixtures distinguish N from N+1. Partial evidence never invents event timestamps.
+3. `status --json` uses committed data without BMC read; failed `check` refresh cannot return 0 or 1. CLI/help and README agree.
 
-### TSK-0003 — IMPLEMENT DURABLE OBSERVATION STORE
+### TSK-0003 — BUILD DEBIAN PACKAGE AND NATIVE INTEGRATION
 
 | # | Field | Value |
 | --- | --- | --- |
 | 1 | depends_on | TSK-0002 |
-| 2 | model | high |
+| 2 | model | default |
 
 **To do**
 
-1. ADD `src/scr_resets_monitor/{store.c,store.h,json.c,json.h}` and `tests/reset_monitor/test_store.py`.
-2. IMPLEMENT `commit_observation`, `recover_transaction`, `read_committed_state`, and strict versioned JSON codec.
-3. MANAGE `/var/log/scr/resets.jsonl`, `/var/log/scr/resets-state.json`, and `/var/log/scr/resets-monitor.log`, root-owned mode `0600`.
-4. CREATE owned `/var/log/scr/` mode `0700` when absent. Preserve unrelated files and original metadata through package lifecycle.
-5. USE hidden `.resets-transaction.json` journal for interrupted commits. Exclude state/journal/rotation barrier from rotation.
-6. SERIALIZE history/state access with `/run/lock/scr-resets-monitor.lock`. Bound utility lock acquisition to one second. Contention returns unavailable.
-7. DEFINE schema version, baseline epoch, sequence/event identity, context, separate counter deltas, validity/discontinuity, and coverage metadata.
-8. ENCODE counters/deltas as decimal strings for lossless JSON interchange. Reject corrupt, conflicting, or unsupported records.
-9. ESTABLISH initial baseline without reporting lifetime totals as new resets. Preserve original totals and first-observation boundary.
-10. RECORD positive deltas once, including aggregate delta greater than one. Attribute cause only to latest observed event.
-11. DEDUPLICATE transaction retries. Repeated unchanged probes create no duplicate reset event. Distinguish durable coverage checkpoints from reset events.
-12. WRITE/synchronize journal before history mutation. Synchronize complete history record before atomic state replacement and parent-directory synchronization.
-13. RETAIN previous committed state during uncertain transaction. Recovery reconciles journal/history/state idempotently before new observations.
-14. DEFINE durable commit point. Cleanup failure cannot erase committed record. Unresolved commit never appears as valid state.
-15. KEEP last proven committed baseline on read/write/sync errors. Preserve uncertain bytes for recovery instead of destructive truncation or silent rebaseline.
-16. REPORT failures through stderr/existing syslog when own log is unavailable. Persistence failure never returns healthy.
-17. PRESERVE counter decrease, firmware/controller change, and unexpected boot/counter relationships as discontinuity evidence.
-18. START invalid coverage epoch only after durable discontinuity record. Treat every decrease as discontinuity, including apparent wrap. Never infer rollover increments or clear BMC totals.
-19. REQUIRE full trustworthy new window after discontinuity before healthy decision. Introduce no RAOM latch or reset-budget policy.
+1. ADD `tools/deb/build.sh` functions `lets_info`, `lets_usage`, `main`, and small mapping validation. Reuse `tools/codex/build.sh` style for D4.
+2. SOURCE trusted `src/resets-monitor/etc/deb.conf` containing `INCLUDE_FILES` and `EXCLUDE_FILES`. Accept local `source:destination` entries with whitespace-separated mappings; reject malformed/remote mappings.
+3. PRESERVE rsync trailing-slash semantics and literal exclusion patterns. Restrict destinations/cleanup to dedicated staging below build/. Reject unsafe destination ancestry and source/staging overlap.
+4. STAGE fresh package under `build/resets-monitor/`; emit `.deb` under ignored build/. Preserve unrelated build outputs. No generated sources enter Git.
+5. ADD `src/resets-monitor/scripts/{control,preinst,postinst,prerm,postrm,scr-resets-monitor.init}` and `etc/{deb.conf,logrotate.conf,monit-example.conf}` for D3/D4. Add small `src/rotation-hooks` Bash helper installed under `/usr/lib/scr-resets-monitor/`.
+6. IMPLEMENT Safety 2–12 through declared path inventory, private payload, durable original backups, conflict checks, upgrade branches, and exact restoration.
+7. INSTALL asynchronous SysV record hook after observed `S16bootmisc.sh`, preserving existing watchdog/monit ordering. Install disabled monit example under `/usr/share/doc/scr-resets-monitor/`, with explicit threshold placeholders.
+8. IMPLEMENT Runtime 14.1–14.5 through `rotation_begin`/`rotation_end` and stanza firstaction/lastaction hooks. Use rename/create with `nocopytruncate`; inherit system schedule/size/retention policy. Keep marker outside rotation and document bounded refusal/recovery. No global wrapper, private scheduler, or rotation-specific tests.
+9. ADD `src/resets-monitor/scripts/check-build.sh` for Verification 7–9 and `tools/deb/test.sh` as thin LETS entry to item checks.
+10. UPDATE `src/resets-monitor/README.md` with build/config mapping, installation paths, startup, dependencies, rotation boundary, and operator commands.
 
 **Done when**
 
-1. Fault tests cover short writes, ENOSPC, read-only storage, permissions, fsync/rename errors, torn files, and crash at every commit boundary.
-2. Failed history write with baseline 146 and BMC 147 leaves committed baseline 146. Later success records accumulated delta exactly once.
-3. Concurrent calls, boot retries, restarts, and recovery produce no duplicate reset delta or missing committed observation.
-4. Status distinguishes last committed observation from incomplete transaction and failed attempt. Discontinuities never appear as normal increments.
-5. Actual filesystem recovery tests cover synchronization failures. Responsibilities 5–15 and 20 have direct evidence.
+1. Verification 7–9 pass. Exact command `./bin/lets deb build src/resets-monitor/etc/deb.conf` emits inspectable script-only Debian package under build/.
+2. Package inventory contains declared payload, correct modes/ownership, scripts, disabled example, and documentation. No C/compiler/toolchain/LETS/Python runtime payload.
+3. Source review confirms D-01/D-03 boundaries, no enabled monit policy or recovery actions, and no undeclared outside-staging build writes.
+4. Package scripts pass shell syntax checks. Focused runtime/API checks still pass for packaged runtime bytes.
 
-### TSK-0004 — IMPLEMENT DECISION CLI AND WINDOW CONTRACT
+### TSK-0004 — VERIFY PACKAGE LIFECYCLE AND COMPLETE HANDOFF
 
 | # | Field | Value |
 | --- | --- | --- |
 | 1 | depends_on | TSK-0003 |
-| 2 | model | high |
-
-**To do**
-
-1. ADD `src/scr_resets_monitor/{window.c,window.h,cli.c}` and `tests/reset_monitor/test_decision.py`.
-2. IMPLEMENT `evaluate_window`, `run_record`, `run_status`, and `run_check` using qualified reader/store interfaces.
-3. PROVIDE `record`, `status --json`, and `check --max-resets N --window SECONDS`. Support `check --json` for machine-readable decision.
-4. REQUIRE both check arguments each call. Accept decimal integer N ≥ 0 and SECONDS > 0 within checked arithmetic range.
-5. REJECT missing, duplicate, negative, fractional, malformed, overflow, and unknown arguments with exit 2 and explicit usage error.
-6. READ no threshold/window from environment, configuration, or built-in fallback. `record` needs neither value.
-7. DEFINE window `(observationTime - SECONDS, observationTime]`. Count boot-count increments. Report power-cycle changes separately without double counting.
-8. ASSIGN delta to interval between valid observations, never invented reset timestamp. Wholly contained interval contributes entire delta.
-9. EXCLUDE wholly outside intervals. Expand observation/window boundaries by recorded clock uncertainty. Retain lower/upper count bounds for overlaps.
-10. REQUIRE trustworthy current clock, valid controller epoch, committed refresh, and trustworthy anchor covering earliest possible window start.
-10.1. BRACKET intervening invalid-time observations as aggregate between valid outer anchors. Never assign individual reset times or infer historical sync.
-10.2. RETURN 2 until adequate trustworthy coverage exists after initial/unsynchronized boot, clock discontinuity, or controller discontinuity.
-11. ***if*** coverage is absent, clock invalid, acquisition/persistence fails, or outcome ambiguous ***then*** RETURN unavailable with exit 2.
-12. ***if*** supported lower bound exceeds N ***then*** RETURN `raom_required` with exit 1.
-13. ***else if*** supported upper bound is at most N ***then*** RETURN `normal` with exit 0.
-14. ***else*** RETURN `unavailable` with exit 2. No branch starts/stops services or enters mode.
-15. DEFINE JSON fields: `schema_version`, `decision`, `reason`, `max_resets`, `window_seconds`, `window_start`, `window_end`, `reset_count_min`, `reset_count_max`, `coverage`, `observation`.
-16. DEFINE status fields: latest committed observation, age, clock/store validity, pending transaction, and last persisted failure when available.
-17. KEEP status read-only toward BMC. Report freshness explicitly. Cached values never imply successful current reading or persistence.
-18. RETURN `record` 0 after durable valid observation, otherwise 2. Return `status` 0 for valid committed store, otherwise 2. JSON exposes time/decision limits.
-19. DOCUMENT initial baseline, insufficient retention, clock jumps, sparse observations, and discontinuity behavior beside CLI contract.
-
-**Done when**
-
-1. Missing values fail. Environment/configuration never substitute. `N=5`, `SECONDS=900` appear only as tests/examples.
-2. N proven increments return 0. N+1 return 1. Exact window boundaries have tests.
-3. Aggregate intervals remain aggregate. Ambiguous boundary, missing anchor, invalid time, and incomplete/corrupt history return 2.
-4. Current read/storage failure returns 2 despite earlier good history. No failed read becomes zero or cached result becomes current success.
-5. CLI/JSON tests cover decisions, reasons, numeric limits, age, cache validity, and incomplete commits. Responsibilities 16–18 and step 2 are covered.
-6. Tests intercept service-control, reboot, watchdog, and BMC-write attempts and prove none occur.
-
-### TSK-0005 — INTEGRATE SYSV OBSERVATION AND MONIT EXAMPLES
-
-| # | Field | Value |
-| --- | --- | --- |
-| 1 | depends_on | TSK-0004 |
 | 2 | model | default |
 
 **To do**
 
-1. ADD `packaging/scr-resets-monitor/init/scr-resets-monitor`, `packaging/scr-resets-monitor/examples/monit-check.conf.in`, and `tests/reset_monitor/test_integration.py`.
-2. IMPLEMENT idempotent asynchronous SysV hook after `mountall-bootclean` and `mountnfs-bootclean`, with `$local_fs` ready. Invoke `record` only.
-3. USE observed `/etc/rcS.d/S17scr-resets-monitor` hook after existing `S16bootmisc.sh` as target layout. Verify exact source layout before installation.
-3.1. LAUNCH detached bounded record worker and return immediately. No synchronous SEMA read, lock wait, fsync, or NTP wait in init parent.
-3.2. PRESERVE all existing watchdog/monit links and start ordering. Do not run global dependency reordering that changes unrelated service links.
-4. ROUTE bootstrap errors to stderr/syslog when log storage cannot persist. Later successful `record`/`check` captures accumulated delta.
-5. INSTALL disabled monit example under package documentation. Require operator-supplied literal N/window before deployment.
-6. SHOW separate status conditions for exits 1 and 2, reporting only. Include no recovery action or automatic enabled symlink.
-7. COVER substituted example in offline integration tests. Exact target monit syntax validation remains required in TSK-0008. Preserve active configuration/recovery policy.
-8. DOCUMENT manual record, hook retry, status inspection, and unavailable outcomes in `docs/RESET-MONITOR.md`.
+1. ADD `src/resets-monitor/scripts/check-package.sh` with controlled disposable-root lifecycle cases for D4, Verification 10, and Safety 4–12.
+2. EXERCISE install/reconfigure, history-preserving upgrade, failed/aborted upgrade, rollback, remove/purge, known conflicts, unsafe types, and pre-existing/unrelated files.
+3. COMPARE original owned payload, path absence, parent metadata, links, hardlinks, xattrs, and ownership after removal. Preserve lifecycle transcripts outside product tree.
+4. UPDATE `src/resets-monitor/README.md` with installation/rollback procedure, limitations, exact-package hardware handoff fields, and separately authorized expected/observed cases.
+5. REBUILD final package through LETS. Record version, architecture, SHA-256, source revision, focused-check results, and pending final image/hardware obligations.
+6. PREPARE implementation INPUT evidence under `.codex/sdlc/artifacts/items/ITM-0001/implementation/`. Coordinator owns explicit manifest publication and later bound acceptance.
+7. ADD simple `src/resets-monitor/scripts/check-target.sh` with `main`, `run_remote`, `capture_evidence`, and `restore_target` for automated target stage. No framework or target LETS/Python dependency.
+8. COVER Verification 14 through focused SSH command fixtures. Document runner arguments, timeouts, recovery, and actual-versus-injected evidence in `src/resets-monitor/README.md`.
 
 **Done when**
 
-1. Init tests prove writable-storage ordering and unchanged monit/watchdog startup. Failed observation cannot block boot.
-2. Hook invokes `record` without parameters. Later successful call captures missed delta exactly once.
-3. Package enables no threshold check and supplies no production values. Example needs explicit substitution.
-4. Example and consumer tests distinguish 1 from 2 with reporting only. Exact target syntax/runtime acceptance remains TSK-0008. Responsibilities 1, 12, 16, 17, and 21 are traced.
-
-### TSK-0006 — INTEGRATE SYSTEM ROTATION AND COVERAGE
-
-| # | Field | Value |
-| --- | --- | --- |
-| 1 | depends_on | TSK-0005 |
-| 2 | model | high |
-
-**To do**
-
-1. ADD `packaging/scr-resets-monitor/logrotate/scr-resets-monitor`, `src/scr_resets_monitor/rotation.c`, and `tests/reset_monitor/test_rotation.py`.
-2. EXTEND `store.c` with `read_retained_history` and integrity/coverage checks for active, numbered, and system-compressed history.
-3. INTEGRATE utility logs with existing logrotate schedule/retention/size/compression policy. Exclude state/journal. Use rename/create, never copytruncate.
-4. OPEN current log path each invocation. Set created log ownership/mode correctly.
-5. IMPLEMENT `begin_rotation` and `end_rotation` maintenance commands through utility stanza `firstaction`/`lastaction`, with shared scripts.
-6. UNDER history flock, persist `.resets-rotation.json` with actual logrotate owner PID/starttime/boot ID and pre-rotation history inventory. Reject hook-shell identity.
-7. REQUIRE normal reader/writer calls to inspect barrier under flock. Active or uncertain barrier returns 2 without changing committed data. Diagnostics use stderr/syslog.
-8. CLEAR barrier under flock only after qualified final hook confirms rename/compression completion and validates current history/state coverage.
-9. ON owner death/reboot, require proof that every rotation/compression participant is quiescent before inventory reconciliation. Parent death alone proves nothing about surviving children.
-10. READ compressed records through qualified bounded decompressor argv. Reject corrupt archives, sequence gaps, conflicting duplicates, incomplete records, and unsafe paths.
-11. RETAIN cumulative counters and coverage watermark in nonrotated state. Old-history deletion reduces coverage, never resets totals or silently starts healthy window.
-12. RETURN 2 when retained history cannot support supplied CLI window. Add no utility cron job, timer, daemon, or private scheduler.
-13. PREPARE offline scenarios for hook ordering, failure propagation, manual calls, simultaneous rotators, and removal with barrier active. Actual logrotate 3.8.7 execution belongs to TSK-0008.
-14. PRESERVE global cron script, unrelated stanzas, and existing schedule unchanged. Reject begin-hook failure before utility rotation. Uncertain recovery stays unavailable.
-15. TREAT direct file mutation outside system rotation as invalid history. Retain evidence and explicit unavailable. Never invent continuity.
-16. KEEP barrier active with exit 2 when participant quiescence cannot be proven. Require explicit recovery. Never clear by timeout or parent death alone.
-17. VALIDATE complete committed history under flock only after quiescence proof. Clear barrier only after validation and durable state synchronization.
-
-**Done when**
-
-1. Offline stanza/barrier tests cover rename/create, compression, deletion, corrupt archives, concurrent calls, and manual rotation through actual compiled maintenance interface.
-2. Rotation loses no committed delta and duplicates no event. State/journal never rotate. Cumulative baseline survives history deletion.
-3. Complete windows return correct decisions. Missing coverage returns 2, including windows beyond system retention.
-4. Original system rules/schedule remain unchanged. Manual logrotate calls execute same hooks. No global wrapper or private scheduler exists.
-5. Tests cover owner death with surviving compression child, wrong owner, PID reuse, hook failure, partial compression, barrier failure, reboot, and concurrent rotators.
-6. Offline failure tests exercise hook ordering and ownership assumptions. Actual logrotate 3.8.7 proof remains mandatory TSK-0008 gate. Responsibility 19 is traced.
-
-### TSK-0007 — BUILD REVERSIBLE DEBIAN DELIVERY
-
-| # | Field | Value |
-| --- | --- | --- |
-| 1 | depends_on | TSK-0006 |
-| 2 | model | high |
-
-**To do**
-
-1. GENERATE scaffold with `./bin/lets sdlc package-init ITM-0001` only after approved running state and hardware-required checks.
-2. KEEP generated sources at command-reported item-worktree path. Add `packaging/scr-resets-monitor/build.sh` as deterministic consumer.
-3. COMPLETE generated `debian/control`, `rules`, `preinst`, `postinst`, `prerm`, `postrm`, and operation manifest.
-4. REUSE `SdlcPackageHelper.cmd_package_init` private payload/backup pattern. Extend scripts for runtime paths, parents, rotated files, and rotation barrier lifecycle.
-5. DECLARE exact version, architecture, dependencies/conflicts, payload ownership, permissions, and maintainer-script behavior.
-6. CHECK complete dpkg file-list inventory and all owners/overlaps before managed payload/backup/marker mutation. Missing lists refuse installation. Capture original baseline once.
-7. INSTALL utility/init/rotation without BMC reads or active monit reload during image package tests. Enable observation hook for subsequent boot only.
-8. REJECT incompatible data schema without replacing working state/binary. Verify failed upgrade, reinstall, downgrade, and rollback behavior.
-9. RESTORE original managed paths/metadata on remove/purge, including runtime files, rotated logs, init links, rotation barrier, and parent directories.
-10. ACCOUNT for package bookkeeping and shared logrotate-state changes. Preserve unrelated files and other package ownership.
-11. RETAIN exact `.deb`, source/build manifest, architecture output, version, and SHA-256 under managed implementation INPUT paths.
-12. TEST absent/corrupt package file-list rejection in controlled synthetic roots. Current live-target database repair remains outside item authority.
-
-**Done when**
-
-1. Script tests cover clean/pre-existing installs, expected/unexpected ownership, overlap, interrupted install, upgrades, active rotation, rollback, remove, and purge.
-2. Upgrade preserves committed counters/history. Uninstall restores pre-install payload/metadata, including initially absent paths.
-3. SEMA hashes remain unchanged. No undeclared runtime install, watchdog/service action, or counter write occurs.
-4. Build source/toolchain are pinned. Version/hash and ownership match manifest. Synthetic-root lifecycle tests pass without image access or live installation.
-5. Package refuses incomplete ownership inventory before managed payload/backup/marker writes. Dpkg bookkeeping remains separately accounted and restored. Real-image/hardware installation stays pending.
-
-### TSK-0009 — COMPLETE OPERATOR CONTRACT AND HARDWARE HANDOFF
-
-| # | Field | Value |
-| --- | --- | --- |
-| 1 | depends_on | TSK-0007 |
-| 2 | model | default |
-
-**To do**
-
-1. COMPLETE `docs/RESET-MONITOR.md`: platform, architecture, CLI/JSON, window rules, durability/recovery, rotation, package lifecycle, and limits.
-2. UPDATE relevant `docs/MONIT.md` consumers with decision API and disabled explicit-argument example. Preserve historical findings and unrelated proposals.
-3. LINK package docs/examples. Update affected architecture/index records only where present.
-3.1. REBUILD package after delivered documentation/example changes. Re-run affected packaging checks and record final version/hash before hardware handoff.
-3.2. USE these final package bytes for TSK-0008 and later SHOW/hardware acceptance. Superseded builds retain history but provide no final acceptance.
-4. ADD responsibility matrix numbered 1–21 linking original anchors, symbols, tests, and retained evidence.
-5. DISTINGUISH observation hook from future boot/mode control. Exit 1 changes no service. Exit 2 defines no caller action.
-6. DOCUMENT counter/reset-mode/clock qualification, initial window, sparse observations, retention, discontinuities, and rebaseline limits.
-7. PREPARE exact-package hardware procedure with identities, source hashes, expected/observed table, logs, developer reset ownership, rollback, and verbatim report field.
-8. INCLUDE installation/error-path checks, developer resets, separately authorized power-loss/early-Linux-failure tests, upgrade, and approved uninstall/restoration.
-9. RECORD pending authority/hardware evidence separately from automated passes. Preserve historical reset observation and its limits.
-10. PREPARE evidence index with explicit pending TSK-0008/image/hardware entries. Add no invented future result. Coordinator publishes later completed evidence for final ceremonies.
-
-**Done when**
-
-1. Docs/help/schema/example/package/tests agree on mandatory values, exits 0/1/2, and decision-only behavior.
-2. Matrix covers all 21 anchors without claiming RAOM activation or unperformed hardware success.
-3. Hardware procedure names exact built package and intended device. Image identity, operation authority, and later acceptance fields remain explicitly pending.
-3.1. Required image/authority fields must be complete before any hardware action. TSK-0008 and post-SHOW handoff supply later evidence without blocking offline documentation.
-4. Handoff identifies tested package/source/evidence and pending hardware obligations without claiming future QA/RESULT/SHOW/promotion completion.
-
-### TSK-0008 — VERIFY RUNTIME AND LOCKED IMAGE RESTORATION
-
-| # | Field | Value |
-| --- | --- | --- |
-| 1 | depends_on | TSK-0009 |
-| 2 | model | high |
-
-**To do**
-
-1. ADD `tests/system/test_reset_monitor.py` and `tests/reset_monitor/package_scenario.sh` for installed CLI, init, rotation, and lifecycle.
-2. RUN `./bin/lets sdlc gate unit tests/reset_monitor`. Default gate paths alone do not select new utility tests.
-3. RUN `./bin/lets sdlc gate style` on changed Python tests. Run C warnings and shell syntax checks through applicable LETS wrappers.
-4. RUN `./bin/lets sdlc gate system --holder ITM-0001` under owned stack lease. Include installed binary and meaningful fault tests.
-5. REQUIRE qualified ARM execution environment. Successful x86 tests never prove target ABI/runtime compatibility.
-6. ***if*** quarantine or source identity remains unresolved ***then*** STOP this image stage with NOT RUN. Offline tasks remain valid but final delivery stays blocked.
-6.1. REQUIRE separately approved recovery/restoration proof before any blocked image access. Inspect exact source identity under shared lock afterward.
-6.2. VERIFY source-specific filesystem, rc links, helpers, logrotate/cron, complete dpkg inventory, all managed paths, parent metadata, and ownership before installation.
-6.3. REJECT incompatible source topology or incomplete inventory before mutation. Do not assume observed live target equals source image.
-7. RUN `./bin/lets sdlc test-package ITM-0001` against qualified source image and exact package under full shared image lock.
-8. EXECUTE explicit version-A install, data creation, version-B upgrade, injected failed upgrade, rollback/downgrade, and removal of all delivered packages inside locked scenario.
-9. INJECT fixtures through test-only harness. Test persistence/sync errors, crashes, locks, clock changes, and missing history with production override disabled.
-9.1. EXECUTE exact target-compatible ARM utility, actual logrotate 3.8.7 hook/compression scenarios, and substituted monit syntax test.
-9.2. REQUIRE barrier spans all rotation/compression participants. No host-only substitute qualifies target runtime or hook ordering.
-10. COMPARE whole-tree fingerprints plus separate exact `/var/log/scr/` and affected-parent manifest. Cover excluded logs, journal, barrier, rotations, and initially absent paths.
-11. VERIFY source hashes/metadata, clean unmount, released loops, and complete scratch cleanup before unlock.
-12. PUBLISH commands, exits, runtime identities, package hashes, fingerprints, and limitations as implementation INPUT.
-13. VERIFY supplementary log manifest before first install and after final uninstall while same image lock remains held. Include bytes/types/owners/modes/timestamps/links/xattrs.
-14. RETAIN explicit package-scenario transcript. Base helper alone does not exercise upgrades. Preserve existing fingerprint exclusions without adding bypasses.
-
-**Done when**
-
-1. Every responsibility has functional evidence, including actual filesystem/rotation behavior and installed ARM-compatible execution.
-2. Full lifecycle restores original tree/metadata and preserves source image. Upgrade/rollback evidence identifies exact versions.
-3. Restoration/cleanup failure quarantines and fails acceptance. Missing runtime/image gate never becomes simulated success.
-4. Retained commands, scenarios, packages, and manifests let independent validator reproduce every task check.
+1. Verification 10 passes on controlled disposable root; all item checks pass through LETS test entry. No host or original-image installation occurs.
+2. Upgrade preserves committed history and first-install backups. Removal restores originals exactly, removes package-created paths, and preserves unrelated data.
+3. Final package version/hash matches inspected payload and current documentation. Transcript names actual checks, failures, and pending target/image/hardware acceptance separately.
+4. Agent target/rollback procedure is actionable with pending IP/device/image fields and recorded SSH authority. Verification 14 passes; runner awaits actual target stage. No task criterion requires target availability, final QA/RESULT/SHOW/promotion, or hardware confirmation.
