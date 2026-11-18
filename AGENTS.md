@@ -5,6 +5,7 @@
 3. APPLY `$caveman full` to replies, SDLC handoffs, and authored SDLC sections. Preserve full technical substance and verbatim customer source.
 4. APPLY simple English to technical text where compatible with explicit register. Preserve commands, identifiers, paths, hashes, and quoted errors.
 5. NUMBER lists. Use hierarchical numbers for nested items. Give every table an explicit first column named `#`.
+6. READ and APPLY `.agents/skills/bash-style/SKILL.md` before writing or editing Bash scripts, including extensionless scripts. Include this skill in Bash worker handoffs.
 
 ## Codex SDLC
 
