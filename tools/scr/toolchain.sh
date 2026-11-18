@@ -2,7 +2,7 @@
 function lets_info() { echo -ne "Pinned ARM compatibility toolchain"; }
 function lets_usage() {
 	[[ -n "$*" ]] && echo -e "error: $*\n"
-	echo "Usage: ./bin/lets toolchain <info|run|env> [arguments]"
+	echo "Usage: ./bin/lets scr toolchain <info|run|env> [arguments]"
 	echo "  info [--json]              show verified toolchain identity"
 	echo "  run <tool> [args...]       run allowlisted managed tool"
 	echo "  env -- <command> [args...] run command with managed compiler wrappers"
@@ -47,7 +47,7 @@ function main() {
 		local tool wrapper
 		for tool in $LETS_TOOLCHAIN_TOOLS; do
 			wrapper="${wrapper_dir}/${LETS_TOOLCHAIN_TRIPLET}-${tool}"
-			printf '#!/bin/sh\nexec %q --lets-project-dir %q toolchain run %q "$@"\n' "${LETS_PROJ_DIR}/bin/lets" "$LETS_PROJ_DIR" "$tool" >"${wrapper}.tmp.$$"
+			printf '#!/bin/sh\nexec %q --lets-project-dir %q scr toolchain run %q "$@"\n' "${LETS_PROJ_DIR}/bin/lets" "$LETS_PROJ_DIR" "$tool" >"${wrapper}.tmp.$$"
 			chmod 0755 "${wrapper}.tmp.$$"
 			mv -f -- "${wrapper}.tmp.$$" "$wrapper"
 		done
