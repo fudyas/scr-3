@@ -456,13 +456,19 @@
       "host": "ec1503b3a74d",
       "event": "task_status",
       "detail": "TSK-0001, TSK-0002, TSK-0003, TSK-0004 -> VALIDATED"
+    },
+    {
+      "at": "2026-11-18T11:40:30.803Z",
+      "host": "ec1503b3a74d",
+      "event": "status",
+      "detail": "IN PROGRESS -> TESTING"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
-  "updated_at": "2026-11-18T11:40:23.521Z",
+  "updated_at": "2026-11-18T11:40:30.803Z",
   "kind": "task",
   "idea": "The entire item was wrongly implemented and needs to be discarded. Below are my instructions:\n- The userspace utility is a bash script that parses the BMC output, no C code needed, no toolchain\n- Debian installation package is built under build/ that is .gitignored\n- The sources layout is: src/resets-monitor/{scripts,etc,src}:\n  - all SystemV, debian control file, deb package pre/post scripts go under scripts\n  - the resets-monitor scripts go under src\n  - any resets-monitor speciific configuration goes into etc\n- The debian package is built with LETS tool ('./bin/lets deb build path/to/deb.conf) under build/ by copying all necessary files into build/resets-monitor/....\n- the src/resets-monitor/etc/deb.conf file is a bash-formatted file that controls how the deb package is built. It contains a list of files and directories to copy into build/resets-monitor/.... in format from:to compatible with rsync, for example INCLUDE_FILES=\"from/local/path/under/src/resets-monitor/:build/resets-monitor/ from/another/...::build/resets-monitor/....\" , EXCLUDE_FILES=\"*.bak\"\n- The bash scripts under src/resets-monitor/src are written in LETS style, simple\n\nBefore you begin:\n- drop all the current code\n- remove from git: docs/audits, docs/RESET-MODULE*\n- squash the git history or otherwise clean it up WE STRAT FRESH \n- rewrite SDLC item 1 breif, title, then plan it again \n\nBottom line: this was supposed to be a simple deb package installing a simple bash script that parses BMC output and manages a log file. It became a C monster with toolchains, tests and uncontrollably scattered files.\n\nFollow-up clarification:\nRetain API, the scope of the item is the same - 1+2 of RAOM",
-  "status": "IN PROGRESS",
+  "status": "TESTING",
   "depends_on": [
     "ITM-0006"
   ],
