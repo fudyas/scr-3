@@ -1,0 +1,24 @@
+{
+  "prefix": "CHN",
+  "number": 2,
+  "desc": "RAOM-TASKS-IMPLEMENTATION",
+  "description": "Implement RAOM tasks in sequence. Item 1 delivers RAOM reset observation and decision API through the Bash reset monitor.",
+  "tags": [
+    "raom",
+    "reset-monitor"
+  ],
+  "history": [
+    {
+      "at": "2026-11-18T17:38:34.141Z",
+      "host": "ec1503b3a74d",
+      "event": "minted",
+      "detail": "ITM-0001"
+    }
+  ],
+  "created_at": "2026-11-18T17:38:34.141Z",
+  "updated_at": "2026-11-18T17:38:34.141Z",
+  "items": [
+    "ITM-0001"
+  ],
+  "host": "ec1503b3a74d"
+}
