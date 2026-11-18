@@ -468,6 +468,12 @@
       "host": "ec1503b3a74d",
       "event": "status",
       "detail": "TESTING -> REVIEW"
+    },
+    {
+      "at": "2026-11-18T13:50:53.934Z",
+      "host": "ec1503b3a74d",
+      "event": "hardware",
+      "detail": "{\"required\":true,\"result\":\"pass\",\"package_path\":\"build/scr-resets-monitor_1.0.7_all.deb\",\"promotion_commit\":\"6963c9642f8ad358d2d21d84e0c6cd0577f6f329\",\"package_sha256\":\"d67049153b867a68f064512da3e6ec25dec0c82f76ce2d242bff1fd2c229917f\",\"image_identity\":\"Real hardware SCR-7CCC91 at 192.168.68.54, Debian GNU/Linux, 3.10.105-imx6 armv7l; no disk image used\",\"notes\":\"# Hardware acceptance\\n\\n1. Developer confirmation (verbatim): `HW acceptance confirmed.`\\n2. Target: SCR-7CCC91 at 192.168.68.54, running Debian GNU/Linux on 3.10.105-imx6, armv7l. Real hardware used; no disk image used.\\n3. Tested package: `scr-resets-monitor` 1.0.7, SHA-256 `d67049153b867a68f064512da3e6ec25dec0c82f76ce2d242bff1fd2c229917f`.\\n4. Procedure: upgraded installed 1.0.6 package with exact 1.0.7 package. Read live BMC output with `sema cap all`. Ran `record`, `status --json`, `check --max-resets 0 --window 60`, and two concurrent `record` calls.\\n5. Expected: valid BMC readings, successful API calls, and no false reset delta when counters stay unchanged.\\n6. Observed: all commands passed. `check` returned 0. BMC boot count stayed 150; power cycle count stayed 54. Four records were committed with zero boot and power deltas. No reset or reboot occurred.\\n7. Rollback: installed exact original 1.0.6 package. History and state files matched their pre-rollback copies. Final target package version is 1.0.6.\\n8. Dpkg printed pre-existing missing-file-list warnings for unrelated installed packages during package operations. Package install and rollback completed successfully.\\n\",\"confirmed_at\":\"2026-11-18T13:50:50.746Z\"}"
     }
   ],
   "created_at": "2026-11-11T09:53:02.952Z",
@@ -523,12 +529,12 @@
   },
   "hardware": {
     "required": true,
-    "result": null,
-    "package_path": null,
-    "promotion_commit": null,
-    "package_sha256": null,
-    "image_identity": null,
-    "notes": null,
-    "confirmed_at": null
+    "result": "pass",
+    "package_path": "build/scr-resets-monitor_1.0.7_all.deb",
+    "promotion_commit": "6963c9642f8ad358d2d21d84e0c6cd0577f6f329",
+    "package_sha256": "d67049153b867a68f064512da3e6ec25dec0c82f76ce2d242bff1fd2c229917f",
+    "image_identity": "Real hardware SCR-7CCC91 at 192.168.68.54, Debian GNU/Linux, 3.10.105-imx6 armv7l; no disk image used",
+    "notes": "# Hardware acceptance\n\n1. Developer confirmation (verbatim): `HW acceptance confirmed.`\n2. Target: SCR-7CCC91 at 192.168.68.54, running Debian GNU/Linux on 3.10.105-imx6, armv7l. Real hardware used; no disk image used.\n3. Tested package: `scr-resets-monitor` 1.0.7, SHA-256 `d67049153b867a68f064512da3e6ec25dec0c82f76ce2d242bff1fd2c229917f`.\n4. Procedure: upgraded installed 1.0.6 package with exact 1.0.7 package. Read live BMC output with `sema cap all`. Ran `record`, `status --json`, `check --max-resets 0 --window 60`, and two concurrent `record` calls.\n5. Expected: valid BMC readings, successful API calls, and no false reset delta when counters stay unchanged.\n6. Observed: all commands passed. `check` returned 0. BMC boot count stayed 150; power cycle count stayed 54. Four records were committed with zero boot and power deltas. No reset or reboot occurred.\n7. Rollback: installed exact original 1.0.6 package. History and state files matched their pre-rollback copies. Final target package version is 1.0.6.\n8. Dpkg printed pre-existing missing-file-list warnings for unrelated installed packages during package operations. Package install and rollback completed successfully.\n",
+    "confirmed_at": "2026-11-18T13:50:50.746Z"
   }
 }
