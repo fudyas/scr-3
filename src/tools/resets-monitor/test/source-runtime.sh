@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Load runtime functions without invoking the command layer.
+TEST_DIR=$(cd -- "${BASH_SOURCE[0]%/*}" && pwd) || return 2 2>/dev/null || exit 2
+RUNTIME_SRC_DIR=${RUNTIME_SRC_DIR:-$TEST_DIR/../src/runtime}
+RUNTIME_TOOL=${RUNTIME_TOOL:-$TEST_DIR/../tool.sh}
+for module in "$RUNTIME_SRC_DIR"/*.sh; do
+    source "$module" || return 2 2>/dev/null || exit 2
+done
+
+source "$RUNTIME_TOOL" || return 2 2>/dev/null || exit 2

@@ -1,0 +1,8 @@
+associd=0 status=0615 leap_none, sync_ntp, 1 event, clock_sync,
+version="ntpd 4.2.6p5@1.2349-o Fri Jul 22 17:59:22 UTC 2016 (1)",
+processor="armv7l", system="Linux/3.10.105-imx6", leap=00, stratum=3,
+precision=-20, rootdelay=93.346, rootdisp=77.083, refid=64.176.167.142,
+reftime=eea0044a.66ce0e83  Thu, Nov 12 2026  9:24:26.401,
+clock=eea00808.6b3cd572  Thu, Nov 12 2026  9:40:24.418, peer=7086, tc=8,
+mintc=3, offset=-1.926, frequency=-18.307, sys_jitter=2.103,
+clk_jitter=1.550, clk_wander=0.306

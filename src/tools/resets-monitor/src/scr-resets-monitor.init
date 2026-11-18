@@ -1,0 +1,27 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          scr-resets-monitor
+# Required-Start:    $local_fs bootmisc
+# Required-Stop:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Records read-only BMC reset observations
+### END INIT INFO
+
+# Starts a bounded one-shot observation without delaying boot.
+# Arguments: $1 - start, stop, restart, or force-reload. Returns: 0 or 2.
+# Output: none; the utility owns its diagnostics and persistent logs.
+function main() {
+    [ "$#" -eq 1 ] || return 2
+    case "$1" in
+        start|restart|force-reload)
+            [ -x /usr/bin/scr-resets-monitor ] || return 2
+            /usr/bin/scr-resets-monitor record </dev/null >/dev/null 2>&1 &
+            ;;
+        stop) : ;;
+        *) return 2 ;;
+    esac
+    return 0
+}
+
+[ "${BASH_SOURCE[0]}" != "$0" ] || main "$@"

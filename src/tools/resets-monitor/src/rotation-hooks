@@ -1,0 +1,69 @@
+#!/bin/bash
+
+source /usr/bin/scr-resets-monitor || exit 2
+
+# Finds the invoking logrotate process and its start-time identity.
+# Arguments: none. Returns: 0 or 2. Output: ROTATOR_PID and ROTATOR_START.
+function rotation_identity() {
+    local pid=$PPID stat_line name depth
+    local -a fields
+    for depth in 1 2 3 4 5 6 7 8; do
+        IFS= read -r name < "/proc/$pid/comm" || return 2
+        IFS= read -r stat_line < "/proc/$pid/stat" || return 2
+        read -r -a fields <<< "${stat_line##*) }"
+        if [ "$name" = logrotate ]; then
+            ROTATOR_PID=$pid; ROTATOR_START=${fields[19]}
+            [[ "$ROTATOR_START" =~ ^[0-9]+$ ]] || return 2
+            return 0
+        fi
+        pid=${fields[1]}
+        [[ "$pid" =~ ^[0-9]+$ ]] && [ "$pid" -gt 1 ] || return 2
+    done
+    return 2
+}
+
+# Creates a durable marker before system-managed rotation changes history.
+# Arguments: none. Returns: 0 or 2. Output: pending marker; no stdout.
+function rotation_begin() {
+    lock_history || return 2
+    load_history || return 2
+    local boot
+    IFS= read -r boot < /proc/sys/kernel/random/boot_id || return 2
+    printf '%s %s %s %s\n' "$boot" "$ROTATOR_PID" "$ROTATOR_START" "${LAST[sequence]:-0}" > "$LOG_DIR/.rotation-pending" || return 2
+    sync_path "$LOG_DIR/.rotation-pending" && sync_path "$LOG_DIR" || return 2
+}
+
+# Clears only a matching marker after retained history is durable and complete.
+# Arguments: none. Returns: 0 or 2. Output: removes matching marker; no stdout.
+function rotation_end() {
+    local boot saved_boot pid started sequence extra
+    exec {LOCK_FD}>> "$LOCK_PATH" || return 2
+    flock -w 2 "$LOCK_FD" || return 2
+    safe_file "$LOG_DIR/.rotation-pending" || return 2
+    IFS= read -r boot < /proc/sys/kernel/random/boot_id || return 2
+    read -r saved_boot pid started sequence extra < "$LOG_DIR/.rotation-pending" || return 2
+    [ -z "$extra" ] && [ "$saved_boot" = "$boot" ] && [ "$pid" = "$ROTATOR_PID" ] && [ "$started" = "$ROTATOR_START" ] || return 2
+    parse_uint "$sequence" 2147483647 || return 2
+    load_history || return 2
+    [ "${LAST[sequence]:-0}" -eq "$sequence" ] || return 2
+    sync_path "$LOG_DIR" || return 2
+    rm -- "$LOG_DIR/.rotation-pending" || return 2
+    if ! sync_path "$LOG_DIR"; then
+        printf '%s %s %s %s\n' "$saved_boot" "$pid" "$started" "$sequence" > "$LOG_DIR/.rotation-pending"
+        sync_path "$LOG_DIR/.rotation-pending" && sync_path "$LOG_DIR" || :
+        return 2
+    fi
+}
+
+# Runs the configured rotation boundary hook without changing rotation policy.
+# Arguments: $1 - begin or end. Returns: 0 or 2. Output: diagnostics on failure.
+function rotation_main() {
+    export LC_ALL=C PATH=/usr/sbin:/usr/bin:/sbin:/bin
+    umask 077
+    [ "$#" -eq 1 ] && [ "$EUID" -eq 0 ] || return 2
+    prepare_storage && rotation_identity || return 2
+    trap cleanup EXIT
+    case "$1" in begin) rotation_begin ;; end) rotation_end ;; *) return 2 ;; esac
+}
+
+rotation_main "$@"
