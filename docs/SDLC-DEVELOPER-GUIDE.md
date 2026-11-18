@@ -39,19 +39,54 @@ Old round commands and Claude SDLC prompts no longer define active workflow. Man
 5. PRESERVE stable IDs and canonical links. Update affected design references and consumers with implementation.
 6. DISTINGUISH implementation evidence from intended design. Missing product or hardware policy remains explicit question.
 
+## Scope and verification
+
+These rules govern new plans and explicit plan revisions. Existing approved plans keep their criteria and effective review decisions.
+Skill updates alone never add or remove obligations, trigger replanning, or reopen completed work.
+
+1. DEFINE deliverables before tasks or tests. Each names source requirement, observable result, owned changes, and supported conditions.
+2. DISTINGUISH owned changes from existing dependencies. Record each consumed interface, required assumption, and evidence needed to use it.
+3. LIMIT each item to a bounded outcome that can be reviewed and accepted independently after prerequisites complete.
+4. SELECT simplest design that satisfies declared behavior. Justify added mechanisms through concrete failures of a deliverable.
+5. KEEP dependency internals outside scope unless changed or explicitly requested. Using a dependency does not assign ownership of its correctness.
+6. MAP each item-specific test to a deliverable criterion, expected result, defect detected, and acceptance stage.
+7. COVER relevant failure behavior and regressions. Name changed code and affected behavior for each regression beyond direct deliverables.
+8. VERIFY consumed interfaces through delivered behavior. Broader dependency qualification requires explicit scope. Missing prerequisite evidence blocks affected acceptance without expanding ownership.
+9. LIST mandatory repository gates and applicable safety checks separately, with their source and stage. Scope limits never waive them.
+10. USE focused fixtures or interface tests that prove required behavior. Require actual dependency execution for integration claims that fixtures cannot establish.
+11. KEEP task criteria achievable at task validation. Place assembled-item QA, RESULT, SHOW, promotion, and hardware confirmation in later acceptance stages.
+12. AUDIT both missing coverage and unnecessary work before approval. Every task and proposed test needs a stated delivery or mandatory-gate purpose.
+13. SHOW deliverables, dependency boundaries, test mapping, mandatory gates, and pending acceptance stages during existing plan approval.
+14. REUSE this mapping in implementation and review. Additional focused diagnostics for the same criteria need no new approval.
+15. CLASSIFY findings as deliverable defects, concrete regressions, unmet prerequisites, mandatory-gate failures, or unrelated observations.
+16. CITE criterion, affected behavior, or mandatory rule for blocking findings. Unrelated improvements remain observations, not automatic rework.
+17. REPORT dependency failures that prevent promised behavior or safe delivery. Such failures do not authorize dependency repair or broader qualification.
+18. ROUTE material changes through existing scope-decision process. Never disguise new product behavior, compatibility changes, or dependency ownership as test hardening.
+
+Test mapping describes acceptance, not a fixed command list. Engineers retain bounded diagnostic freedom within approved behavior and authority.
+Task validation uses relevant unit/style checks. Final QA retains required repository gates and applicable package/image checks.
+An unrun required check stays pending or failed at its assigned stage. Earlier stages cannot claim its success or require later-stage completion.
+
+| # | Requested change | Relevant evidence | Outside scope without additional requirement |
+| --- | --- | --- | --- |
+| 1 | Utility integrates its logs with existing rotation | Shipped configuration, post-rotation writes, retained-history decisions, and required integration behavior | General scheduler, compression engine, or unrelated-log qualification |
+| 2 | Item changes rotation policy | Changed policy and affected logs, including scheduling or retention behavior that item changes | Unaffected platform behavior |
+| 3 | CLI adds one output field | Field value/schema and affected output compatibility | Requalification of unchanged network, database, or logging implementations |
+| 4 | Reversible image package | Owned payload plus all required source-preservation, ownership, restoration, cleanup, and hardware evidence | Unrequested platform features |
+
 ## Plan
 
 Template: `tools/sdlc/src/item_engine/etc/PLAN.template.md`. `items plan check ID` validates structure and task dependencies.
 
 Task validation precedes final item QA/RESULT/SHOW/promotion, whose mandatory obligations belong in post-task item acceptance instead of task Done-when.
 
-1. Header contains Goal, Context, Design with Fit/Patterns/Context, and Out of scope.
+1. Header contains Goal, Context, Deliverables, Dependencies, Design with Fit/Patterns/Context, Out of scope, Safety, and Verification.
 2. BLK-NNNN blocks own disjoint work. Blocks have no cross-block dependencies.
 3. TSK-NNNN tasks carry depends_on, model hint, To do, and verifiable Done when. Dependencies reference earlier tasks within same block.
 4. Model hints are low, default, high. They select available Codex effort through coordinator. They are not foreign model identifiers.
 5. Each handoff contains full header and one task. Effective review decisions travel with every later handoff.
 6. Image plans include package ownership, backups, scripts, upgrades, conflicts, whole-tree restoration, rollback, locked tests, and hardware procedure.
-7. Planner asks load-bearing questions before drafting. Developer approves concrete checked draft. Approved PLAN.md stays immutable.
+7. Planner asks load-bearing questions before drafting and audits scope under [Scope and verification](#scope-and-verification). Developer approves concrete checked draft. Approved PLAN.md stays immutable.
 8. REVIEW.md holds actual later developer decisions. Each decision names Overrides and Decision. Autonomous findings belong in reworks and logs.
 9. Bounded engineering fixes within approved invariants continue. Changed customer behavior, scope, risk, safety, or hardware authority requires renewed developer decision.
 10. Replanning requires unscheduling unstarted work. Active review changes retain integration ownership. Preserve prior plans and evidence through ledger history.
@@ -150,7 +185,7 @@ Required handoff fields:
 
 1. Complete role instructions, including safety rules and role-specific duties.
 2. Item ID, chain/order when active, target branch, plan revision and explicit approval evidence.
-3. Complete approved Goal, Context, Design, Out of scope, Safety, and assigned task with every Done-when criterion.
+3. Complete approved header and assigned task with every Done-when criterion. Include available deliverable/test mapping, dependency boundaries, and acceptance stages.
 4. Effective `REVIEW.md` decisions with Overrides and Decision, or explicit statement that none exist.
 5. Absolute assigned worktree path, branch, base revision, file ownership, and allowed edits.
 6. Shared-worker warning, preservation of others' edits, current stage, and main-checkout bookkeeping path.
@@ -275,6 +310,9 @@ Recovery requires separately approved procedure and successful restoration proof
 2. Host-local `stack` lease serializes system QA. `maintree` serializes promotion. When both needed, acquire maintree before stack.
 3. Never steal or force another holder's lease. Check ownership before shared operations. Release ordinary leases on every exit.
 4. `gate unit` runs project automated unit tests. `gate style PATH...` checks changed Python paths. `gate system --holder ID` runs disposable automated system tests.
+   4.1. `gate unit` always includes `tests/sdlc` and `tests/toolchain`. Additional path arguments extend collection, not narrow it.
+   4.2. USE a pytest `-k` or marker selector for scoped task checks. Verify selected tests cover task criteria and relevant regressions.
+   4.3. RETAIN full required gates at final QA. A scoped task pass cannot substitute for their results.
 5. `gate all --holder ID` runs unit then system. Failed unit prevents system. Missing/failed system coverage cannot become a green result.
 6. Automated CLI system tests prove tooling behavior. Image acceptance additionally requires locked package restoration evidence and developer hardware result.
 7. `sdlc test` runs item-engine and retained SCR safety regressions. Tests use temporary repositories and simulated image operations.
@@ -294,7 +332,7 @@ Recovery requires separately approved procedure and successful restoration proof
 7. ***if*** member completes ***then*** SYNC, verify unchanged membership/order, recheck prerequisites, and continue automatically.
 8. ***if*** halt, safety failure, ownership conflict, failed command, or changed order ***then*** STOP chain and report current member/resume command.
 9. ***if*** chain completes ***then*** REPORT ready unfinished chains. Start no unrelated chain.
-10. Chain planning keeps complete outcomes together, assigns unique artifact ownership, reconciles existing records, and preserves every acceptance obligation.
+10. Chain planning defines bounded complete outcomes, assigns unique artifact ownership, reconciles existing records, and preserves every acceptance obligation.
 11. Authorized membership changes use LETS only. A partially applied batch requires fresh reads before dependent writes.
 
 ## Migration boundary

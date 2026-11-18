@@ -28,6 +28,8 @@ Review binds source tree and immutable INPUT digest. QA publishes separate RESUL
 Artifact-bearing review requires `--expected-artifacts DIGEST` on verified, approve, settle, prepare-promotion, and promote. Never downgrade missing artifact index to source-only.
 
 1. READ project instructions, relevant design, similar code, and related items. Separate facts, assumptions, constraints, acceptance, exclusions, and questions.
+   1.1. APPLY [Scope and verification](../../../docs/SDLC-DEVELOPER-GUIDE.md#scope-and-verification). Identify bounded deliverables and existing dependency interfaces before proposing acceptance.
+   1.2. KEEP inferred improvements separate from customer requirements. Dependency use alone never adds implementation or qualification scope.
 2. RUN `./bin/lets sdlc mark - new`.
 3. NORMALIZE kind (`task`, `improve`, `refactor`, `fix`), uppercase domain-first DESC, description, tags, and explicit dependencies.
 4. SHOW concrete proposed record. Reuse existing mint authorization. Ask only when authorization or essential intent is missing.

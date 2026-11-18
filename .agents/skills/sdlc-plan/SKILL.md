@@ -31,10 +31,14 @@ Artifact-bearing review requires `--expected-artifacts DIGEST` on verified, appr
 2. ***if*** item is neither BACKLOG nor PLANNED ***then*** STOP. Unschedule before replanning. Retain active review ownership.
 3. RUN `./bin/lets sdlc mark ID plan` and `./bin/lets sdlc items plan edit ID`.
 4. LAUNCH `sdlc_planner` with item, draft path, existing code, design, and image-analysis evidence. Planner edits only draft.
+   4.1. REQUIRE [Scope and verification](../../../docs/SDLC-DEVELOPER-GUIDE.md#scope-and-verification) audit of deliverables, dependency ownership, design necessity, tests, and acceptance stages.
 5. ***while*** planner reports STALE, UNSURE, contradictions, or load-bearing questions:
    5.1. ASK developer focused questions before drafting. Reuse same planner for answers and feedback.
 6. RUN `./bin/lets sdlc items plan check ID`.
+   6.1. REVIEW planner's coverage and necessity findings. Structural success alone does not prove focused scope or relevant tests.
+   6.2. RESOLVE unsupported tasks, dependency qualification, and tests before approval. Preserve required safety and repository gates separately.
 7. SHOW Goal, Context, Design, and Out of scope verbatim. Summarize blocks and tasks with IDs, dependencies, and model hints. Name draft path.
+   7.1. SHOW deliverables, dependency assumptions, test-to-criterion mapping, mandatory gates, and acceptance stages within same approval request.
 8. WAIT for explicit plan approval, changes, or stop. Never infer approval from silence or chain agreement.
 9. ***if*** approved ***then*** RUN `./bin/lets sdlc items plan approve ID`.
 10. RUN `./bin/lets sdlc mark ID end`.

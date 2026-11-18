@@ -29,6 +29,7 @@ Artifact-bearing review requires `--expected-artifacts DIGEST` on verified, appr
 
 1. RUN `./bin/lets sdlc sync`. Select explicit ID, next ready scheduled item, or sole PLANNED item. Ask only for ambiguous selection.
 2. READ item and available `worktree context ID --json`.
+   2.1. APPLY [Scope and verification](../../../docs/SDLC-DEVELOPER-GUIDE.md#scope-and-verification) to approved criteria and effective review decisions. Existing plans need no retroactive rewrite.
 3. ***if*** active review context exists ***then*** APPLY `$sdlc-review ID`, regardless of item status.
 4. ***if*** PLANNED ***then*** RUN `items schedule ID`. Run request authorizes scheduling.
 5. ***if*** SCHEDULED ***then*** RUN `items status set ID IN_PROGRESS`. Never force another host's claim or bypass dependencies.
@@ -37,8 +38,10 @@ Artifact-bearing review requires `--expected-artifacts DIGEST` on verified, appr
    6.2. ***for each*** unfinished task in dependency order:
       6.2.1. MARK task IN_PROGRESS.
       6.2.2. LAUNCH `sdlc_implementation` with complete `items task show ID TSK` handoff, block path, ownership, and findings.
+         6.2.2.1. IDENTIFY assigned deliverables, dependency boundaries, applicable task checks, and later acceptance obligations from existing plan.
       6.2.3. COMMIT only assigned block changes under authorized SDLC execution. Preserve unrelated main edits.
    6.3. LAUNCH `sdlc_validation` against block and diff base. PASS marks tasks VALIDATED. FAIL records `items task rework ID TSK --stage validate --reason TEXT` and returns findings to engineer.
+      6.3.1. REQUIRE blocking findings to cite approved criterion, concrete regression, unmet prerequisite, or mandatory rule. Unrelated improvements remain observations.
 7. CREATE integration with `worktree add ID integration`. LAUNCH `sdlc_integration` in assemble mode for validated blocks, sequentially.
 8. RUN `worktree present ID`, then `worktree snapshot ID --json`.
 9. SET TESTING. LAUNCH `sdlc_qa` against detached snapshot, all criteria, package hashes, and restoration evidence.

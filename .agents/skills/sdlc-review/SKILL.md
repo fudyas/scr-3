@@ -36,6 +36,8 @@ Artifact-bearing review requires `--expected-artifacts DIGEST` on verified, appr
    5.2. RECORD affected task reworks and set IN_PROGRESS. Autonomous QA findings belong in reworks and logs, never invented user decisions.
    5.3. LAUNCH `sdlc_implementation` for requested fixes in integration only. Preserve existing edits. Leave review fixes unstaged and uncommitted.
 6. RUN `worktree snapshot ID --json`. Pass detached source path, source tree, INPUT digest, and immutable artifact path to validator and QA.
+   6.1. APPLY [Scope and verification](../../../docs/SDLC-DEVELOPER-GUIDE.md#scope-and-verification) to effective approved scope and current acceptance stage.
+   6.2. CLASSIFY findings before rework. Dependency failures do not authorize dependency repairs. Unrelated improvements do not become acceptance criteria.
 7. ***if*** any gate or criterion fails ***then*** RECORD evidence and continue authorized fixes in integration. Never record verification for failed or unchecked criteria.
 8. RECORD `worktree verified ID --expected-tree TREE --expected-artifacts DIGEST`, then set REVIEW. Concurrent edits require fresh snapshot and verification.
 9. SHOW source tree, INPUT digest/path, RESULT digest/path, target, full diff, package hashes, tests, rollback, and hardware obligations. WAIT for explicit approval of that exact tree.

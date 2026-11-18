@@ -10,9 +10,9 @@ description: >-
 
 # SDLC chain planning
 
-One item closes one coherent functionality, data, or effort area within the agreed release scope.
+One item delivers one bounded, useful outcome within agreed release scope.
 Later items consume its result. They do not finish its completion claim.
-Prefer the fewest complete items that remain practical to review and verify.
+Choose item boundaries by usefulness, reviewability, and independent acceptance. Item count alone does not determine boundaries.
 
 The user often develops the chain through an ongoing conversation.
 Stay in that conversation. Do not require a new intake, a complete specification, or an existing chain ID.
@@ -20,6 +20,7 @@ Use `$sdlc-chain-plan` or `/sdlc-chain-plan`.
 
 The [SDLC guide](../../../docs/SDLC-DEVELOPER-GUIDE.md) owns statuses, ledger operations, plans, approvals, and execution.
 The [agent platform contract](../../../docs/SDLC-DEVELOPER-GUIDE.md#run-and-independent-roles) defines Codex roles and independent handoffs.
+The [scope contract](../../../docs/SDLC-DEVELOPER-GUIDE.md#scope-and-verification) bounds deliverables, dependency ownership, and verification.
 
 READ [Codex role dispatch](../../../docs/SDLC-DEVELOPER-GUIDE.md#codex-role-dispatch) before each worker launch.
 This skill explicitly authorizes configured model and mapped effort overrides for fresh independent SDLC workers.
@@ -77,9 +78,9 @@ After resumption, refresh ledger state instead of inferring item status from the
 | # | Criterion | Required result |
 | --- | --- | --- |
 | 1 | Completion | One concrete outcome and observable evidence establish completion within the declared scope. |
-| 2 | Cohesion | Work that shares invariants, a data lifecycle, or repeated joint decisions stays together. |
+| 2 | Cohesion | Keep work together when splitting breaks promised behavior or leaves unusable intermediate delivery. Shared infrastructure alone does not justify consolidation. |
 | 3 | Ownership | Each required artifact and contract change has one owning item. Consumers reference that owner. |
-| 4 | Coverage | Scope includes the required models, schemas, migrations, SQL, repositories, assets, interfaces, tests, and documentation. Only applicable parts belong. |
+| 4 | Coverage | Include only artifacts and tests required by declared deliverables or mandatory gates. Existing dependencies retain ownership of their internals. |
 | 5 | Verification | After its prerequisites complete, the item can prove its own outcome without a later item. |
 | 6 | Decisions | Decisions that determine behavior or data shape precede dependent implementation boundaries. Implementation choices remain in item planning. |
 | 7 | Consumers | Shared changes include necessary updates to existing consumers and removal of replaced implementations. |
@@ -97,16 +98,16 @@ It does not need to deliver every future consumer.
 Unsettled semantics and unused speculative abstractions do not establish a complete foundation.
 Substantial design work can have its own item. Do not mint detailed downstream scope around unresolved product choices.
 
-### Split exception
+### Split boundaries
 
-A split needs both a concrete size problem and a valid completion boundary.
-Size problems include excessive review context, costly verification, difficult rollback, or too many independent decisions for reliable planning.
+A split needs independently useful outcomes and valid completion boundaries.
+Separate acceptance, review context, rollback, or independent product decisions can justify separate items.
 File count, task count, service count, and one-session duration alone do not justify a split.
 Use tasks and blocks for internal decomposition under the SDLC contract.
 
 Each proposed child must have its own completion claim, acceptance evidence, and stable contract with the other children.
 Each intermediate promotion must leave a valid state within its declared scope.
-Record why internal tasks cannot adequately manage the size problem and how the split reduces it.
+Record each outcome's ownership, consumed interfaces, and acceptance boundary. Shared dependencies do not require owning or qualifying their implementation.
 Do not split solely by architecture layer, document section, or opportunities for parallel execution.
 Choose complete item boundaries before grouping and scheduling chains.
 
