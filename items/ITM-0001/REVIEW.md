@@ -34,3 +34,57 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 6. **Clarification:** Developer: "Retain API, the scope of the item is the same - 1+2 of RAOM". Functional scope, decision-only behavior, explicit threshold/window, and exits 0/1/2 remain.
 7. **Boundary:** D-01 and D-03 remain effective. No compiler/toolchain or broad OS qualification in replacement. Original `var/` files remain intact. New plan and package need their own acceptance.
 8. **Cleanup:** Rejected ITM-0001 worktrees/branches removed. Main cleanup commit removes old kernel source and requested documentation. Fresh empty integration supersedes previous verified context through public tooling. Historical ledger/artifacts remain rejected history.
+
+## D-05 — Match LETS tool layout and module size
+
+1. **Overrides:** Current source refactor's direct-execution guard in `tool.sh`, separate `arguments.sh` and `command.sh`, overly narrow module split, and source-loading ownership.
+2. **Decision:** Developer: "tool.sh can never run directly, remove [ \"${BASH_SOURCE[0]}\" != \"$0\" ] || main \"$@\"". Keep sourced tool files from invoking `main` automatically.
+3. **Decision:** Developer: "the src-reset-monitor entry point must load all the lib/ like lets.sh does and all the src/, tools.sh uses them directly without sourcing". Make the central entry point load shared libraries and tool modules before command dispatch. The command layer uses loaded functions.
+4. **Decision:** Developer: "arguments.sh - move into tools.sh see how arguments and usage are handled by LETS tools and copy this behavior" and "command.sh - should be handled in tools.sh not a standalone module". Developer clarification: "I meant tool.sh not tools.sh". Keep argument parsing, usage, and command dispatch in sourced `tool.sh`, following LETS tool conventions.
+5. **Decision:** Developer: "make simple file names, merge similar together, e.g.: clock-health.sh -> clock.sh, don't be too granular on modules and functions". Group related helpers in cohesive modules with short names.
+6. **Process:** Developer: "Ask me where in doubt. See LETS - it's the best reference for simple modular bash scripting." Use LETS patterns as reference and ask when layout intent remains unclear.
+7. **Standing guidance:** Apply these layout rules to upcoming Bash tool implementations. Preserve simple implementations, documented functions, and useful in-code comments.
+
+## D-06 — Consolidate Bash modules and load them from entry points
+
+1. **Overrides:** Current `lets_info` and `lets_usage` names, separate storage/files/history modules, separate clock/window modules, and `src/tools/resets-monitor/src/runtime.sh` loader.
+2. **Decision:** Developer: "replace lets_XXX with scr_XXX in functions names". Rename tool metadata functions to `scr_info` and `scr_usage`.
+3. **Decision:** Developer: "leave one empty row between blocks of statements that go together". Separate statement blocks with one blank line.
+4. **Decision:** Developer: "starge+files+history - belong in one file - history.sh". Merge storage, file, and history functions in `history.sh`.
+5. **Decision:** Developer: "remove: src/tools/resets-monitor/src/runtime.sh". Remove the loader module. Central and installed entry points source the required runtime modules before `tool.sh`.
+6. **Decision:** Developer: "clock and windows should go into a single file - time calculations". Merge clock and reset-window functions in `time.sh`.
+7. **Context:** Developer asked: "src/tools/resets-monitor/src/scr-resets-monitor - why needed ?" This file is the package's installed `/usr/sbin/scr-resets-monitor` entry point. It loads installed runtime modules and `tool.sh`; the central source-tree entry cannot replace it because that entry depends on project configuration and shared development libraries.
+8. **Standing guidance:** Apply these module, naming, and spacing rules to upcoming Bash tool implementations.
+
+## D-07 — Apply reviewed code simplifications
+
+1. **Overrides:** Retain unused `scr_info` and `scr_usage` metadata wrappers; repeat runtime module filenames in source, installed, and test entry points; duplicate package payload paths in `FILES` and `PAYLOAD_FILES`; and keep commit operations in standalone `commit.sh`.
+2. **Decision:** Developer: "Apply the above improvements". Remove unused `scr_info` and `scr_usage` functions. Keep `show_usage` as command help.
+3. **Decision:** Place runtime modules under `src/tools/resets-monitor/src/runtime/`. Have source, installed, and test entry points load runtime `*.sh` files from that directory.
+4. **Decision:** Define `PAYLOAD_FILES` once. Derive `FILES` by adding the managed startup link, runtime data, markers, and lock paths.
+5. **Decision:** Move journal/cache commit functions into `history.sh` and observation orchestration into `record.sh`. Remove `commit.sh`.
+6. **Boundary:** Preserve runtime behavior, API, package ownership, upgrade/rollback, and restoration evidence. No package promotion or target operation is authorized by this refactor.
+
+## D-08 — Use one source and installed command entry point
+
+1. **Overrides:** Separate source-tree `src/bin/src-resets-monitor` and installed `src/tools/resets-monitor/src/scr-resets-monitor` command entry points.
+2. **Decision:** Developer asked: "The tools.sh needs to be called from src/bin/src-resets-monitor, why src/tools/resets-monitor/src/scr-resets-monitor is needed ?" Use `src/bin/src-resets-monitor` as the single command entry point for source-tree use and installed `/usr/sbin/scr-resets-monitor` use.
+3. **Implementation:** Make the entry point load shared project libraries and `src/tools/resets-monitor/src/runtime/*.sh` in the source tree. In the installed package, load modules from `../lib/scr-resets-monitor/runtime/` and `tool.sh` from the installed library directory.
+4. **Decision:** Remove `src/tools/resets-monitor/src/scr-resets-monitor`. Map the central entry point to the package's `/usr/sbin/scr-resets-monitor` path.
+5. **Boundary:** Keep the same runtime API, package paths, behavior, ownership, upgrade, and restoration criteria. Do not promote or perform target/hardware operations.
+
+## D-09 — Install the complete source subtree under `/usr/local/scr`
+
+1. **Overrides:** D-08's `/usr/sbin` command path and separate installed runtime/module layout.
+2. **Decision:** Developer: "The debian package needs to install under /usr/local/scr the subtree of the repo starting under src/ + install /usr/bin/ links into this location".
+3. **Implementation:** Copy the complete repository `src/` subtree to `/usr/local/scr/`, preserving paths. Install `/usr/bin/scr-resets-monitor` as a symlink to `/usr/local/scr/bin/src-resets-monitor`.
+4. **Integration:** Keep the existing `scr-resets-monitor` API. Update SysV, logrotate, monit examples, tests, and documentation to use the new paths. Remove the redundant installed wrapper.
+5. **Boundary:** Retain package ownership, original-file backup, upgrade, rollback, and full restoration checks. This decision does not authorize package promotion or target/hardware operations.
+
+## D-10 — Remove source-image acceptance checks
+
+1. **Overrides:** Plan r5 Verification 11–12, Mandatory gates 3–4, and Post-task item acceptance 4, to the extent they require checks against `var/image_8.26.0` or another source image.
+2. **Decision:** Developer: "Remove the var/image_8.26.0 checks, promote the item now" and "Remove the var/image_8.26.0 checks, promote the item now".
+3. **Scope:** Do not run or require source-image install, runtime, restoration, or cleanup checks for this item. Preserve all files and metadata under `var/`.
+4. **Boundary:** Keep exact-package target testing and hardware confirmation requirements. Use the real target after exact SHOW approval. This decision does not authorize reboot, reset, power loss, or firmware/watchdog changes.
+5. **Boundary:** Keep repository gates, focused Bash checks, native package lifecycle checks, package hash binding, exact-revision SHOW, and promotion checks.
