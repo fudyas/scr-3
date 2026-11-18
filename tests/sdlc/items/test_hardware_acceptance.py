@@ -1,8 +1,10 @@
+import hashlib
 from pathlib import Path
 from typing import Callable
 
 import pytest
 
+from sdlc.models.artifact import ArtifactBinding
 from sdlc.models.errors import InvalidTransitionError, SdlcError
 from sdlc.models.item import ItemStatus, TaskStatus
 from sdlc.usecases.hardware_usecases import HardwareUsecases
@@ -32,6 +34,7 @@ class HardwareFixtureHelper:
         host.plan_usecases.set_task_status(item_id, TaskStatus.IN_PROGRESS, ["all"])
         host.plan_usecases.set_task_status(item_id, TaskStatus.VALIDATED, ["all"])
         built = WorktreeGitHelper.built_integration(host)
+        WorktreeGitHelper.commit_file(built.path, ".gitignore", "/.lets\n/.codex/worktrees\n/var\n/build\n")
         WorktreeGitHelper.commit_file(built.path, "package.deb", "simulated package bytes\n")
         host.worktree_usecases.present(item_id, None)
         tree = WorktreeGitHelper.approve_snapshot(host)
@@ -86,3 +89,41 @@ class TestHardwareAcceptance:
         restarted = host.item_usecases.set_status("ITM-0001", ItemStatus.IN_PROGRESS, False)
         assert restarted.hardware.result is None
         assert any("RS485 response missing" in entry.detail for entry in restarted.history)
+
+    def test_ignored_build_package_matches_approved_input_artifact(
+            self, make_host: Callable[[str], AppWiring], plan_text: str, tmp_path: Path,
+            monkeypatch: pytest.MonkeyPatch) -> None:
+        """Accepts an ignored package when its bytes match approved INPUT evidence."""
+        host = make_host("alpha")
+        committed_package = HardwareFixtureHelper.prepare(host, plan_text)
+        package_bytes = committed_package.read_bytes()
+        build_package = committed_package.parent / "build" / committed_package.name
+        build_package.parent.mkdir()
+        build_package.write_bytes(package_bytes)
+
+        context = host.worktree_usecases.context("ITM-0001")
+        input_path = tmp_path / "input"
+        evidence_package = input_path / "items" / "ITM-0001" / committed_package.name
+        evidence_package.parent.mkdir(parents=True)
+        evidence_package.write_bytes(package_bytes)
+        digest = "a" * 64
+        binding = ArtifactBinding(
+            item_id="ITM-0001", purpose="INPUT", stage="implementation", digest=digest,
+            ledger_path=f"artifacts/bundles/{digest}.json", snapshot_path=input_path,
+            source_tree=context.approved_tree,
+        )
+        monkeypatch.setattr(
+            host.worktree_usecases, "context",
+            lambda _: context.model_copy(update={"snapshot_artifacts": binding,
+                                                   "approved_artifacts": digest}),
+        )
+        monkeypatch.setattr(host.artifact_usecases, "verify_review", lambda *_: None)
+        notes = tmp_path / "developer.txt"
+        notes.write_text("Developer confirmed acceptance of the exact package.")
+
+        accepted = HardwareUsecases(host).record(
+            "pass", "ITM-0001", str(build_package), "SCR-1 baseline", str(notes), True,
+        )
+
+        assert accepted.hardware.result == "pass"
+        assert accepted.hardware.package_sha256 == hashlib.sha256(package_bytes).hexdigest()

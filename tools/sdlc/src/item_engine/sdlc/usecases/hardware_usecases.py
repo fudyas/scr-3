@@ -4,7 +4,7 @@ from typing import Dict, Optional, TYPE_CHECKING
 
 from sdlc.algorithms.timestamps import TimestampHelper
 from sdlc.datasources.git_command import GitCommandRunner
-from sdlc.models.errors import SdlcError
+from sdlc.models.errors import GitCommandError, SdlcError
 from sdlc.models.item import HardwareAcceptance, Item, ItemStatus
 from sdlc.models.record import HistoryEntry
 
@@ -62,12 +62,30 @@ class HardwareUsecases:
             if not package.is_relative_to(context.worktree.resolve()):
                 raise SdlcError("--deb must belong to the retained integration worktree")
             relative = package.relative_to(context.worktree.resolve()).as_posix()
-            delivered = GitCommandRunner(self._wiring.settings.main_root).run_binary(
-                ["show", f"{context.promotion_commit}:{relative}"], b""
-            )
             with package.open("rb") as package_file:
                 package_hash = hashlib.file_digest(package_file, "sha256").hexdigest()
-            if hashlib.sha256(delivered).hexdigest() != package_hash:
+
+            # Binds committed packages to the promotion and ignored build outputs to approved INPUT bytes
+            try:
+                delivered = GitCommandRunner(self._wiring.settings.main_root).run_binary(
+                    ["show", f"{context.promotion_commit}:{relative}"], b""
+                )
+                delivered_hash = hashlib.sha256(delivered).hexdigest()
+            except GitCommandError:
+                binding = context.snapshot_artifacts
+                if binding is None or binding.digest != context.approved_artifacts:
+                    raise SdlcError("hardware package has no approved artifact binding")
+                self._wiring.artifact_usecases.verify_review(short_id, context.approved_tree, binding)
+                artifact_root = Path(binding.snapshot_path)
+                matching_artifacts = [
+                    path for path in artifact_root.rglob(package.name)
+                    if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == package_hash
+                ]
+                if len(matching_artifacts) != 1:
+                    raise SdlcError("hardware package differs from the approved INPUT artifacts")
+                delivered_hash = package_hash
+
+            if delivered_hash != package_hash:
                 raise SdlcError("hardware package differs from the approved promoted artifact")
             values = HardwareAcceptance(
                 required=True, result=action, package_sha256=package_hash,
