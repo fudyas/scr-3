@@ -1,0 +1,29 @@
+SEMA - Smart Embedded Management Agent
+(c)2009-2014 LiPPERT ADLINK Technology GmbH, Germany
+
+Client Version:   2.5 R4
+Library Version:  2.5 R4
+
+Capabilities: 0x38ebf
+Uptime counter:1
+Restart event: 1
+Boot counter:  1
+BMC Typ:       0
+Board version:    BMC LEC-iMX6 0v13 Jun 25 2015 (c) ADLINK Technology Inc.
+Hw revision:      59-72501-0220Y
+Serial number:    25A1100MLC
+Manufacture date: 2025-10-14
+MAC Id:           0030647CCC91
+Bootloader:       bl_LiMX6 3v2 Aug  5 2014
+Firmware:         BMC LEC-iMX6 0v13 Jun 25 2015
+BMC Status:       0x1D
+Power cycles:     51
+Boot count:       147
+Total uptime:     78126 minutes (54d 6h 6m)
+Power uptime:     9815 seconds (0d 2h 43m 35s)
+Restart event:    Watchdog
+MPwr Current:     353
+Board temp:       37
+Board temp log:   min:-22 max:52
+Startup temp:     Board:22
+Exception code:   0x00
