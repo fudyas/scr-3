@@ -81,7 +81,10 @@ function build_candidate() {
     local stage="$EVIDENCE/candidate-$1-${2:-normal}"
     dpkg-deb --raw-extract "$DEB" "$stage" || abort 'candidate extraction'
     sed -i "s/^Version: .*/Version: $1/" "$stage/DEBIAN/control"
-    if [ -n "${2:-}" ]; then
+    if [ "${2:-}" = preinst ]; then
+        # Fail only after the shipped preinst actually added/reused diversions.
+        printf '\nprintf "injected failure after package preinst\\n" >&2\nexit 23\n' >>"$stage/DEBIAN/preinst"
+    elif [ -n "${2:-}" ]; then
         printf '#!/bin/bash\nexit 23\n' >"$stage/DEBIAN/$2"
         chmod 0755 "$stage/DEBIAN/$2"
     fi
@@ -92,7 +95,7 @@ function build_candidate() {
 # Verifies normal package transitions and client data preservation through dpkg.
 # Arguments: none. Returns: 0 or aborts. Output: lifecycle evidence.
 function check_lifecycle() {
-    local config history status
+    local config history status diversions
     prepare_root lifecycle
     package_dpkg --install "$DEB" || abort 'install'
     check_installed
@@ -106,9 +109,11 @@ function check_lifecycle() {
     package_dpkg --install "$DEB" || abort 'reconfigure via reinstall'
     build_candidate 1.1.1
     package_dpkg --install "$CANDIDATE" || abort 'upgrade'
+    diversions=$(dpkg-divert --root "$TEST_ROOT" --list | sort)
     build_candidate 1.1.2 preinst
     status=0; package_dpkg --install "$CANDIDATE" || status=$?
     [ "$status" -ne 0 ] || abort 'failing preinst accepted'
+    [ "$diversions" = "$(dpkg-divert --root "$TEST_ROOT" --list | sort)" ] || abort 'aborted 1.1 upgrade changed existing diversions'
     check_installed
     build_candidate 1.1.3 postinst
     status=0; package_dpkg --install "$CANDIDATE" || status=$?
@@ -128,7 +133,7 @@ function check_lifecycle() {
 # Checks actual immutable 1.0.6/1.0.7 archives and their migration/rollback boundary.
 # Arguments: none. Returns: 0 or aborts. Output: legacy package hashes and results.
 function check_legacy() {
-    local version archive expected actual baseline history config
+    local version archive expected actual baseline history config status
     for version in 1.0.6 1.0.7; do
         archive="/home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0001/implementation/package-lifecycle-20261118-r1/scr-resets-monitor_${version}_all.deb"
         case "$version" in
@@ -142,6 +147,14 @@ function check_legacy() {
         printf 'legacy history fixture\n' >"$TEST_ROOT/var/log/scr/resets.jsonl"
         history=$(sha256sum "$TEST_ROOT/var/log/scr/resets.jsonl")
         baseline=$(sha256sum "$TEST_ROOT/var/lib/scr-resets-monitor/originals.tar")
+        build_candidate "1.1.4-legacy-$version" preinst
+        status=0; package_dpkg --install "$CANDIDATE" || status=$?
+        [ "$status" -ne 0 ] || abort 'legacy upgrade injected failure accepted'
+        check_restored
+        [ "$(dpkg-query --admindir="$TEST_ROOT/var/lib/dpkg" -W -f='${Version} ${Status}' scr-resets-monitor)" = "$version install ok installed" ] || abort 'aborted upgrade lost installed legacy status'
+        [ "$baseline" = "$(sha256sum "$TEST_ROOT/var/lib/scr-resets-monitor/originals.tar")" ] || abort 'aborted upgrade changed legacy backup'
+        [ "$history" = "$(sha256sum "$TEST_ROOT/var/log/scr/resets.jsonl")" ] || abort 'aborted upgrade lost legacy history'
+        printf 'PASS actual %s aborted upgrade after shipped preinst restores native originals/diversions/history\n' "$version"
         package_dpkg --install "$DEB" || abort 'legacy upgrade'
         check_installed
         printf '\n# retained legacy rollback client choice\n' >>"$TEST_ROOT/etc/default/scr-raom"

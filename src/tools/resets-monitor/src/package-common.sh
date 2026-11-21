@@ -130,10 +130,15 @@ function package_main() {
     postrm:remove|postrm:purge|postrm:abort-install)
         remove_diversions
         ;;
-    postrm:upgrade)
+    postrm:abort-upgrade)
+        # Legacy versions had no diversions. A failed preinst has not unpacked
+        # replacements, so undo the diversions introduced by this upgrade only.
+        # An aborted 1.1 upgrade must retain the installed version's diversions.
         case "$version" in 1.0.6|1.0.7) remove_diversions ;; esac
         ;;
-    prerm:*|postrm:failed-upgrade|postrm:abort-upgrade) : ;;
+    # Legacy rollback requires remove, then install; postrm upgrade runs before
+    # obsolete replacement files disappear and cannot restore native originals.
+    prerm:*|postrm:failed-upgrade|postrm:upgrade) : ;;
     *) abort "unsupported callback: $phase $action" ;;
     esac
 }
