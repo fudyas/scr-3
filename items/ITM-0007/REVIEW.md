@@ -30,3 +30,14 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 3. **Scope:** Built-in safe-mode-on-error defaults to true before configuration access. Configuration-read failure selects safe mode.
 4. **Scope:** Client defines safe-mode MONIT service contents. This item owns profile selection and integration, not deployment or qualification of client service inventory. Cloudflare excluded entirely.
 5. **Boundary:** Startup remains subject to MONIT and selected profile availability. Report failed launch accurately. Existing watchdog continuity during boot gate remains integration safety requirement.
+
+## D-04 — Build and verify through Debian packages
+
+1. **Overrides:** TSK-0003 private-payload copying and manual metadata restoration/test machinery, and corresponding Safety/Verification requirements that duplicate dpkg responsibilities. Approved RAOM behavior remains unchanged.
+2. **Decision:** Developer: "Why don't you build and test via deb package ? Why make custom copies and then try to overcome the issues this  create ? Revert back, test through deb. Remove all unnecessary \"manual\" non-dpkg tests".
+3. **Scope:** Build a real Debian archive. Test installation, upgrade, downgrade, removal, and purge through dpkg. Remove custom-copy test paths, tar fingerprint comparisons, access-time equality gates, and unnecessary manual lifecycle simulations.
+4. **Implementation:** Use dpkg-managed installed paths and standard Debian configuration, ownership, and diversion mechanisms where required. Remove the generic private-payload copying and backup engine from new delivery. Keep only necessary project-specific migration and service integration callbacks.
+5. **Scope:** Preserve focused RAOM decision tests and actual installed behavior tests. Verify project-specific integration, configuration preservation, history preservation, and rollback outcomes through installed packages. Do not requalify dpkg metadata behavior.
+6. **Boundary:** Preserve historical packages, reports, failed evidence, source images, and kernel files. Retired metadata failures remain historical evidence, not current acceptance gates. Original hardware-image preservation remains required.
+7. **Boundary:** Standard dpkg conflicts remain errors. Do not invent SCR ownership claims or repair global package inventory. The earlier manual nine-path ownership-adoption proposal is superseded by the Debian-native approach, not silently approved.
+8. **Boundary:** No target installation, service action, reboot, promotion, or hardware success follows from this decision. Independent validation, required repository gates, exact-revision SHOW, and separate hardware confirmation remain required.
