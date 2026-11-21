@@ -576,13 +576,22 @@ class SdlcPackageHelper(ABC):
                 SdlcRuntimeHelper.atomic_json(dirty, journal)
                 raise SDLCError(f"initial image fingerprint failed and was quarantined: {exc}") from exc
             install_attempted = False
+            archive_created = False
+            native_archive = root / f".sdlc-{journal['run']}.deb"
             primary_error: Optional[Exception] = None
             cleanup_error: Optional[Exception] = None
             try:
                 journal["phase"] = "installing"
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
+                install_command = SdlcPackageHelper.package_install_command(root, deb)
+                # Uses the image's dpkg and account database for Debian-native verification
+                if rollback_command:
+                    with deb.open("rb") as source, native_archive.open("xb") as destination:
+                        archive_created = True
+                        shutil.copyfileobj(source, destination)
+                    install_command = ["chroot", str(root), "/usr/bin/dpkg", "-i", f"/{native_archive.name}"]
                 install_attempted = True
-                SdlcRuntimeHelper.run(SdlcPackageHelper.package_install_command(root, deb), capture=False)
+                SdlcRuntimeHelper.run(install_command, capture=False)
                 journal["phase"] = "testing"
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
                 if args.test_command:
@@ -594,10 +603,17 @@ class SdlcPackageHelper(ABC):
                 journal["phase"] = "uninstalling"
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
                 if install_attempted:
-                    removed = SdlcRuntimeHelper.run(["dpkg", f"--root={root}", f"--admindir={root / 'var/lib/dpkg'}", "-r", name],
-                                  check=False, capture=False)
+                    remove_command = (["chroot", str(root), "/usr/bin/dpkg", "-r", name] if rollback_command else
+                                      ["dpkg", f"--root={root}", f"--admindir={root / 'var/lib/dpkg'}", "-r", name])
+                    removed = SdlcRuntimeHelper.run(remove_command, check=False, capture=False)
                     if removed.returncode:
                         cleanup_error = SDLCError(f"dpkg removal failed with exit code {removed.returncode}")
+                # Removes only the temporary archive created by this verification run
+                if archive_created:
+                    try:
+                        native_archive.unlink()
+                    except OSError as exc:
+                        cleanup_error = exc
             journal["phase"] = "verifying-clean"
             SdlcRuntimeHelper.atomic_json(journal_path, journal)
             # Requires restoration proof even after functional installation or test failure

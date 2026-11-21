@@ -138,10 +138,14 @@ class TestSdlc:
                 SDLCError: The selected checked command fails.
             """
             # Maps only the expected package and project assertion operations
-            operation = command[-1] if command[0] == "chroot" else command[0]
-            if operation == "dpkg":
-                assert command == ["dpkg", f"--root={root}", f"--admindir={root / 'var/lib/dpkg'}", "-r", "scr-example"]
-                operation = "remove"
+            assert command[:2] == ["chroot", str(root)]
+            operation = command[-1]
+            if command[2] == "/usr/bin/dpkg":
+                operation = "install" if command[3] == "-i" else "remove"
+                if operation == "install":
+                    assert (root / command[4].lstrip("/")).read_bytes() == b"test"
+                else:
+                    assert command[3:] == ["-r", "scr-example"]
             commands.append(operation)
             if operation == failure and kwargs.get("check", True):
                 raise sdlc.SDLCError(f"{operation} failed")
@@ -158,6 +162,7 @@ class TestSdlc:
             sdlc.SdlcPackageHelper.cmd_verify_package(ctx, args)
         expected = ["install"] + ([] if failure == "install" else ["installed"]) + ["remove", "rollback"]
         assert commands == expected
+        assert not list(root.glob(".sdlc-*.deb"))
         assert (ctx.lock_root / "quarantine/image-dirty.json").exists() == (failure in {"remove", "rollback"})
 
     @staticmethod
