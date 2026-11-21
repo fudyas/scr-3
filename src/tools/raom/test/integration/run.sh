@@ -22,7 +22,7 @@ function expect() {
 # Arguments: $1 - window seconds; $2 - error-policy boolean. Returns: write status.
 # Output: complete /etc/default/scr-raom fixture configuration; no stdout.
 function configure() {
-    printf 'N=5\nM=%s\nK=2\nSAFE_MODE_ON_ERROR=%s\nSAFE_PROFILE=/etc/monit/raom/safe.monitrc\nNORMAL_PROFILE=/etc/monit/monitrc\n' \
+    printf 'MAX_RESETS=5\nRESET_WINDOW_SECONDS=%s\nNTP_SYNC_TIMEOUT_SECONDS=2\nSAFE_MODE_ON_ERROR=%s\nSAFE_PROFILE=/etc/monit/raom/safe.monitrc\nNORMAL_PROFILE=/etc/monit/monitrc\n' \
         "$1" "$2" >/etc/default/scr-raom
 }
 
@@ -109,6 +109,9 @@ function main() {
     [ ! -e /run/monit.pid ] || fail 'unexpected daemon PID file'
     dpkg-query -S /usr/bin/scr-raom /usr/local/scr/bin/src-raom /usr/bin/scr-resets-monitor /usr/local/scr/bin/src-resets-monitor
     sha256sum /usr/local/scr/bin/src-raom /usr/local/scr/bin/src-resets-monitor /etc/monit/raom/safe.monitrc
+    # Run the installed lifecycle tests without privilege inside this PID namespace.
+    STARTPAR_TEST_BINARY=/opt/scr-raom-integration/startpar setpriv --reuid=nobody --regid=nogroup --clear-groups \
+        bash /usr/local/scr/tools/raom/test/check-boot.sh || fail 'installed watchdog and boot lifecycle'
     printf 'PASS V9 installed actual selector/reset CLI; fixture SEMA/NTP; no daemons/hardware\n'
 }
 

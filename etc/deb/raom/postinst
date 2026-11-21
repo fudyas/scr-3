@@ -1,3 +1,4 @@
 #!/bin/bash
+
 # dpkg integration callback; never activates services.
-package_main prerm "$@"
+package_main postinst "$@"

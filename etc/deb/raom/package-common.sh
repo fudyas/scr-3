@@ -1,6 +1,6 @@
 # Project integration only. dpkg owns and installs all operational files.
-PKG=scr-resets-monitor
-COMPAT_PATHS=(/etc/init.d/monit /etc/monitrc /sbin/monitstate.sh /etc/rc.local
+PKG=scr-raom
+COMPAT_PATHS=(/etc/init.d/monit /etc/init.d/watchdog /etc/monitrc /sbin/monitstate.sh /etc/rc.local
     /etc/rc2.d/S03monit /etc/rc3.d/S03monit /etc/rc4.d/S03monit /etc/rc5.d/S03monit
     /etc/rcS.d/S17scr-resets-monitor)
 
@@ -43,6 +43,9 @@ function check_diversions() {
             [ "$(divert --truename "$path")" = "$destination" ] || abort "unexpected diversion: $path"
         else
             [ ! -L "$ROOT$destination" ] && [ ! -e "$ROOT$destination" ] || abort "diversion destination exists: $destination"
+            if [ "$path" = /etc/init.d/watchdog ]; then
+                [ -f "$ROOT$path" ] && [ -x "$ROOT$path" ] || abort "native watchdog init unavailable: $path"
+            fi
             if [ -L "$ROOT$path" ]; then
                 case "$path:$(readlink "$ROOT$path")" in
                     /etc/rc[2345].d/S03monit:../init.d/monit|/etc/rcS.d/S17scr-resets-monitor:../init.d/scr-resets-monitor) ;;
@@ -54,6 +57,7 @@ function check_diversions() {
                         [ -x "$ROOT$path" ] || abort 'native MONIT init is not executable'
                         continue ;;
                     /etc/monitrc) continue ;;
+                    /etc/init.d/watchdog) expected=9e2284c9e0643b326002bb0df598eda7c072e41eb426b9740ebe63a965799347 ;;
                     /sbin/monitstate.sh) expected=abcf2ffcad0dd2e8e1ec6476d466ec28868e46fe2ce33b3a2a75145bd49e97e2 ;;
                     /etc/rc.local) expected=e2a687d373c6dae389128c5712e1918662cd4e91f644659fa933c0c8d0a580b3 ;;
                     *) abort "unsupported native path: $path" ;;
@@ -79,10 +83,10 @@ function add_diversions() {
 }
 
 # Returns native originals after dpkg removes our replacement files.
-# Arguments: none. Returns: 0 or aborts. Output: removes diversions and empty storage dirs.
+# Arguments: paths to restore. Returns: 0 or aborts. Output: removes diversions and empty storage dirs.
 function remove_diversions() {
     local path owner destination directory
-    for path in "${COMPAT_PATHS[@]}"; do
+    for path in "$@"; do
         owner=$(divert --listpackage "$path") || abort 'cannot query diversion owner'
         [ "$owner" = "$PKG" ] || continue
         destination="/usr/share/$PKG/diverted$path"
@@ -96,7 +100,7 @@ function remove_diversions() {
     done
 }
 
-# Dispatches necessary diversion, configuration mode, and legacy migration work.
+# Dispatches necessary diversion, configuration mode, and native adapter permissions.
 # Arguments: $1 - phase; $2 - action; $3 - optional prior/next version.
 # Returns: 0 or aborts. Output: diagnostics; no daemon or watchdog action.
 function package_main() {
@@ -109,8 +113,11 @@ function package_main() {
     [ "${DPKG_MAINTSCRIPT_ARCH:-all}" = all ] || abort 'package architecture mismatch'
     case "$phase:$action" in
     preinst:install|preinst:upgrade)
+        # A conflicting private-payload package restores its baseline after our unpack.
+        # Its removal must finish before dpkg can install either operational command.
+        [ ! -d "$ROOT/usr/lib/scr-resets-monitor/payload" ] || abort 'preserve reset data and remove scr-resets-monitor before installation'
         if [ -n "$version" ]; then
-            case "$version" in 1.0.6|1.0.7|1.1.*) ;; *) abort "unsupported prior package version: $version" ;; esac
+            case "$version" in 1.1.*) ;; *) abort "unsupported prior package version: $version" ;; esac
         fi
         add_diversions
         ;;
@@ -119,26 +126,15 @@ function package_main() {
             [ ! -L "$ROOT$path" ] && [ -f "$ROOT$path" ] || abort "unsafe configuration: $path"
             chmod 0600 "$ROOT$path" || abort 'cannot restrict MONIT configuration'
         done
-        for path in /etc/init.d/monit /sbin/monitstate.sh /etc/rc.local; do
+        for path in /etc/init.d/monit /etc/init.d/watchdog /sbin/monitstate.sh /etc/rc.local; do
             chmod 0755 "$ROOT$path" || abort 'cannot set native script mode'
         done
-        # Retained legacy callbacks leave this marker during upgrade. Keep history
-        # and their immutable backup; release only that package transition marker.
-        check_parent /var/log/scr/.package-pending
-        rm -f -- "$ROOT/var/log/scr/.package-pending" || abort 'cannot release legacy transition'
         ;;
     postrm:remove|postrm:purge|postrm:abort-install)
-        remove_diversions
+        remove_diversions "${COMPAT_PATHS[@]}"
         ;;
-    postrm:abort-upgrade)
-        # Legacy versions had no diversions. A failed preinst has not unpacked
-        # replacements, so undo the diversions introduced by this upgrade only.
-        # An aborted 1.1 upgrade must retain the installed version's diversions.
-        case "$version" in 1.0.6|1.0.7) remove_diversions ;; esac
-        ;;
-    # Legacy rollback requires remove, then install; postrm upgrade runs before
-    # obsolete replacement files disappear and cannot restore native originals.
-    prerm:*|postrm:failed-upgrade|postrm:upgrade) : ;;
+    # Every version of scr-raom owns the same diversions during upgrade or rollback.
+    prerm:*|postrm:abort-upgrade|postrm:failed-upgrade|postrm:upgrade) : ;;
     *) abort "unsupported callback: $phase $action" ;;
     esac
 }

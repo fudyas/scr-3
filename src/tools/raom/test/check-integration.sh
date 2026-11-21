@@ -21,9 +21,15 @@ function build_fixtures() {
         esac
         install -m 0755 "$TEST_DIR/integration/$fixture" "$stage/$destination" || fail 'fixture staging file'
     done
+    # dpkg diverts this captured init. Decision-only calls inspect a harmless
+    # executable in the private PID namespace. No fixture opens /dev/watchdog.
+    install -m 0755 "$TEST_DIR/fixtures/watchdog.init" "$stage/etc/init.d/watchdog" || fail 'stage native watchdog init'
+    mkdir -p "$stage/usr/sbin" || fail 'fixture executable directory'
+    ln -s /bin/false "$stage/usr/sbin/watchdog" || fail 'fixture watchdog executable'
     sha256sum "$TOOLING/monit-target" "$TOOLING/root/usr/bin/qemu-arm-static" >"$EVIDENCE/tooling.sha256"
     [ "$(sha256sum "$TOOLING/monit-target" | cut -d ' ' -f 1)" = fab35bf7fa3d040b37d24ec99e515d6c13e1cd50c85987ae1531c2b98617341c ] || fail 'target MONIT hash'
     install -m 0755 "$TOOLING/monit-target" "$stage/opt/scr-raom-integration/monit-target" || fail 'stage captured MONIT'
+    install -m 0755 "$TOOLING/startpar/startpar" "$stage/opt/scr-raom-integration/startpar" || fail 'stage scheduler'
     install -m 0755 "$TOOLING/root/usr/bin/qemu-arm-static" "$stage/opt/scr-raom-integration/qemu-arm-static" || fail 'stage emulator'
     cp -a "$TOOLING/target-root" "$stage/opt/scr-raom-integration/target-root" || fail 'stage captured ARM libraries'
     dpkg-deb -Zxz --root-owner-group --build "$stage" "$EVIDENCE/fixtures.deb" || fail 'fixture package build'
@@ -56,8 +62,8 @@ function namespace_main() {
 function cleanup_packages() {
     local status=0
     if [ "$APP_INSTALLED" = true ]; then
-        chroot "$ROOT" dpkg --remove scr-resets-monitor || status=1
-        chroot "$ROOT" dpkg --purge scr-resets-monitor || status=1
+        chroot "$ROOT" dpkg --remove scr-raom || status=1
+        chroot "$ROOT" dpkg --purge scr-raom || status=1
     fi
     if [ "$FIXTURES_INSTALLED" = true ]; then
         chroot "$ROOT" dpkg --purge scr-raom-integration-fixtures || status=1

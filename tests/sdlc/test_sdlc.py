@@ -10,6 +10,7 @@ import json
 import locale
 import os
 import shlex
+import stat
 import subprocess
 from abc import ABC
 from pathlib import Path
@@ -102,26 +103,27 @@ class TestSdlc:
     """Verifies SDLC command boundaries and disposable package safety."""
 
     @staticmethod
-    @pytest.mark.parametrize("failure", [None, "install", "installed", "remove", "rollback"])
+    @pytest.mark.parametrize("failure", [None, "install", "installed", "purge", "rollback", "content", "leftover"])
     def test_dpkg_rollback_contract(
             repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: Optional[str]) -> None:
-        """Verifies package cleanup and quarantine without metadata fingerprints.
+        """Checks native purge, rollback assertions, and payload quarantine.
 
         Args:
             repo: Supplies an isolated repository.
             tmp_path: Supplies disposable paths.
             monkeypatch: Replaces external package processes.
-            failure: Selects the failed package operation.
+            failure: Selects a failed command or persistent tree change.
         """
-        # Prepares a disposable root and prohibits metadata scans
+        # Seeds an unrelated file outside the package inventory
         ctx = sdlc.Context(repo)
         root = tmp_path / "root"
         root.mkdir()
+        unrelated = root / "unrelated"
+        unrelated.write_bytes(b"before")
         deb = tmp_path / "change.deb"
         deb.write_bytes(b"test")
         monkeypatch.setattr(sdlc.SdlcPackageHelper, "package_name", Mock(return_value="scr-example"))
         monkeypatch.setattr(sdlc.SdlcPackageHelper, "package_install_command", Mock(return_value=["install"]))
-        monkeypatch.setattr(sdlc.SdlcPackageHelper, "fingerprint_tree", Mock(side_effect=AssertionError("metadata scan")))
         commands = []
 
         def run(command: List[str], **kwargs: bool) -> subprocess.CompletedProcess[str]:
@@ -139,13 +141,22 @@ class TestSdlc:
             """
             # Maps only the expected package and project assertion operations
             assert command[:2] == ["chroot", str(root)]
+            if command[2] == "/usr/bin/dpkg-query":
+                assert command[3:] == ["-W", "-f=${Package}\\n"]
+                commands.append("inventory")
+                return subprocess.CompletedProcess(command, 0, "dpkg\n", "")
             operation = command[-1]
             if command[2] == "/usr/bin/dpkg":
-                operation = "install" if command[3] == "-i" else "remove"
+                operation = "install" if command[3] == "-i" else "purge"
                 if operation == "install":
                     assert (root / command[4].lstrip("/")).read_bytes() == b"test"
                 else:
-                    assert command[3:] == ["-r", "scr-example"]
+                    assert command[3:] == ["--purge", "scr-example"]
+            # Leaves damage outside the project assertions even when all commands succeed
+            if operation == "installed" and failure == "content":
+                unrelated.write_bytes(b"damage")
+            if operation == "rollback" and failure == "leftover":
+                (root / "leftover").touch()
             commands.append(operation)
             if operation == failure and kwargs.get("check", True):
                 raise sdlc.SDLCError(f"{operation} failed")
@@ -160,10 +171,82 @@ class TestSdlc:
                 sdlc.SdlcPackageHelper.cmd_verify_package(ctx, args)
         else:
             sdlc.SdlcPackageHelper.cmd_verify_package(ctx, args)
-        expected = ["install"] + ([] if failure == "install" else ["installed"]) + ["remove", "rollback"]
+        expected = ["inventory", "install"] + ([] if failure == "install" else ["installed"]) + ["purge", "rollback"]
         assert commands == expected
         assert not list(root.glob(".sdlc-*.deb"))
-        assert (ctx.lock_root / "quarantine/image-dirty.json").exists() == (failure in {"remove", "rollback"})
+        dirty = ctx.lock_root / "quarantine/image-dirty.json"
+        assert dirty.exists() == (failure in {"purge", "rollback", "content", "leftover"})
+        if failure in {"content", "leftover"}:
+            journal = json.loads(dirty.read_text(encoding="utf-8"))
+            assert journal["changed_paths"] == (["/unrelated"] if failure == "content" else ["/leftover"])
+            identity = hashlib.sha256(str(root).encode()).hexdigest()[:20]
+            assert json.loads((dirty.parent / f"image-{identity}.json").read_text(encoding="utf-8")) == journal
+            with pytest.raises(sdlc.SDLCError, match="logically locked by quarantine"):
+                ctx.assert_image_available()
+
+    @staticmethod
+    @pytest.mark.parametrize("inventory,error", [("dpkg\nscr-example\n", "already has a package record"),
+                                                ("", "empty target package inventory")])
+    def test_native_purge_refuses_unsafe_baseline(
+            repo: Path, monkeypatch: pytest.MonkeyPatch, inventory: str, error: str) -> None:
+        """Rejects an existing package or missing baseline evidence before installation.
+
+        Args:
+            repo: Supplies the isolated repository.
+            monkeypatch: Replaces external commands.
+            inventory: Supplies the target package records.
+            error: Names the expected refusal.
+        """
+        # Allows only the baseline query against the disposable root
+        ctx = sdlc.Context(repo)
+        root = repo / "root"
+        root.mkdir()
+        deb = repo / "change.deb"
+        deb.touch()
+        query = ["chroot", str(root), "/usr/bin/dpkg-query", "-W", "-f=${Package}\\n"]
+        run = Mock(return_value=subprocess.CompletedProcess(query, 0, inventory, ""))
+        monkeypatch.setattr(sdlc.SdlcPackageHelper, "package_name", Mock(return_value="scr-example"))
+        monkeypatch.setattr(sdlc.SdlcRuntimeHelper, "run", run)
+        args = argparse.Namespace(root=str(root), deb=str(deb), recover=False, test_command=None, rollback_command="true")
+        with pytest.raises(sdlc.SDLCError, match=error):
+            sdlc.SdlcPackageHelper.cmd_verify_package(ctx, args)
+        run.assert_called_once_with(query)
+        assert not list(root.iterdir())
+
+    @staticmethod
+    def test_native_dpkg_payload_fingerprint(tmp_path: Path) -> None:
+        """Checks ownership, content, entry types, link targets, xattrs, and hard links.
+
+        Args:
+            tmp_path: Supplies an isolated payload tree.
+        """
+        # Creates ordinary and special entries, including hard-linked symlinks
+        payload = tmp_path / "payload"
+        payload.write_bytes(b"original")
+        os.link(payload, tmp_path / "alias")
+        symlink = tmp_path / "link"
+        symlink.symlink_to(".")
+        os.link(symlink, tmp_path / "link2", follow_symlinks=False)
+        os.mkfifo(tmp_path / "pipe")
+        try:
+            os.setxattr(payload, "user.sdlc-test", b"value")
+        except OSError as exc:
+            if exc.errno in {errno.ENOTSUP, errno.EOPNOTSUPP}:
+                pytest.skip("test filesystem lacks user xattrs")
+            raise
+
+        # Checks the native payload fields and both sets of link relationships
+        tree = sdlc.SdlcPackageHelper.fingerprint_tree(tmp_path, [], native_dpkg=True)
+        assert tree["/"]["type"] == stat.S_IFDIR
+        assert tree["/pipe"]["type"] == stat.S_IFIFO
+        assert tree["/link"]["type"] == stat.S_IFLNK
+        assert tree["/link"]["link"] == "."
+        assert tree["/link"]["hardlink_group"] == ["/link", "/link2"]
+        assert tree["/alias"] == tree["/payload"] == {
+            "type": stat.S_IFREG, "uid": payload.stat().st_uid, "gid": payload.stat().st_gid,
+            "size": 8, "xattrs": sdlc.SdlcPackageHelper.fingerprint_xattrs(payload),
+            "sha256": hashlib.sha256(b"original").hexdigest(), "hardlink_group": ["/alias", "/payload"],
+        }
 
     @staticmethod
     def test_dpkg_rollback_cannot_release_quarantine(repo: Path, tmp_path: Path) -> None:

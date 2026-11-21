@@ -8,6 +8,7 @@ etc/anthropic_api_key
 materials/
 /var
 /backup/
+/pkg
 # Loop-mount point for 'lets scr image mount' (a mounted filesystem, never source).
 /image/
 *-PROGRESS.md

@@ -1,10 +1,10 @@
 # SCR developer guidance
 
 Reset API source: `src/tools/resets-monitor/`. RAOM boot selector source: `src/tools/raom/`.
-Package `scr-resets-monitor` 1.1.0 delivers both through dpkg-owned `/usr/local/scr/` paths.
+Package `scr-raom` 1.1.0 delivers both through dpkg-owned `/usr/local/scr/` paths.
 [Canonical SDLC contract](SDLC-DEVELOPER-GUIDE.md) owns ceremonies, task validation, final QA, exact-pair SHOW, promotion, and hardware gates.
 Current Codex skills use `$sdlc-new`, `$sdlc-plan`, `$sdlc-run`, `$sdlc-review`, and chain/follow-up counterparts.
-All workflow commands use `./bin/lets sdlc`. Retired REQ commands and historical snapshots grant no current authority.
+All workflow commands use `./bin/lets sdlc`.
 
 ## RAOM delivery and focused verification
 
@@ -12,21 +12,20 @@ All workflow commands use `./bin/lets sdlc`. Retired REQ commands and historical
 [Reset API guide](../src/tools/resets-monitor/README.md) defines unchanged `record`, `status --json`, and `check --max-resets N --window M` interfaces.
 RAOM delegates threshold calculation to actual reset CLI. Client owns production profiles. Keepalive-only safe sample supplies no remote-service guarantee.
 
-REVIEW D-04 for ITM-0007 requires real Debian archive installation and lifecycle tests. New delivery uses standard dpkg ownership, conffiles, and diversions.
-Generic private-payload copying, manual lifecycle simulations, tar fingerprint comparisons, and access-time equality gates are superseded for this item.
-Legacy backup archives and prior reports stay unchanged. Historical failed metadata evidence is not current acceptance gate.
+Build both commands with `./bin/lets deb build etc/deb/raom/deb.conf`. Package definitions live in `etc/deb/raom/`.
+LETS writes staging files and the finished archive under ignored `pkg/`.
+Delivery uses standard dpkg ownership, conffiles, and diversions. Package verification exercises real Debian archive installation and lifecycle operations.
+Trusted `src/tools/raom/etc/raom.conf` centralizes runtime paths and fallback profile paths. Client policy comes from data-only `/etc/default/scr-raom`.
+RAOM serializes native watchdog requests and MONIT lifecycle actions under one lock. Native MONIT status remains available during handoff.
+`src/tools/raom/test/check-boot.sh` exercises planned PID gaps, failed handoff, concurrent activation, and captured runlevel ordering with harmless service substitutes.
+Shared `src/lib/run.sh` supplies root checks. Shared `src/lib/log.sh` supplies diagnostics; RAOM routes them to stderr.
+`etc/compat/` supplies installed startup adapters described in [MONIT integration](MONIT.md).
 
 `src/tools/raom/test/check-integration.sh` exercises actual installed selector/reset CLI with package-installed SEMA/NTP fixtures in assigned disposable Bullseye root.
 Real target MONIT 5.22 syntax checks consume installed safe-profile bytes. Private mount/PID namespace supplies `/proc`. No host daemon or hardware action occurs.
 Focused checks cover consumed interfaces only. Dependency internals, client service qualification, locked image acceptance, final QA, SHOW, and hardware confirmation retain assigned stages.
 
-Supported legacy rollback uses two commands, in order:
-
-1. REMOVE current package with `dpkg --remove scr-resets-monitor`.
-2. INSTALL exact retained 1.0.6/1.0.7 archive with `dpkg --install /absolute/retained.deb`.
-
-Direct in-place legacy downgrade is unsupported and can leave MONIT missing. Package callbacks never start services or reboot.
-Standard remove/purge restores diverted integration files. Conffiles survive remove, but not purge. Reset history and historical backup evidence remain retained.
+Package callbacks never start services or reboot. Debian conffiles preserve client configuration choices; reset history remains application data.
 
 ## Image authority and preservation
 
@@ -56,9 +55,10 @@ Ordinary `stack`/`maintree` leases and `SDLC_IMAGE_LOCK_HELD` environment values
 
 ## Authorized package lifecycle
 
-Default procedure below applies unless effective approved item decisions select different restoration evidence.
-ITM-0007 D-04 uses Debian-native lifecycle and explicit rollback checks, described above, instead of manual metadata requalification.
-Its authorized `test-package`/`verify-package` calls can supply `--rollback-command CMD`. Source hashing, image lock, architecture, cleanup, and quarantine remain required.
+`test-package`/`verify-package` compares filesystem fingerprints by default.
+`--rollback-command CMD` requires a fresh package baseline. It uses native dpkg install/purge, then runs project assertions and compares filesystem payload.
+The native comparison includes paths, content, file types, ownership, symlinks, hardlinks, and xattrs. It excludes permission bits and access/modification times.
+Source hashing, image lock, architecture, cleanup, and quarantine remain required.
 `--rollback-command` cannot combine with `--recover`.
 
 1. RECORD item, exact image identity/source hash, package version/hash, architecture, approved operations, expected behavior, and rollback.
@@ -66,11 +66,11 @@ Its authorized `test-package`/`verify-package` calls can supply `--rollback-comm
 3. VERIFY quarantine, active mounts, partition geometry, source identity, and supported execution architecture.
 4. CREATE disposable image copy while lock remains held.
 5. MOUNT disposable copy through LETS image tools.
-6. CAPTURE original whole-tree fingerprint and immutable first backup for every managed operation.
+6. CAPTURE original filesystem fingerprint for the selected comparison mode and prepare any additional project rollback assertions.
 7. INSTALL exact package through root-scoped target dpkg.
 8. RUN approved functional checks and explicit upgrade/rollback checks.
 9. UNINSTALL all delivered packages, including approved remove/purge coverage.
-10. VERIFY complete original payload, metadata, ownership, symlinks, hardlinks, xattrs, timestamps, and moved/added/deleted paths.
+10. VERIFY configured restoration check after package removal.
 11. UNMOUNT disposable copy and detach loop devices.
 12. VERIFY original source hash and final mount/loop state.
 13. REMOVE disposable scratch only after evidence permits cleanup.
@@ -80,8 +80,8 @@ Its authorized `test-package`/`verify-package` calls can supply `--rollback-comm
 15. RELEASE ordinary image lock after successful cleanup, or retain logical quarantine after failure.
 
 Package ownership and overlap checks must reject conflicting owners. Architecture must match target, with explicit cross-architecture execution intent where required.
-Maintainer scripts preserve immutable first baseline across upgrades. Backups cover replaced, patched, moved, added, and deleted paths.
-Uninstalling all delivered packages must restore original bytes, file types, owner/group, modes, symlink targets, hardlinks, timestamps, and xattrs.
+Debian diversions preserve native paths replaced by RAOM adapters. Project assertions verify restored integration and retained client data.
+Default fingerprint mode compares original bytes, file types, owner/group, modes, symlink targets, hardlinks, timestamps, and xattrs.
 Missing evidence fails acceptance. Synthetic/offline tooling tests cannot establish real package restoration or target compatibility.
 Kernel/module changes also retain approved no-force, normal activation/removal, and exact-package requirements.
 Retries never bypass source preservation, lock, restoration, or quarantine rules. No manual marker removal or recovery environment shortcut is permitted.
@@ -154,4 +154,3 @@ Codex automatic token-transcript capture is not enabled. Explicit events/logs/st
    5.1. REPEAT affected verification and exact-package SHOW/hardware acceptance.
 
 Plan/SHOW approval, automated tests, historical results, and container access never establish hardware authority or hardware success.
-This documentation item performed no package lifecycle, image operation, container launch, recovery, or hardware test.

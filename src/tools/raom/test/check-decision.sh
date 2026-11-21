@@ -32,6 +32,9 @@ function sleep() {
 # Creates disposable data and fake commands; loads modules without execution.
 # Arguments: none. Returns: 0 or exits 1. Output: WORK/global paths and fixture files.
 function setup() {
+    source "$RAOM_HOME/../../lib/log.sh" || fail 'shared logger'
+    source "$RAOM_HOME/../../lib/run.sh" || fail 'shared root helper'
+    log_colors ''
     source "$RAOM_HOME/../../tools/resets-monitor/src/runtime/values.sh" || fail 'values module'
     source "$RAOM_HOME/src/decision.sh" || fail 'decision module'
     source "$RAOM_HOME/tool.sh" || fail 'command module'
@@ -39,10 +42,20 @@ function setup() {
     trap 'chmod -R u+rwX "$WORK"; rm -rf -- "$WORK"' EXIT
     export LC_ALL=C
     umask 077
+
     # Override only in this sourced test shell, never through production environment.
-    source_overrides
-    runtime_paths
-    cp "$RAOM_HOME/etc/raom.conf" "$WORK/config" || fail 'configuration fixture'
+    RAOM_POLICY_FILE=$WORK/config RAOM_STATE_DIR=$WORK/run RAOM_BOOT_ID_FILE=$WORK/boot
+    RAOM_UPTIME_FILE=$WORK/uptime RAOM_RESETS_MONITOR=$WORK/api RAOM_NTP_QUERY=$WORK/ntpq RAOM_STATE_UID=$EUID
+
+    # Bypass privilege only after every path points into this private fixture.
+    # Arguments: none. Returns: 0. Output: none.
+    function require_root() { return 0; }
+
+    # Models an idle watchdog for decision-only calls. No process inspection.
+    # Arguments: none. Returns: 3 (absent). Output: none.
+    function watchdog_status() { return 3; }
+
+    cp "$RAOM_HOME/etc/default-policy.conf" "$WORK/config" || fail 'configuration fixture'
     printf '%s\n' 11111111-1111-1111-1111-111111111111 >"$WORK/boot"
     printf '100.25 0.00\n' >"$WORK/uptime"
     printf '0\n' >"$WORK/api-status"
@@ -64,20 +77,6 @@ FIXTURE
     chmod 0700 "$WORK/api" "$WORK/ntpq" || fail 'fixture executables'
 }
 
-# Restores test seams after the production command module defines fixed paths.
-# Arguments: none. Returns: 0. Output: function overrides; no stdout.
-function source_overrides() {
-    # Supplies disposable paths; never exports test hooks into the shipped tool.
-    # Arguments: none. Returns: 0. Output: runtime globals; no stdout.
-    function runtime_paths() {
-        RAOM_CONFIG=$WORK/config RAOM_RUN=$WORK/run RAOM_BOOT_ID=$WORK/boot
-        RAOM_UPTIME=$WORK/uptime RAOM_API=$WORK/api RAOM_NTPQ=$WORK/ntpq RAOM_UID=$EUID
-    }
-    # Bypasses root checks only after every path points into private fixtures.
-    # Arguments: none. Returns: 0. Output: none.
-    function require_root() { return 0; }
-}
-
 # Replaces one configuration value without evaluating configuration as code.
 # Arguments: $1 - key; $2 - replacement value. Returns: 0 or exits 1.
 # Output: updated private configuration file; no stdout.
@@ -94,7 +93,7 @@ function config_value() {
 # Asserts full fallback, including true policy and both known profile paths.
 # Arguments: none. Returns: 0 or exits 1. Output: none.
 function assert_defaults() {
-    [ "$N:$M:$K:$SAFE_MODE_ON_ERROR" = 5:900:60:true ] || fail 'partial numeric/policy fallback'
+    [ "$MAX_RESETS:$RESET_WINDOW_SECONDS:$NTP_SYNC_TIMEOUT_SECONDS:$SAFE_MODE_ON_ERROR" = 5:900:60:true ] || fail 'partial numeric/policy fallback'
     [ "$SAFE_PROFILE:$NORMAL_PROFILE" = /etc/monit/raom/safe.monitrc:/etc/monit/monitrc ] || fail 'partial profile fallback'
 }
 
@@ -105,40 +104,40 @@ function test_config() {
     expect_status 0 load_config
     assert_defaults
     local key value
-    for key in N M K; do
+    for key in MAX_RESETS RESET_WINDOW_SECONDS NTP_SYNC_TIMEOUT_SECONDS; do
         config_value "$key" 2147483647
     done
     config_value SAFE_MODE_ON_ERROR false
     config_value SAFE_PROFILE '/client/safe profile'
     expect_status 0 load_config
-    [ "$N:$M:$K:$SAFE_MODE_ON_ERROR:$SAFE_PROFILE" = '2147483647:2147483647:2147483647:false:/client/safe profile' ] || fail 'valid custom configuration'
-    config_value N 0000
+    [ "$MAX_RESETS:$RESET_WINDOW_SECONDS:$NTP_SYNC_TIMEOUT_SECONDS:$SAFE_MODE_ON_ERROR:$SAFE_PROFILE" = '2147483647:2147483647:2147483647:false:/client/safe profile' ] || fail 'valid custom configuration'
+    config_value MAX_RESETS 0000
     expect_status 0 load_config
-    [ "$N" = 0 ] || fail 'zero reset threshold'
-    for key in N M K SAFE_MODE_ON_ERROR SAFE_PROFILE NORMAL_PROFILE; do
+    [ "$MAX_RESETS" = 0 ] || fail 'zero reset threshold'
+    for key in MAX_RESETS RESET_WINDOW_SECONDS NTP_SYNC_TIMEOUT_SECONDS SAFE_MODE_ON_ERROR SAFE_PROFILE NORMAL_PROFILE; do
         for value in '' -1 2147483648 '$(touch SHOULD_NOT_EXIST)' '1+1'; do
-            cp "$RAOM_HOME/etc/raom.conf" "$WORK/config"
+            cp "$RAOM_HOME/etc/default-policy.conf" "$WORK/config"
             config_value "$key" "$value"
             expect_status 2 load_config 2>"$WORK/error"
             assert_defaults
             [ -s "$WORK/error" ] || fail 'silent configuration fallback'
         done
     done
-    for key in M K; do
-        cp "$RAOM_HOME/etc/raom.conf" "$WORK/config"
+    for key in RESET_WINDOW_SECONDS NTP_SYNC_TIMEOUT_SECONDS; do
+        cp "$RAOM_HOME/etc/default-policy.conf" "$WORK/config"
         config_value "$key" 0
         expect_status 2 load_config 2>"$WORK/error"
     done
-    for value in 'N=5' 'UNKNOWN=5' 'SAFE_MODE_ON_ERROR=false' 'source /tmp/never'; do
-        cp "$RAOM_HOME/etc/raom.conf" "$WORK/config"
+    for value in 'MAX_RESETS=5' 'UNKNOWN=5' 'SAFE_MODE_ON_ERROR=false' 'source /tmp/never'; do
+        cp "$RAOM_HOME/etc/default-policy.conf" "$WORK/config"
         printf '%s\n' "$value" >>"$WORK/config"
         expect_status 2 load_config 2>"$WORK/error"
         assert_defaults
     done
-    printf 'SAFE_MODE_ON_ERROR=false\nN=1\n' >"$WORK/config"
+    printf 'SAFE_MODE_ON_ERROR=false\nMAX_RESETS=1\n' >"$WORK/config"
     expect_status 2 load_config 2>"$WORK/error"
     assert_defaults
-    cp "$RAOM_HOME/etc/raom.conf" "$WORK/config"
+    cp "$RAOM_HOME/etc/default-policy.conf" "$WORK/config"
     printf '\000' >>"$WORK/config"
     expect_status 2 load_config 2>"$WORK/error"
     [ ! -e SHOULD_NOT_EXIST ] || fail 'configuration executed'
@@ -151,7 +150,7 @@ function test_config() {
     mkfifo "$WORK/config"
     expect_status 2 load_config 2>"$WORK/error"
     rm "$WORK/config"
-    cp "$RAOM_HOME/etc/raom.conf" "$WORK/config"
+    cp "$RAOM_HOME/etc/default-policy.conf" "$WORK/config"
     chmod 000 "$WORK/config"
     if [ "$EUID" -ne 0 ]; then
         expect_status 2 load_config 2>"$WORK/error"
@@ -159,7 +158,7 @@ function test_config() {
     fi
 }
 
-# Covers V2: all API exits and both policies, with exact N/M arguments.
+# Covers V2: all API exits and both policies, with exact MAX_RESETS/RESET_WINDOW_SECONDS arguments.
 # Arguments: none. Returns: 0 or exits 1. Output: captured selection/API calls.
 function test_api_decisions() {
     setup
@@ -169,8 +168,8 @@ function test_api_decisions() {
             rm -rf "$WORK/run"
             rm -f "$WORK/api-calls"
             config_value SAFE_MODE_ON_ERROR "$policy"
-            config_value N 8
-            config_value M 123
+            config_value MAX_RESETS 8
+            config_value RESET_WINDOW_SECONDS 123
             printf '%s\n' "$status" >"$WORK/api-status"
             expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
             expected=safe
@@ -209,7 +208,7 @@ function test_wait() {
     local policy expected
     for policy in true false; do
         rm -rf "$WORK/run"
-        config_value K 2
+        config_value NTP_SYNC_TIMEOUT_SECONDS 2
         config_value SAFE_MODE_ON_ERROR "$policy"
         printf '100.25 0.00\n' >"$WORK/uptime"
         printf 'unready\n' >"$WORK/ntp-status"

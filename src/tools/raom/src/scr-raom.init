@@ -9,14 +9,14 @@
 # Short-Description: Selects the boot profile before MONIT starts
 ### END INIT INFO
 
-# Routes startup through the gate; native MONIT retains stop/status handling.
+# Routes lifecycle actions through RAOM. Watchdog reads native MONIT status.
 # Arguments: $1 - start, stop, status, reload, restart, or force-reload.
 # Returns: delegated status, or 2 for invalid input. Output: delegated diagnostics.
 function main() {
     [ "$#" -eq 1 ] || return 2
     case "$1" in
-    start | restart | force-reload | reload) /usr/bin/scr-raom monit "$1" ;;
-    stop | status) /etc/init.d/monit "$1" ;;
+    start | stop | restart | force-reload | reload) /usr/bin/scr-raom monit "$1" ;;
+    status) /etc/init.d/monit "$1" ;;
     *) return 2 ;;
     esac
 }
