@@ -213,10 +213,16 @@
       "host": "8fd23203e4ed",
       "event": "status",
       "detail": "TESTING -> REVIEW"
+    },
+    {
+      "at": "2026-11-21T13:52:01.290Z",
+      "host": "8fd23203e4ed",
+      "event": "task_rework",
+      "detail": "TSK-0002 after qa: Real HW SCR-7CCC91, package 1.1.0 b21f040e: native ntpd inherits RAOM lock FD 10; status and MONIT reload exit 2 storage_unavailable after safe boot. Stopping ntpd releases lock and both commands succeed. Evidence: implementation/hardware-d05/lock-diagnostic.log and lock-confirmation.log. Retain integration for fix and fresh exact-package QA/hardware test."
     }
   ],
   "created_at": "2026-11-21T05:50:51.912Z",
-  "updated_at": "2026-11-21T13:21:23.355Z",
+  "updated_at": "2026-11-21T13:52:01.290Z",
   "kind": "task",
   "idea": "We now proceed to the second SDLC item that implements tha RAOM safe mode. See docs/emails/RAOM.md that describes the condition for entering the safe mode and the services that need to be invoked there. Next, start planning a new SDLC item in chain 2 that implements a new SysV RAOM startup service according to the instructions below:\n- the service replaces the basic scr-resets-monitor service\n- the service boots as early as possible\n- the service invokes the sc-resets-monitor and tests if the threshold corssed \n- on the crossed threshold the service enters the RAOM safemode, otherwise launches normaly\n- my suggestion: the service launches MONIT in both cases, just points it to two different sets of configurations: safe mode and normal mode\n\nReview and evaluate the above solution against the target machine configuration - use IP of 192.168.68.54",
   "status": "REVIEW",
@@ -245,7 +251,7 @@
         "TSK-0001"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "IN PROGRESS"
     },
     "TSK-0003": {
       "block": "BLK-0001",
