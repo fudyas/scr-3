@@ -41,3 +41,15 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 6. **Boundary:** Preserve historical packages, reports, failed evidence, source images, and kernel files. Retired metadata failures remain historical evidence, not current acceptance gates. Original hardware-image preservation remains required.
 7. **Boundary:** Standard dpkg conflicts remain errors. Do not invent SCR ownership claims or repair global package inventory. The earlier manual nine-path ownership-adoption proposal is superseded by the Debian-native approach, not silently approved.
 8. **Boundary:** No target installation, service action, reboot, promotion, or hardware success follows from this decision. Independent validation, required repository gates, exact-revision SHOW, and separate hardware confirmation remain required.
+
+## D-05 — Final design documentation and shared Bash conventions
+
+1. **Overrides:** Product-document history and legacy uninstall explanations; short N/M/K configuration names; duplicated root checks; embedded runtime paths and custom RAOM diagnostic formatting. Prior exact source/INPUT pair needs fresh verification after these edits.
+2. **Decision:** Developer: "remove the history record tracking in docs, present with the final intended design (e.g.: no need to explain how scr-resets-monitor needs to be uninstalled)".
+3. **Decision:** Developer: "src/bin/src-raom and other scripts needs to adhere to the bash style like in src/bin/src-resets-monitor including empty lines and comments".
+4. **Decision:** Developer: "give keys in src/tools/raom/etc/raom.conf meaningful names" and "what is the purpose of src/tools/raom/etc/compat folder ?".
+5. **Decision:** Developer: "src/tools/raom/tool.sh needs to load src/tools/raom/etc/raom.conf where all runtime paths are defined like LETS does it".
+6. **Decision:** Developer: "the require_root function repeats itself - move to lib/run.sh".
+7. **Decision:** Developer: "src/tools/raom/src/decision.sh and others need to reuse lib/log.sh, it also need bettere comments inside functions" and "print usage and check arguments as LETS tool do".
+8. **Scope:** Apply fixes in retained integration workspace. Keep product guides about current supported design. Preserve prior immutable SDLC records and package evidence separately.
+9. **Boundary:** Retain safe configuration fallback, data-only client configuration parsing, fixed boot mode, actual dpkg verification, and shared logger stream discipline. No new hardware action or promotion authority.
