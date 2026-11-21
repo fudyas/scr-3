@@ -59,3 +59,12 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 1. **Overrides:** Completion sequence for D-05. Reload current Bash skill after fixes, before final acceptance.
 2. **Decision:** Developer: "When done fixing, reload the updated bash skills, then review the code and check where its style needs fixing and where the code can be simplified".
 3. **Scope:** Review changed code against freshly read Bash guidance. Correct concrete style issues and unnecessary complexity while preserving approved behavior.
+
+## D-07 — Coordinate watchdog activation with RAOM lifecycle
+
+1. **Overrides:** D2/TSK-0002 native watchdog integration and native MONIT stop delegation where they leave MONIT supervision active during mode selection or a planned stop/restart. Necessary package adapters and final-design documentation in TSK-0003/TSK-0004 follow this decision.
+2. **Decision:** Developer: "Who and when launches the watchdog to monitor MONIT ? You need to be part of this process to enter safe/normal mode before the watchdog is armed and let it work onnly after the mode is selected. Proceed with the fix and retest".
+3. **Scope:** Integrate watchdog activation with committed safe/normal selection and selected MONIT readiness. Coordinate planned MONIT stop/restart so watchdog cannot treat its intentional PID gap as a failure. Preserve hardware feeding through native keepalive handoff. Keep MONIT as service supervisor and client-owned safe-service inventory unchanged.
+4. **Verification:** Prove no MONIT watchdog supervision before selection, correct activation after selected MONIT startup, safe planned lifecycle handoff, exclusion of concurrent rearming, retained lock fix, and exact-package hardware retest.
+5. **Boundary:** Use reversible Debian package and retained integration. Existing native watchdog checks resume after valid activation. No permanent watchdog disablement, physical reset loops, client service expansion, or source promotion inferred. Latest instruction authorizes necessary target install, native service actions, controlled reboot, and rollback for retest on 192.168.68.52 with admin/hw_ed25519.
+
