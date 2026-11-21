@@ -68,3 +68,13 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 4. **Verification:** Prove no MONIT watchdog supervision before selection, correct activation after selected MONIT startup, safe planned lifecycle handoff, exclusion of concurrent rearming, retained lock fix, and exact-package hardware retest.
 5. **Boundary:** Use reversible Debian package and retained integration. Existing native watchdog checks resume after valid activation. No permanent watchdog disablement, physical reset loops, client service expansion, or source promotion inferred. Latest instruction authorizes necessary target install, native service actions, controlled reboot, and rollback for retest on 192.168.68.52 with admin/hw_ed25519.
 
+## D-08 — Report decision latency and final watchdog coverage
+
+1. **Overrides:** Final verification reporting and RAOM README coverage for D07. No change to client safe-service inventory inferred from questions.
+2. **Decision:** Developer: "how fast RAOM reaches the safe/normal mode decision on average in milliseconds ?".
+3. **Decision:** Developer: "does the watchdog protect  monit in bothe safe and normal modes ?".
+4. **Decision:** Developer: "did you update the src/tools/raom/README.md document to reflect the final design with the new boot sequence ?".
+5. **Scope:** Measure fresh decisions on real hardware with monotonic time. Report sample counts, timeout settings, and readiness/error conditions. Do not count cached status calls or fixture timings as real decision samples. Add minimal per-decision observability where required for boot measurement.
+6. **Scope:** State actual watchdog coverage in each selected profile. Update `src/tools/raom/README.md` for final boot sequence, planned lifecycle handoff, and timing definition. Keep production service inventory client-owned unless developer separately changes safe sample policy.
+
+
