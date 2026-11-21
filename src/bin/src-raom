@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Resolve source and installed command links to the same SCR layout.
+SCRIPT=$(readlink -f -- "${BASH_SOURCE[0]}") || exit 2
+export SCR_HOME
+SCR_HOME=$(cd -- "${SCRIPT%/*}/.." && pwd -P) || exit 2
+source "$SCR_HOME/etc/scr.conf" || exit 2
+[ ! -f "$SCR_HOME/etc/local.scr.conf" ] || source "$SCR_HOME/etc/local.scr.conf" || exit 2
+source "$SCR_LIB_DIR/log.sh" || exit 2
+# Reuse the reset API's decimal validation, without loading its command layer.
+source "$SCR_RESETS_MONITOR_SRC_DIR/runtime/values.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/decision.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/monit.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/tool.sh" || exit 2
+[ "${BASH_SOURCE[0]}" != "$0" ] || main "$@"

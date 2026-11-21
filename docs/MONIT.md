@@ -1,16 +1,36 @@
 # Monit configuration and stability
 
-## Overview
+## RAOM integration in `scr-resets-monitor` 1.1.0
+
+Current package adds configurable boot selection through existing reset API. [RAOM operator guide](../src/tools/raom/README.md) owns shipped behavior and rollback procedure.
+Normal `/etc/monit/monitrc` stays client-owned and unchanged. Safe sample `/etc/monit/raom/safe.monitrc` supervises existing `wd_keepalive` only.
+Client defines production safe services. No Cloudflare provisioning or remote-access guarantee belongs to this package.
+
+1. Native keepalive remains active during bounded logging/NTP bootstrap and monotonic readiness wait.
+2. RAOM calls actual reset CLI, fixes safe/normal mode and profile path for current boot, then validates selected MONIT configuration.
+3. Native MONIT start/restart/reload and fallback use same selected profile. Stop/status delegate original init script through Debian diversion.
+4. Default `/etc/monitrc` follows validated runtime pointer. Missing selection fails closed. Narrow `/etc/rc.local` change removes MONIT state wipe.
+5. Runlevel `S03monit` links target `scr-raom`; scheduler identity remains `monit`. Obsolete `S17scr-resets-monitor` hook no longer runs.
+6. `/etc/default/monit`, normal profile, MONIT binaries, and watchdog payload remain unchanged. Package callbacks never start services.
+7. Debian diversions/conffiles deliver integration and retain native originals. Legacy rollback removes 1.1.0 before installing retained 1.0.6/1.0.7 archive.
+
+Defaults: `N=5`, `M=900`, `K=60`, `SAFE_MODE_ON_ERROR=true`. Invalid configuration discards partial values and uses complete built-in defaults.
+Threshold exit 1 always selects safe. Other errors retain reason and obey error flag where startup remains possible.
+Failed safe-profile launch never substitutes normal. Keepalive-only sample acceptance does not establish client service or hardware success.
+
+## Historical image 8.26.0 overview
 
 This document describes how [monit](https://mmonit.com/monit/) is configured on
 the SCR system image, how it relates to the software-upgrade (RFS) procedure,
 the known stability problems, and the proposed fixes.
 
-Source: partition 2 (`rootfs`) of image `8.26.0`.
+Historical source: partition 2 (`rootfs`) of image `8.26.0`.
+Remaining sections describe that historical image and proposals. They do not describe upgraded package behavior or approved ITM-0007 scope.
+A/B slots, client service inventory, and Cloudflare requirements below remain historical proposals outside ITM-0007.
 
 Contents:
 
-1. [Current configuration](#overview) — factual snapshot of the on-image setup.
+1. [Historical configuration](#historical-image-8260-overview) — factual snapshot of original image setup.
 2. [Software upgrade procedure (RFS)](#software-upgrade-procedure-rfs-and-monits-place-in-it) — and monit's place in it.
 3. [Stability issues](#stability-issues) — the gaps and their proposed fixes.
 
