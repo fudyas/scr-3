@@ -49,31 +49,31 @@ EOF
     # Preserve the complete source subtree under its installed SCR_HOME.
     diff -r src "$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr" || abort 'source subtree payload mismatch'
     [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/bin/src-resets-monitor" ] || abort 'missing central entry point'
-    [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/etc/init.d/scr-resets-monitor" ] || abort 'missing SysV hook'
+    [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/etc/init.d/scr-raom" ] || abort 'missing gated SysV service'
+    for file in 2 3 4 5; do
+        grep -qx "etc/rc$file.d/S03monit=../init.d/scr-raom" src/tools/raom/etc/runlevels.conf || abort 'native scheduler identity lost'
+    done
+    grep -q '^etc/rc[016].d/' src/tools/raom/etc/runlevels.conf && abort 'unexpected shutdown graph ownership'
     [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/etc/logrotate.d/scr-resets-monitor" ] || abort 'missing logrotate integration'
     [ ! -e "$scratch/package/etc/monit" ] || abort 'active monit policy installed'
     dpkg-deb --contents "$deb" > "$scratch/inventory" || abort 'cannot inspect inventory'
     grep -q 'root/root' "$scratch/inventory" || abort 'payload owner metadata'
     printf 'PASS Debian inventory, script modes, syntax and exact runtime bytes\n'
-    # Exercise the shipped init function with one isolated command fixture.
-    INIT_SOURCE="$root/src/tools/resets-monitor/src/scr-resets-monitor.init" bash <<'BASH' || abort 'startup hook behavior'
+    # Exercise the gated service without accessing native services or devices.
+    INIT_SOURCE="$root/src/tools/raom/src/scr-raom.init" bash <<'BASH' || abort 'startup gate dispatch'
 source "$INIT_SOURCE"
-# Replaces only the fixed observation executable in this isolated test shell.
-# Arguments: record. Returns: 0 or 1. Output: none.
-function /usr/bin/scr-resets-monitor() { [ "$*" = record ]; }
-# Supplies executable discovery only for the isolated installed path.
-# Arguments: test expression. Returns: 0 for executable fixture, otherwise builtin status.
-function [() {
-    if [[ "$*" == '-x /usr/bin/scr-resets-monitor ]' ]]; then return 0; fi
-    builtin [ "$@"
-}
+# Substitutes the installed selector only in this isolated test shell.
+# Arguments: monit start. Returns: 0 for exact dispatch, 1 otherwise. Output: none.
+function /usr/bin/scr-raom() { [ "$*" = 'monit start' ]; }
+# Substitutes native stop handling only in this isolated test shell.
+# Arguments: stop. Returns: 0 for exact dispatch, 1 otherwise. Output: none.
+function /etc/init.d/monit() { [ "$*" = stop ]; }
 main start || exit 1
-wait || exit 1
 main stop || exit 1
 main unexpected && exit 1
 exit 0
 BASH
-    printf 'PASS asynchronous observation hook and inactive stop behavior\n'
+    printf 'PASS gated startup and native stop dispatch\n'
     RUNTIME="$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/bin/src-resets-monitor" \
     RUNTIME_SRC_DIR="$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/tools/resets-monitor/src/runtime" \
     RUNTIME_TOOL="$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/tools/resets-monitor/tool.sh" \

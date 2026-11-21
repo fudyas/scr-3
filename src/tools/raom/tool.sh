@@ -17,10 +17,11 @@ function runtime_paths() {
 function scr_usage() {
     printf '%s\n' 'Usage: scr-raom select [--ntp-start-failed]' \
         '       scr-raom status | profile | --help' \
+        '       scr-raom monit start|restart|force-reload|reload|syntax' \
         'select: call after bounded native NTP bootstrap; flag reports bootstrap failure.' \
         'status/profile: read existing selection for this boot; never reevaluate.' \
         'Exit 0: complete selection (safe or normal); exit 2: unavailable.' \
-        'Selection does not launch MONIT or prove successful startup.'
+        'select/status/profile do not launch MONIT; monit actions use native service adapters.'
 }
 
 # Checks root authority before protected state or dependency access.
@@ -29,16 +30,19 @@ function require_root() { [ "$EUID" -eq 0 ] || return 2; }
 
 # Dispatches one invocation with an isolated umask, lock, and cleanup traps.
 # Arguments: command and optional bootstrap-failure flag. Returns: 0 or 2.
-# Output: selection record/profile to stdout; diagnostics to stderr; boot files.
+# Output: selection/profile to stdout, diagnostics to stderr; boot files and explicit MONIT actions.
 function main() {
     (
         export LC_ALL=C PATH=/usr/sbin:/usr/bin:/sbin:/bin
         umask 077
-        local command=${1:-} bootstrap_failed=false result
+        local command=${1:-} bootstrap_failed=false result action=
         case "$command:$#" in
         --help:1 | help:1) scr_usage; exit $? ;;
         select:1 | status:1 | profile:1) ;;
         select:2) [ "$2" = --ntp-start-failed ] || { scr_usage >&2; exit 2; }; bootstrap_failed=true ;;
+        monit:2)
+            case "$2" in start | restart | force-reload | reload | syntax) action=$2 ;; *) scr_usage >&2; exit 2 ;; esac
+            ;;
         *) scr_usage >&2; exit 2 ;;
         esac
 
@@ -50,6 +54,11 @@ function main() {
         trap 'exit 2' HUP INT TERM
         prepare_state || { raom_error storage_unavailable; exit 2; }
         read_boot_id || { raom_error boot_id_unavailable; exit 2; }
+        if [ "$command" = monit ]; then
+            monit_paths
+            monit_action "$action"
+            exit $?
+        fi
         load_selection
         result=$?
         if [ "$result" -eq 1 ] && [ "$command" = select ]; then

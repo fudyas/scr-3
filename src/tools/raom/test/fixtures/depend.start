@@ -1,0 +1,7 @@
+TARGETS = rsyslog dhcpcd beacond bootlogs motd killprocs wd_keepalive single monit alive_timer rc.local rmnologin
+INTERACTIVE =
+single: killprocs bootlogs motd
+monit: rsyslog dhcpcd beacond bootlogs motd wd_keepalive
+alive_timer: rsyslog dhcpcd beacond bootlogs motd wd_keepalive
+rc.local: rsyslog dhcpcd beacond bootlogs motd wd_keepalive
+rmnologin: rsyslog dhcpcd beacond bootlogs motd wd_keepalive

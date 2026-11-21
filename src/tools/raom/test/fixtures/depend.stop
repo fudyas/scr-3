@@ -1,0 +1,35 @@
+TARGETS = watchdog monit rsshAgentD samba-ad-dc nmbd smbd pm cps adminTool mysql autossh wildfly nmsAgent scriptd bserv cm ntp cron ssh dhcpcd beacond alive_timer resolvconf urandom winbind sendsigs rsyslog umountnfs.sh rpcbind nfs-common networking hwclock.sh umountfs umountroot halt reboot
+rsshAgentD: watchdog monit
+samba-ad-dc: watchdog monit
+nmbd: watchdog monit
+smbd: watchdog monit
+pm: watchdog monit
+cps: watchdog monit
+adminTool: watchdog monit
+mysql: watchdog monit
+autossh: watchdog monit
+wildfly: watchdog monit
+nmsAgent: watchdog monit
+scriptd: watchdog monit
+bserv: watchdog monit
+cm: watchdog monit
+ntp: watchdog
+cron: watchdog
+ssh: watchdog
+dhcpcd: watchdog monit
+beacond: watchdog monit
+alive_timer: watchdog monit
+resolvconf: watchdog monit
+urandom: watchdog monit
+winbind: cron watchdog monit
+sendsigs: samba-ad-dc nmbd winbind mysql autossh wildfly monit smbd alive_timer scriptd beacond watchdog
+rsyslog: winbind mysql autossh sendsigs ntp cron ssh watchdog monit
+umountnfs.sh: samba-ad-dc nmbd winbind mysql autossh wildfly monit smbd sendsigs rsyslog alive_timer scriptd beacond watchdog
+rpcbind: umountnfs.sh watchdog monit
+nfs-common: umountnfs.sh watchdog monit
+networking: samba-ad-dc nmbd umountnfs.sh rpcbind winbind mysql wildfly smbd alive_timer scriptd beacond watchdog monit
+hwclock.sh: mysql nfs-common rsyslog watchdog monit
+umountfs: resolvconf samba-ad-dc nmbd umountnfs.sh rpcbind urandom hwclock.sh winbind networking mysql autossh wildfly dhcpcd monit smbd alive_timer scriptd beacond watchdog
+umountroot: umountfs watchdog monit
+halt: umountroot watchdog monit
+reboot: umountroot watchdog monit

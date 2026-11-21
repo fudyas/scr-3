@@ -10,5 +10,6 @@ source "$SCR_LIB_DIR/log.sh" || exit 2
 # Reuse the reset API's decimal validation, without loading its command layer.
 source "$SCR_RESETS_MONITOR_SRC_DIR/runtime/values.sh" || exit 2
 source "$SRC_TOOLS_DIR/raom/src/decision.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/monit.sh" || exit 2
 source "$SRC_TOOLS_DIR/raom/tool.sh" || exit 2
 [ "${BASH_SOURCE[0]}" != "$0" ] || main "$@"
