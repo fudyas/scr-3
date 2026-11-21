@@ -231,10 +231,16 @@
       "host": "8fd23203e4ed",
       "event": "task_status",
       "detail": "TSK-0002 -> VALIDATED"
+    },
+    {
+      "at": "2026-11-21T14:19:18.447Z",
+      "host": "8fd23203e4ed",
+      "event": "task_rework",
+      "detail": "TSK-0002 after qa: Real HW package65422fe lock fix passes, but normal MONIT restart removes /var/run/monit.pid while native watchdog watches that path. Watchdog log14:12:24 shows cannot open PID file and shutting down system error2; unexpected reboot followed. D2/V4-V6 supported restart remains unsafe on actual target. Further restart tests stopped; baseline1.0.6 restored and dpkg configured. Evidence implementation/hardware-lockfix/report.md and final-confirmed.log."
     }
   ],
   "created_at": "2026-11-21T05:50:51.912Z",
-  "updated_at": "2026-11-21T14:12:03.338Z",
+  "updated_at": "2026-11-21T14:19:18.447Z",
   "kind": "task",
   "idea": "We now proceed to the second SDLC item that implements tha RAOM safe mode. See docs/emails/RAOM.md that describes the condition for entering the safe mode and the services that need to be invoked there. Next, start planning a new SDLC item in chain 2 that implements a new SysV RAOM startup service according to the instructions below:\n- the service replaces the basic scr-resets-monitor service\n- the service boots as early as possible\n- the service invokes the sc-resets-monitor and tests if the threshold corssed \n- on the crossed threshold the service enters the RAOM safemode, otherwise launches normaly\n- my suggestion: the service launches MONIT in both cases, just points it to two different sets of configurations: safe mode and normal mode\n\nReview and evaluate the above solution against the target machine configuration - use IP of 192.168.68.54",
   "status": "TESTING",
@@ -263,7 +269,7 @@
         "TSK-0001"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "IN PROGRESS"
     },
     "TSK-0003": {
       "block": "BLK-0001",
