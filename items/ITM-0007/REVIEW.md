@@ -53,3 +53,9 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 7. **Decision:** Developer: "src/tools/raom/src/decision.sh and others need to reuse lib/log.sh, it also need bettere comments inside functions" and "print usage and check arguments as LETS tool do".
 8. **Scope:** Apply fixes in retained integration workspace. Keep product guides about current supported design. Preserve prior immutable SDLC records and package evidence separately.
 9. **Boundary:** Retain safe configuration fallback, data-only client configuration parsing, fixed boot mode, actual dpkg verification, and shared logger stream discipline. No new hardware action or promotion authority.
+
+## D-06 — Reload Bash guidance and review completed fixes
+
+1. **Overrides:** Completion sequence for D-05. Reload current Bash skill after fixes, before final acceptance.
+2. **Decision:** Developer: "When done fixing, reload the updated bash skills, then review the code and check where its style needs fixing and where the code can be simplified".
+3. **Scope:** Review changed code against freshly read Bash guidance. Correct concrete style issues and unnecessary complexity while preserving approved behavior.
