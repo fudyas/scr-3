@@ -86,3 +86,13 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 4. **Scope:** Deliver one RAOM Debian package containing RAOM and `src-resets-monitor`. Use `scr-raom` as the unified package identity. Remove active standalone resets-monitor build entry. Keep reset CLI/history behavior and watchdog integration unchanged.
 5. **Verification:** Build from tracked source without existing ignored output. Verify one archive contains both commands, native dpkg ownership/lifecycle/conflict handling, and updated references. Package identity changes require fresh package evidence; prior archive results remain scoped to prior bytes.
 6. **Boundary:** Preserve historical archives, immutable evidence, original images, main edits, and client configuration/history. No source promotion or new hardware success inferred.
+
+## D-10 — Hardware retest, Debian tool style, and promotion
+
+1. **Overrides:** D09 pending hardware test and completion sequence. TSK-0003 also includes Bash style in `tools/deb`.
+2. **Decision:** Developer: "Test on HW".
+3. **Decision:** Developer: "When done, apply bash styling to tools/deb".
+4. **Decision:** Developer: "When done, promote the item".
+5. **Scope:** Retest exact unified archive on authorized target `192.168.68.52` with `admin/hw_ed25519`. Preserve live reset data and client configuration through native dpkg owner change and rollback. Existing controlled reboot and service-test authority applies.
+6. **Scope:** After hardware tests, apply current Bash conventions to `tools/deb`, preserving build behavior and safety checks. Validate final source and artifact pair before requested promotion to `feature/monit-stability`.
+7. **Boundary:** Promotion request does not itself confirm hardware success. Report agent observations separately. Preserve unrelated main edits and immutable prior evidence.
