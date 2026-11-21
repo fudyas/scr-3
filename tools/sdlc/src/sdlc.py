@@ -743,6 +743,7 @@ class SdlcPackageHelper(ABC):
             if functional_error is not None:
                 raise SDLCError(f"package test failed; disposable image was cleaned: {functional_error}")
         print("package passed disposable-image restoration test; source image unchanged")
+        print(f"source image SHA-256: {original_hash}")
 
     @staticmethod
     def cmd_lock_run(ctx: Context, args: argparse.Namespace) -> None:
