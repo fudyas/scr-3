@@ -13,3 +13,12 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 7. **Decision:** Developer: "It is now 192.168.68.52". Supersedes 192.168.68.54 as inspection target.
 8. **Boundary:** Planning and read-only inspection only. No package install, service restart, watchdog operation, reboot, or physical output authorized here.
 9. **Pending:** Non-NTP exit-2 policy, exact timing boundary, and boot-mode persistence remain proposed design details for concrete plan review. NTP timeout safe-mode behavior is settled.
+
+## D-02 — Configurable safe mode on errors
+
+1. **Overrides:** D-01 unconditional NTP-timeout safe mode and pending non-NTP error policy. Error-triggered safe mode now depends on configurable flag. Reset threshold remains separate.
+2. **Decision:** Developer: "Safe mode on errors (missing NTP, filesystem issues, configuration not accessible, etc) - configurable, if set to true - enter safe mode".
+3. **Scope:** Error policy covers NTP synchronization timeout, unavailable reset evidence, filesystem failures, and inaccessible configuration. Do not report these errors as a valid below-threshold result.
+4. **Proposed configuration:** `SAFE_MODE_ON_ERROR=true` by default. False permits normal-profile selection on errors where startup remains possible. Positive threshold decision selects safe mode regardless of flag.
+5. **Pending:** Built-in fallback when configuration cannot be read or validated requires developer answer. Proposed fallback is true; never assume unreadable configuration contains false.
+6. **Boundary:** Mode selection cannot guarantee successful startup when MONIT, selected profile, executable dependencies, or required filesystems are unavailable. Preserve error evidence and report failed startup accurately.
