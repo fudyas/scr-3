@@ -78,3 +78,11 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 6. **Scope:** State actual watchdog coverage in each selected profile. Update `src/tools/raom/README.md` for final boot sequence, planned lifecycle handoff, and timing definition. Keep production service inventory client-owned unless developer separately changes safe sample policy.
 
 
+## D-09 — Root package output and one RAOM delivery
+
+1. **Overrides:** TSK-0003 package layout/name and corresponding build tests and TSK-0004 documentation. Previous exact archive remains historical evidence.
+2. **Decision:** Developer: "The src/tools/resets-monitor/pkg directory needs to be moved to project  root and git-ignored. Also the package for RAOM needs to include src-resets-monitor and no separate rc-resets-monitor deb package should exist".
+3. **Scope:** Root `pkg/` holds ignored generated packaging files and archive output. Keep required build definitions tracked so clean checkouts can reproduce delivery. Remove the nested `src/tools/resets-monitor/pkg` layout.
+4. **Scope:** Deliver one RAOM Debian package containing RAOM and `src-resets-monitor`. Use `scr-raom` as the unified package identity. Remove active standalone resets-monitor build entry. Keep reset CLI/history behavior and watchdog integration unchanged.
+5. **Verification:** Build from tracked source without existing ignored output. Verify one archive contains both commands, native dpkg ownership/lifecycle/conflict handling, and updated references. Package identity changes require fresh package evidence; prior archive results remain scoped to prior bytes.
+6. **Boundary:** Preserve historical archives, immutable evidence, original images, main edits, and client configuration/history. No source promotion or new hardware success inferred.
