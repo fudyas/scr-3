@@ -41,7 +41,7 @@ class SafetyCliHelper(ABC):
             if command == "lock-run" and args.command[:1] == ["--"]:
                 args.command = args.command[1:]
             main_root = MainRootHelper.resolve(Path.cwd())
-            ctx = LEGACY.Context(main_root)
+            ctx = LEGACY.Context(main_root, Path(__file__).resolve().parents[6])
             if getattr(args, "recover", False):
                 os.environ["SDLC_RECOVERY"] = "1"
 

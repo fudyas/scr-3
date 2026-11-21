@@ -52,7 +52,6 @@ function setup() {
     source "$RAOM_HOME/src/decision.sh" || fail 'decision'
     source "$RAOM_HOME/src/monit.sh" || fail 'MONIT adapter'
     source "$RAOM_HOME/tool.sh" || fail 'command layer'
-    source "$RAOM_HOME/etc/compat.sh" || fail 'compatibility adapter'
     WORK=$(mktemp -d) || fail 'scratch'
     trap 'if [ "$?" -ne 0 ] && [ -f "$WORK/error" ]; then cat "$WORK/error" >&2; fi; chmod -R u+rwX "$WORK"; rm -rf -- "$WORK"' EXIT
     export LC_ALL=C
@@ -356,43 +355,41 @@ NATIVE
     done
 }
 
-# Checks captured original adapters and native POSIX action/fallback dispatch.
-# Arguments: none. Returns: 0 or exits 1. Output: rendered fixture files and assertions.
+# Checks delivered templates and native POSIX action/fallback dispatch.
+# Arguments: none. Returns: 0 or exits 1. Output: harmless fixtures and assertions.
 function test_compatibility() {
     setup
-    local pair path fixture
-    for pair in '/etc/init.d/monit:monit.init' '/etc/default/monit:monit.defaults' '/sbin/monitstate.sh:monitstate.sh' '/etc/rc.local:rc.local'; do
-        path=${pair%:*} fixture=${pair#*:}
-        expect_status 0 render_compat "$path" "$TEST_DIR/fixtures/$fixture" "$WORK/$fixture.rendered" "$RAOM_HOME/etc"
-        cp "$TEST_DIR/fixtures/$fixture" "$WORK/unsupported"
-        printf '# unexpected edit\n' >>"$WORK/unsupported"
-        expect_status 2 render_compat "$path" "$WORK/unsupported" "$WORK/rejected" "$RAOM_HOME/etc" 2>"$WORK/error"
-        [ ! -e "$WORK/rejected" ] || fail 'unsupported original produced output'
-    done
-    expect_status 2 render_compat /etc/monitrc "$TEST_DIR/fixtures/monit.defaults" "$WORK/rejected" "$RAOM_HOME/etc" 2>"$WORK/error"
     sed '/^rm -f \/var\/lib\/monit\/state$/d' "$TEST_DIR/fixtures/rc.local" >"$WORK/expected-rc.local"
-    cmp "$WORK/expected-rc.local" "$WORK/rc.local.rendered" || fail 'rc.local changed beyond state wipe'
-    # Only the early routing block differs; native stop/status implementation stays exact.
-    sed '/^# Startup\/reload/,/^esac$/d' "$WORK/monit.init.rendered" | sed '/^$/d' >"$WORK/native-tail"
-    sed '/^$/d' "$TEST_DIR/fixtures/monit.init" >"$WORK/original-tail"
-    cmp "$WORK/native-tail" "$WORK/original-tail" || fail 'native stop/status changed'
+    cmp "$WORK/expected-rc.local" "$RAOM_HOME/etc/compat/rc.local" || fail 'rc.local changed beyond state wipe'
     cat >"$WORK/selector" <<'FIXTURE'
 #!/bin/sh
 printf '%s\n' "$*" >>"${0%/*}/routes"
 exit 0
 FIXTURE
     chmod 0700 "$WORK/selector"
-    sed "s|/usr/bin/scr-raom|$WORK/selector|g" "$WORK/monit.init.rendered" >"$WORK/native-init"
+    cat >"$WORK/original" <<'FIXTURE'
+#!/bin/sh
+printf '%s\n' "$*" >>"${0%/*}/native-routes"
+exit 7
+FIXTURE
+    chmod 0700 "$WORK/original"
+    sed -e "s|/usr/bin/scr-raom|$WORK/selector|g" \
+        -e "s|/usr/share/scr-resets-monitor/diverted/etc/init.d/monit|$WORK/original|g" \
+        "$RAOM_HOME/etc/compat/monit.init" >"$WORK/native-init"
     local action
     for action in start restart force-reload reload syntax; do
         dash "$WORK/native-init" "$action" || fail "native $action route"
         grep -qx "monit $action" "$WORK/routes" || fail "native $action escaped selector"
     done
-    sed "s|/etc/init.d/monit|$WORK/native-init|g" "$WORK/monitstate.sh.rendered" >"$WORK/fallback"
+    for action in stop status; do
+        expect_status 7 dash "$WORK/native-init" "$action"
+        grep -qx "$action" "$WORK/native-routes" || fail "native $action not delegated"
+    done
+    sed "s|/etc/init.d/monit|$WORK/native-init|g" "$RAOM_HOME/etc/compat/monitstate.sh" >"$WORK/fallback"
     chmod 0700 "$WORK/native-init"
     bash "$WORK/fallback" || fail 'fallback route'
     tail -n 1 "$WORK/routes" | grep -qx 'monit start' || fail 'fallback bypassed native gate'
-    grep -v '^#' "$WORK/monitstate.sh.rendered" | grep -Eq 'reboot|/etc/monit/bin/monit|sleep' && fail 'unsafe fallback retained'
+    grep -v '^#' "$RAOM_HOME/etc/compat/monitstate.sh" | grep -Eq 'reboot|/etc/monit/bin/monit|sleep' && fail 'unsafe fallback retained'
     return 0
 }
 

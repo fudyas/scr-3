@@ -40,14 +40,16 @@ class SDLCError(RuntimeError):
 class Context:
     """Repository configuration and shared host locks."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, command_root: Optional[Path] = None) -> None:
         """Initializes repository configuration and shared lock and runtime paths.
 
         Args:
             root: Identifies the repository or filesystem root.
+            command_root: Selects the checkout providing package verification commands.
         """
         # Loads host configuration before deriving any shared paths
         self.root = root.resolve()
+        self.command_root = (command_root or root).resolve()
         self.conf = SdlcRuntimeHelper.parse_conf(self.root / "etc/sdlc.conf")
 
         # Resolves shared host paths through the configuration contract
@@ -523,12 +525,12 @@ class SdlcPackageHelper(ABC):
 
     @staticmethod
     def cmd_verify_package(ctx: Context, args: argparse.Namespace) -> None:
-        """Installs and removes a package while proving whole-tree restoration under the image lock.
+        """Verifies package installation and rollback under the image lock.
 
         Steps:
             1. HOLD the image lock and check quarantine.
             2. INSTALL the package and run its test command.
-            3. REMOVE the package and compare restoration fingerprints.
+            3. REMOVE the package and verify the selected rollback contract.
             4. QUARANTINE failed restoration before reporting test errors.
 
         Args:
@@ -543,6 +545,10 @@ class SdlcPackageHelper(ABC):
         deb = Path(args.deb).resolve()
         if not root.is_dir() or not deb.is_file():
             raise SDLCError("--root must be a mounted directory and --deb must be a file")
+        # Selects project rollback assertions when metadata verification belongs to dpkg
+        rollback_command = getattr(args, "rollback_command", None)
+        if rollback_command and args.recover:
+            raise SDLCError("--rollback-command cannot release a quarantined image")
         identity = hashlib.sha256(str(root).encode()).hexdigest()[:20]
         quarantine = ctx.lock_root / "quarantine" / f"image-{identity}.json"
         dirty = ctx.lock_root / "quarantine" / "image-dirty.json"
@@ -551,7 +557,8 @@ class SdlcPackageHelper(ABC):
         excludes = [x for x in ctx.conf.get("SDLC_VERIFY_EXCLUDES", "").split(",") if x]
         name = SdlcPackageHelper.package_name(deb)
         journal = {"run": str(uuid.uuid4()), "host": socket.gethostname(), "root": str(root),
-                   "deb": str(deb), "package": name, "started": SdlcRuntimeHelper.now(), "phase": "waiting-lock"}
+                   "deb": str(deb), "package": name, "started": SdlcRuntimeHelper.now(), "phase": "waiting-lock",
+                   "rollback_command": rollback_command}
         journal_path = ctx.runtime / f"verify-{journal['run']}.json"
         SdlcRuntimeHelper.atomic_json(journal_path, journal)
         lock_context = contextlib.nullcontext() if os.environ.get("SDLC_IMAGE_LOCK_HELD") == "1" else ctx.lock("image")
@@ -560,7 +567,7 @@ class SdlcPackageHelper(ABC):
             ctx.assert_image_available(identity, args.recover)
             # Captures the original tree before any package operation
             try:
-                before = SdlcPackageHelper.fingerprint_tree(root, excludes)
+                before = {} if rollback_command else SdlcPackageHelper.fingerprint_tree(root, excludes)
             # Quarantines any fingerprint failure before reporting its cause
             except Exception as exc:
                 journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "error": str(exc)})
@@ -595,7 +602,7 @@ class SdlcPackageHelper(ABC):
             SdlcRuntimeHelper.atomic_json(journal_path, journal)
             # Requires restoration proof even after functional installation or test failure
             try:
-                after = SdlcPackageHelper.fingerprint_tree(root, excludes)
+                after = {} if rollback_command else SdlcPackageHelper.fingerprint_tree(root, excludes)
             # Quarantines any fingerprint failure before reporting its cause
             except Exception as exc:
                 journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "error": str(exc)})
@@ -603,11 +610,18 @@ class SdlcPackageHelper(ABC):
                 SdlcRuntimeHelper.atomic_json(quarantine, journal)
                 SdlcRuntimeHelper.atomic_json(dirty, journal)
                 raise SDLCError(f"restoration fingerprint failed and was quarantined: {exc}") from exc
+            # Verifies package-specific rollback without duplicating dpkg metadata behavior
+            if rollback_command:
+                try:
+                    SdlcRuntimeHelper.run(["chroot", str(root), "/bin/sh", "-c", rollback_command], capture=False)
+                except Exception as exc:
+                    cleanup_error = exc
             # Retains both quarantine scopes when restoration or package removal fails
             if before != after or cleanup_error is not None:
                 changed = sorted(set(before) ^ set(after) |
                                  {p for p in set(before) & set(after) if before[p] != after[p]})
-                journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "changed_paths": changed[:500]})
+                journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "changed_paths": changed[:500],
+                                "cleanup_error": str(cleanup_error) if cleanup_error else None})
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
                 SdlcRuntimeHelper.atomic_json(quarantine, journal)
                 SdlcRuntimeHelper.atomic_json(dirty, journal)
@@ -675,13 +689,15 @@ class SdlcPackageHelper(ABC):
                     cwd=ctx.root, capture=False)
                 env = os.environ.copy()
                 env["SDLC_IMAGE_LOCK_HELD"] = "1"
-                command = [str(ctx.root / "bin/lets"), "sdlc", "verify-package", args.id,
+                command = [str(ctx.command_root / "bin/lets"), "sdlc", "verify-package", args.id,
                            "--root", str(ctx.root / "image"), "--deb", str(deb)]
                 if args.test_command:
                     command.extend(["--test-command", args.test_command])
+                if getattr(args, "rollback_command", None):
+                    command.extend(["--rollback-command", args.rollback_command])
                 journal["phase"] = "install-test-remove"
                 SdlcRuntimeHelper.atomic_json(scratch / "journal.json", journal)
-                completed = subprocess.run(command, cwd=ctx.root, env=env, check=False)
+                completed = subprocess.run(command, cwd=ctx.command_root, env=env, check=False)
                 if completed.returncode:
                     raise SDLCError(f"package verification failed with exit code {completed.returncode}")
             # Preserves cleanup and quarantine after any command failure
@@ -963,6 +979,7 @@ class SdlcCliHelper(ABC):
         vp.add_argument("--root", required=True)
         vp.add_argument("--deb", required=True)
         vp.add_argument("--test-command")
+        vp.add_argument("--rollback-command", help="Runs package-specific rollback assertions instead of metadata fingerprints")
         vp.add_argument("--recover", action="store_true")
         vp.set_defaults(func=SdlcPackageHelper.cmd_verify_package)
         it = sub.add_parser("test-package")
@@ -970,6 +987,7 @@ class SdlcCliHelper(ABC):
         it.add_argument("--image", required=True)
         it.add_argument("--deb", required=True)
         it.add_argument("--test-command")
+        it.add_argument("--rollback-command", help="Runs package-specific rollback assertions instead of metadata fingerprints")
         it.set_defaults(func=SdlcPackageHelper.cmd_test_package)
         lr = sub.add_parser("lock-run")
         lr.add_argument("--image", required=True)

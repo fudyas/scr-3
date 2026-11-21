@@ -1,0 +1,3 @@
+/etc/default/scr-raom
+/etc/monit/raom/safe.monitrc
+/etc/logrotate.d/scr-resets-monitor

@@ -99,6 +99,82 @@ repo = pytest.fixture(name="repo")(SdlcTestHelper.repo)
 
 
 class TestSdlc:
+    """Verifies SDLC command boundaries and disposable package safety."""
+
+    @staticmethod
+    @pytest.mark.parametrize("failure", [None, "install", "installed", "remove", "rollback"])
+    def test_dpkg_rollback_contract(
+            repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: Optional[str]) -> None:
+        """Verifies package cleanup and quarantine without metadata fingerprints.
+
+        Args:
+            repo: Supplies an isolated repository.
+            tmp_path: Supplies disposable paths.
+            monkeypatch: Replaces external package processes.
+            failure: Selects the failed package operation.
+        """
+        # Prepares a disposable root and prohibits metadata scans
+        ctx = sdlc.Context(repo)
+        root = tmp_path / "root"
+        root.mkdir()
+        deb = tmp_path / "change.deb"
+        deb.write_bytes(b"test")
+        monkeypatch.setattr(sdlc.SdlcPackageHelper, "package_name", Mock(return_value="scr-example"))
+        monkeypatch.setattr(sdlc.SdlcPackageHelper, "package_install_command", Mock(return_value=["install"]))
+        monkeypatch.setattr(sdlc.SdlcPackageHelper, "fingerprint_tree", Mock(side_effect=AssertionError("metadata scan")))
+        commands = []
+
+        def run(command: List[str], **kwargs: bool) -> subprocess.CompletedProcess[str]:
+            """Simulates package operations and captures their order.
+
+            Args:
+                command: Supplies the process arguments.
+                kwargs: Supplies process execution options.
+
+            Returns:
+                The selected process result.
+
+            Raises:
+                SDLCError: The selected checked command fails.
+            """
+            # Maps only the expected package and project assertion operations
+            operation = command[-1] if command[0] == "chroot" else command[0]
+            if operation == "dpkg":
+                assert command == ["dpkg", f"--root={root}", f"--admindir={root / 'var/lib/dpkg'}", "-r", "scr-example"]
+                operation = "remove"
+            commands.append(operation)
+            if operation == failure and kwargs.get("check", True):
+                raise sdlc.SDLCError(f"{operation} failed")
+            return subprocess.CompletedProcess(command, int(operation == failure), "", "")
+
+        # Requires cleanup after install failure and quarantines failed rollback
+        monkeypatch.setattr(sdlc.SdlcRuntimeHelper, "run", run)
+        args = argparse.Namespace(root=str(root), deb=str(deb), recover=False,
+                                  test_command="installed", rollback_command="rollback")
+        if failure:
+            with pytest.raises(sdlc.SDLCError):
+                sdlc.SdlcPackageHelper.cmd_verify_package(ctx, args)
+        else:
+            sdlc.SdlcPackageHelper.cmd_verify_package(ctx, args)
+        expected = ["install"] + ([] if failure == "install" else ["installed"]) + ["remove", "rollback"]
+        assert commands == expected
+        assert (ctx.lock_root / "quarantine/image-dirty.json").exists() == (failure in {"remove", "rollback"})
+
+    @staticmethod
+    def test_dpkg_rollback_cannot_release_quarantine(repo: Path, tmp_path: Path) -> None:
+        """Refuses recovery through a weaker rollback contract.
+
+        Args:
+            repo: Supplies an isolated repository.
+            tmp_path: Supplies disposable paths.
+        """
+        # Refuses recovery before any package process can run
+        deb = tmp_path / "change.deb"
+        deb.write_bytes(b"test")
+        args = argparse.Namespace(root=str(tmp_path), deb=str(deb), recover=True, rollback_command="true")
+        with pytest.raises(sdlc.SDLCError, match="cannot release a quarantined image"):
+            sdlc.SdlcPackageHelper.cmd_verify_package(sdlc.Context(repo), args)
+
     """Checks retained CLI behavior and image-safety boundaries."""
 
     @staticmethod
@@ -456,7 +532,7 @@ class TestSdlc:
             monkeypatch: Replaces external effects within the test.
         """
         # Quarantines image when disposable scratch cannot be removed
-        ctx = sdlc.Context(repo)
+        ctx = sdlc.Context(repo, repo / "candidate")
         image = tmp_path / "image.img"
         image.write_bytes(b"image")
         deb = tmp_path / "package.deb"
@@ -494,12 +570,15 @@ class TestSdlc:
             Returns:
                 The simulated verifier result.
             """
-            assert command[:3] == [str(repo / "bin/lets"), "sdlc", "verify-package"]
+            assert command[:3] == [str(repo / "candidate/bin/lets"), "sdlc", "verify-package"]
+            assert command[-2:] == ["--rollback-command", "check-project-rollback"]
+            assert _kwargs["cwd"] == repo / "candidate"
             return subprocess.CompletedProcess(command, 0, "", "")
 
         monkeypatch.setattr(sdlc.subprocess, "run", verify_process)
         monkeypatch.setattr(sdlc.shutil, "rmtree", Mock(side_effect=OSError("scratch busy")))
-        args = argparse.Namespace(id="REQ-0001-TEST", image=str(image), deb=str(deb), test_command=None)
+        args = argparse.Namespace(id="REQ-0001-TEST", image=str(image), deb=str(deb), test_command=None,
+                                  rollback_command="check-project-rollback")
         with pytest.raises(sdlc.SDLCError, match="scratch cleanup failed and was quarantined"):
             sdlc.SdlcPackageHelper.cmd_test_package(ctx, args)
         assert (ctx.lock_root / "quarantine/image-dirty.json").is_file()
@@ -547,10 +626,14 @@ class TestSdlc:
         (["verify-package", "ITM-0002", "--root", "/root", "--deb", "/change.deb",
           "--test-command", "service example status", "--recover"],
          {"command": "verify-package", "id": "ITM-0002", "root": "/root", "deb": "/change.deb",
-          "test_command": "service example status", "recover": True}),
+          "test_command": "service example status", "recover": True, "rollback_command": None}),
         (["test-package", "ITM-0002", "--image", "/source.img", "--deb", "/change.deb"],
          {"command": "test-package", "id": "ITM-0002", "image": "/source.img",
-          "deb": "/change.deb", "test_command": None}),
+          "deb": "/change.deb", "test_command": None, "rollback_command": None}),
+        (["test-package", "ITM-0007", "--image", "/source.img", "--deb", "/change.deb",
+          "--rollback-command", "test ! -e /usr/bin/scr-raom"],
+         {"command": "test-package", "id": "ITM-0007", "image": "/source.img", "deb": "/change.deb",
+          "test_command": None, "rollback_command": "test ! -e /usr/bin/scr-raom"}),
         (["lock-run", "--image", "/source.img", "--", "printf", "%s", "two words"],
          {"image": "/source.img", "command": ["--", "printf", "%s", "two words"]}),
     ])
