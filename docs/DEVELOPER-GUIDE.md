@@ -1,9 +1,32 @@
 # SCR developer guidance
 
-Item 1 restarts as a Bash reset monitor for RAOM steps 1 and 2. Sources belong under `src/resets-monitor/`.
+Reset API source: `src/tools/resets-monitor/`. RAOM boot selector source: `src/tools/raom/`.
+Package `scr-resets-monitor` 1.1.0 delivers both through dpkg-owned `/usr/local/scr/` paths.
 [Canonical SDLC contract](SDLC-DEVELOPER-GUIDE.md) owns ceremonies, task validation, final QA, exact-pair SHOW, promotion, and hardware gates.
 Current Codex skills use `$sdlc-new`, `$sdlc-plan`, `$sdlc-run`, `$sdlc-review`, and chain/follow-up counterparts.
 All workflow commands use `./bin/lets sdlc`. Retired REQ commands and historical snapshots grant no current authority.
+
+## RAOM delivery and focused verification
+
+[RAOM operator guide](../src/tools/raom/README.md) defines complete defaults, data-only configuration, monotonic NTP deadline, fixed boot selection, and launch errors.
+[Reset API guide](../src/tools/resets-monitor/README.md) defines unchanged `record`, `status --json`, and `check --max-resets N --window M` interfaces.
+RAOM delegates threshold calculation to actual reset CLI. Client owns production profiles. Keepalive-only safe sample supplies no remote-service guarantee.
+
+REVIEW D-04 for ITM-0007 requires real Debian archive installation and lifecycle tests. New delivery uses standard dpkg ownership, conffiles, and diversions.
+Generic private-payload copying, manual lifecycle simulations, tar fingerprint comparisons, and access-time equality gates are superseded for this item.
+Legacy backup archives and prior reports stay unchanged. Historical failed metadata evidence is not current acceptance gate.
+
+`src/tools/raom/test/check-integration.sh` exercises actual installed selector/reset CLI with package-installed SEMA/NTP fixtures in assigned disposable Bullseye root.
+Real target MONIT 5.22 syntax checks consume installed safe-profile bytes. Private mount/PID namespace supplies `/proc`. No host daemon or hardware action occurs.
+Focused checks cover consumed interfaces only. Dependency internals, client service qualification, locked image acceptance, final QA, SHOW, and hardware confirmation retain assigned stages.
+
+Supported legacy rollback uses two commands, in order:
+
+1. REMOVE current package with `dpkg --remove scr-resets-monitor`.
+2. INSTALL exact retained 1.0.6/1.0.7 archive with `dpkg --install /absolute/retained.deb`.
+
+Direct in-place legacy downgrade is unsupported and can leave MONIT missing. Package callbacks never start services or reboot.
+Standard remove/purge restores diverted integration files. Conffiles survive remove, but not purge. Reset history and historical backup evidence remain retained.
 
 ## Image authority and preservation
 
@@ -32,6 +55,11 @@ Shared `SDLC_SHARED_LOCK_ROOT` must identify same lock root across hosts sharing
 Ordinary `stack`/`maintree` leases and `SDLC_IMAGE_LOCK_HELD` environment values do not establish real image-lock ownership.
 
 ## Authorized package lifecycle
+
+Default procedure below applies unless effective approved item decisions select different restoration evidence.
+ITM-0007 D-04 uses Debian-native lifecycle and explicit rollback checks, described above, instead of manual metadata requalification.
+Its authorized `test-package`/`verify-package` calls can supply `--rollback-command CMD`. Source hashing, image lock, architecture, cleanup, and quarantine remain required.
+`--rollback-command` cannot combine with `--recover`.
 
 1. RECORD item, exact image identity/source hash, package version/hash, architecture, approved operations, expected behavior, and rollback.
 2. ACQUIRE shared SDLC image lock before copy, inspection, or mount.
