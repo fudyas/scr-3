@@ -22,3 +22,11 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 4. **Proposed configuration:** `SAFE_MODE_ON_ERROR=true` by default. False permits normal-profile selection on errors where startup remains possible. Positive threshold decision selects safe mode regardless of flag.
 5. **Pending:** Built-in fallback when configuration cannot be read or validated requires developer answer. Proposed fallback is true; never assume unreadable configuration contains false.
 6. **Boundary:** Mode selection cannot guarantee successful startup when MONIT, selected profile, executable dependencies, or required filesystems are unavailable. Preserve error evidence and report failed startup accurately.
+
+## D-03 — Built-in fallback and client-owned safe profile
+
+1. **Overrides:** D-02 pending configuration fallback; initial brief requirement to deliver customer email service inventory; Cloudflare prerequisite or installation scope.
+2. **Decision:** Developer: "Built-in true if fails to read its own configuration. CloudFlare is out of this item scope, the client will define what goes into the safe mode monit config".
+3. **Scope:** Built-in safe-mode-on-error defaults to true before configuration access. Configuration-read failure selects safe mode.
+4. **Scope:** Client defines safe-mode MONIT service contents. This item owns profile selection and integration, not deployment or qualification of client service inventory. Cloudflare excluded entirely.
+5. **Boundary:** Startup remains subject to MONIT and selected profile availability. Report failed launch accurately. Existing watchdog continuity during boot gate remains integration safety requirement.
