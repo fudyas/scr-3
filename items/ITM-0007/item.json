@@ -57,10 +57,16 @@
       "previous": {
         "description": "# RAOM SysV startup and mode selection\n\n1. Deliver second item in CHN-0002: boot-time RAOM selection and required remote-access services through reversible Debian package.\n2. Replace basic scr-resets-monitor SysV observation hook with RAOM startup service. Preserve existing reset-monitor utility, history, and API.\n3. Consume completed ITM-0001 decision API: `scr-resets-monitor check --max-resets N --window SECONDS`. Exit 0 means threshold not exceeded, 1 means exceeded, 2 means unavailable. User spelling `sc-resets-monitor` refers provisionally to this existing utility.\n4. Start decision service at earliest valid dependency boundary, before unrestricted application startup. Determine actual storage, SEMA, clock, watchdog, and SysV dependencies from target evidence.\n5. Threshold exceeded selects RAOM. Valid non-exceeded result selects normal boot. Ship configurable reset limit N and window M with testable defaults chosen during planning. Client owns production values. Use existing check API for calculation.\n6. Start NTP prerequisite, wait for synchronization, and enter safe mode if synchronization does not occur within configurable K seconds. MONIT launches and supervises selected safe/normal service profile. Developer explicitly replaces email requirement against MONIT-dependent startup. No duplicate supervision.\n7. RAOM retains kernel/OS, Alive Timer, armed watchdog with keepalive, logging, networking, SSH, CPS, Cloudflare, NMS agent, and Auto-SSH. Admin tool optional per customer source. Identify actual target service names, dependencies, startup paths, and safe failure actions before design approval.\n8. Inspect 192.168.68.52 read-only. Supersedes 192.168.68.54. Do not infer current target state from historical image documentation. No install, restart, watchdog change, reboot, or physical output authorized by this planning request.\n9. Address direct SysV/application startup bypasses, duplicate MONIT launch, configuration reload paths, recovery-induced resets, and watchdog ownership where required for delivered RAOM behavior.\n10. RAOM exit follows customer repair-and-reboot expectation. Boot-scoped mode and safe fallback for non-NTP unavailable evidence remain proposals for plan review. NTP-timeout safe mode is settled. No automatic return to normal inferred.\n11. Reuse project Bash/LETS conventions, existing Debian build tooling, and reversible-package patterns. Preserve ITM-0001 dependency internals unless separately authorized.\n12. Acceptance covers selected boot mode, required services and excluded applications, safe failure behavior, normal-mode regression, package upgrades/rollback, exact restoration, and explicit hardware confirmation.\n13. Mandatory repository gates and locked disposable-image safety checks remain separate from focused delivery tests. Preserve original image/kernel payload and metadata.\n14. Out of scope: kernel/C rewrite, global OS repair, unrelated MONIT redesign, automatic deployment, and inferred hardware success.\n15. Planning starts unapproved. Independent planner resolves load-bearing questions before implementation draft. No implementation or chain execution authorization inferred."
       }
+    },
+    {
+      "at": "2026-11-21T07:20:21.467Z",
+      "host": "8fd23203e4ed",
+      "event": "plan_committed",
+      "detail": "revision 1, 4 tasks"
     }
   ],
   "created_at": "2026-11-21T05:50:51.912Z",
-  "updated_at": "2026-11-21T06:36:38.658Z",
+  "updated_at": "2026-11-21T07:20:21.467Z",
   "kind": "task",
   "idea": "We now proceed to the second SDLC item that implements tha RAOM safe mode. See docs/emails/RAOM.md that describes the condition for entering the safe mode and the services that need to be invoked there. Next, start planning a new SDLC item in chain 2 that implements a new SysV RAOM startup service according to the instructions below:\n- the service replaces the basic scr-resets-monitor service\n- the service boots as early as possible\n- the service invokes the sc-resets-monitor and tests if the threshold corssed \n- on the crossed threshold the service enters the RAOM safemode, otherwise launches normaly\n- my suggestion: the service launches MONIT in both cases, just points it to two different sets of configurations: safe mode and normal mode\n\nReview and evaluate the above solution against the target machine configuration - use IP of 192.168.68.54",
   "status": "BACKLOG",
@@ -70,11 +76,46 @@
   "host": null,
   "queue_rank": null,
   "plan": {
-    "revision": 0,
+    "revision": 1,
     "approved_revision": null,
     "approved_at": null
   },
-  "tasks": {},
+  "tasks": {
+    "TSK-0001": {
+      "block": "BLK-0001",
+      "title": "IMPLEMENT CONFIGURABLE BOOT DECISION",
+      "depends_on": [],
+      "model": "default",
+      "status": "TODO"
+    },
+    "TSK-0002": {
+      "block": "BLK-0001",
+      "title": "INTEGRATE SYSV AND SELECTED MONIT PROFILE",
+      "depends_on": [
+        "TSK-0001"
+      ],
+      "model": "default",
+      "status": "TODO"
+    },
+    "TSK-0003": {
+      "block": "BLK-0001",
+      "title": "PACKAGE REVERSIBLE STARTUP UPGRADE",
+      "depends_on": [
+        "TSK-0002"
+      ],
+      "model": "high",
+      "status": "TODO"
+    },
+    "TSK-0004": {
+      "block": "BLK-0001",
+      "title": "VERIFY CONSUMED INTERFACES AND DOCUMENT OPERATION",
+      "depends_on": [
+        "TSK-0003"
+      ],
+      "model": "default",
+      "status": "TODO"
+    }
+  },
   "hardware": {
     "required": true,
     "result": null,
