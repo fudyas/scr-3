@@ -195,10 +195,16 @@
       "host": "8fd23203e4ed",
       "event": "review_committed",
       "detail": "6 decisions"
+    },
+    {
+      "at": "2026-11-21T13:12:51.140Z",
+      "host": "8fd23203e4ed",
+      "event": "task_status",
+      "detail": "TSK-0001, TSK-0002, TSK-0003, TSK-0004 -> VALIDATED"
     }
   ],
   "created_at": "2026-11-21T05:50:51.912Z",
-  "updated_at": "2026-11-21T12:54:12.952Z",
+  "updated_at": "2026-11-21T13:12:51.140Z",
   "kind": "task",
   "idea": "We now proceed to the second SDLC item that implements tha RAOM safe mode. See docs/emails/RAOM.md that describes the condition for entering the safe mode and the services that need to be invoked there. Next, start planning a new SDLC item in chain 2 that implements a new SysV RAOM startup service according to the instructions below:\n- the service replaces the basic scr-resets-monitor service\n- the service boots as early as possible\n- the service invokes the sc-resets-monitor and tests if the threshold corssed \n- on the crossed threshold the service enters the RAOM safemode, otherwise launches normaly\n- my suggestion: the service launches MONIT in both cases, just points it to two different sets of configurations: safe mode and normal mode\n\nReview and evaluate the above solution against the target machine configuration - use IP of 192.168.68.54",
   "status": "IN PROGRESS",
@@ -218,7 +224,7 @@
       "title": "IMPLEMENT CONFIGURABLE BOOT DECISION",
       "depends_on": [],
       "model": "default",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     },
     "TSK-0002": {
       "block": "BLK-0001",
@@ -227,7 +233,7 @@
         "TSK-0001"
       ],
       "model": "default",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     },
     "TSK-0003": {
       "block": "BLK-0001",
@@ -236,7 +242,7 @@
         "TSK-0002"
       ],
       "model": "high",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     },
     "TSK-0004": {
       "block": "BLK-0001",
@@ -245,7 +251,7 @@
         "TSK-0003"
       ],
       "model": "default",
-      "status": "IN PROGRESS"
+      "status": "VALIDATED"
     }
   },
   "hardware": {
