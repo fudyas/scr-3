@@ -96,3 +96,10 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 5. **Scope:** Retest exact unified archive on authorized target `192.168.68.52` with `admin/hw_ed25519`. Preserve live reset data and client configuration through native dpkg owner change and rollback. Existing controlled reboot and service-test authority applies.
 6. **Scope:** After hardware tests, apply current Bash conventions to `tools/deb`, preserving build behavior and safety checks. Validate final source and artifact pair before requested promotion to `feature/monit-stability`.
 7. **Boundary:** Promotion request does not itself confirm hardware success. Report agent observations separately. Preserve unrelated main edits and immutable prior evidence.
+
+## D-11 — Accept hardware results and waive remaining threshold test
+
+1. **Overrides:** Remaining synchronized-NTP threshold hardware test obligation and pending developer acceptance for exact delivered scr-raom 1.1.0 archive.
+2. **Decision:** Developer requested "Promote the item to done,". Asked "Confirm you accept the tested `scr-raom 1.1.0` hardware results and waive the remaining synchronized-NTP threshold hardware test?", developer replied "I confirm, proote".
+3. **Scope:** Accept reported hardware results on SCR-7CCC91, image 8.26.0, exact archive SHA-256 `216f0177e56c7212d833b457b364471f8d6556f9aed3e63850659ed0d2cd306b`. Waive remaining synchronized-NTP threshold hardware test for this item. Complete bookkeeping after recorded acceptance.
+4. **Boundary:** Waiver does not establish that the unrun test passed. Preserve native NTP limitation, hardware logs, rollback results, prior failures, and immutable package evidence. No new device action authorized or performed by this decision.
