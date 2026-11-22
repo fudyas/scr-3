@@ -100,10 +100,10 @@ class TestSdlcPublicCommands:
         assert models.returncode == 0, models.stderr + models.stdout
         rows = [line for line in models.stdout.splitlines() if "\t" in line]
         assert rows == [
-            "coordinator\tgpt-6.1-sol\thigh", "requirements\tgpt-6-astra\txhigh",
-            "image_analysis\tgpt-6.1-terra\thigh", "planner\tgpt-6-astra\thigh",
-            "implementation\tgpt-6.1-sol\thigh", "validation\tgpt-6-astra\thigh",
-            "integration\tgpt-6-astra\thigh", "qa\tgpt-6-astra\thigh",
+            "coordinator\tgpt-6.2-sol\txhigh", "requirements\tgpt-6.2-astra\txhigh",
+            "image_analysis\tgpt-6.1-terra\thigh", "planner\tgpt-6.2-astra\txhigh",
+            "implementation\tgpt-6.2-astra\txhigh", "validation\tgpt-6.2-astra\txhigh",
+            "integration\tgpt-6.2-astra\txhigh", "qa\tgpt-6.2-astra\txhigh",
             "follow_up\tgpt-6.1-sol\thigh",
         ]
         assert not (checkout / "var").exists()
