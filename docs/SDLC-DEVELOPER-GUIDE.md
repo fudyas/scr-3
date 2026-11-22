@@ -128,14 +128,14 @@ These identifiers require fresh support checks against the current collaboration
 
 | # | Role | Model | Role effort |
 | --- | --- | --- | --- |
-| 1 | `sdlc_coordinator` | `gpt-6.1-sol` | `high` |
-| 2 | `sdlc_requirements` | `gpt-6-astra` | `xhigh` |
+| 1 | `sdlc_coordinator` | `gpt-6.2-sol` | `xhigh` |
+| 2 | `sdlc_requirements` | `gpt-6.2-astra` | `xhigh` |
 | 3 | `sdlc_image_analysis` | `gpt-6.1-terra` | `high` |
-| 4 | `sdlc_planner` | `gpt-6-astra` | `high` |
-| 5 | `sdlc_implementation` | `gpt-6.1-sol` | `high` |
-| 6 | `sdlc_validation` | `gpt-6-astra` | `high` |
-| 7 | `sdlc_integration` | `gpt-6-astra` | `high` |
-| 8 | `sdlc_qa` | `gpt-6-astra` | `high` |
+| 4 | `sdlc_planner` | `gpt-6.2-astra` | `xhigh` |
+| 5 | `sdlc_implementation` | `gpt-6.2-astra` | `xhigh` |
+| 6 | `sdlc_validation` | `gpt-6.2-astra` | `xhigh` |
+| 7 | `sdlc_integration` | `gpt-6.2-astra` | `xhigh` |
+| 8 | `sdlc_qa` | `gpt-6.2-astra` | `xhigh` |
 | 9 | `sdlc_follow_up` | `gpt-6.1-sol` | `high` |
 
 Task `model` values are effort hints, never model identifiers. Roles without a task hint use `default`.
@@ -144,8 +144,12 @@ Effort order is `low`, `medium`, `high`, `xhigh`, `max`, `ultra`, subject to cur
 | # | Task hint | Selected effort |
 | --- | --- | --- |
 | 1 | `default` | Configured role effort. |
-| 2 | `low` | `low`. |
+| 2 | `low` | `low`, subject to role floor. |
 | 3 | `high` | At least `high`. Preserve configured `xhigh`, `max`, or `ultra`. |
+
+Roles `sdlc_implementation`, `sdlc_validation`, and `sdlc_qa` have minimum effort `xhigh`, including tasks with `low` hints.
+Apply floor after hint mapping. Preserve higher selected effort. Other roles keep hint mapping above.
+Existing approved plans retain their hints and criteria unchanged. Floor applies to future dispatches.
 
 Canonical `.agents/skills/sdlc-*` instructions authorize configured model and mapped effort overrides for fresh independent workers.
 Overrides require `fork_turns="none"` and a complete reconstructed handoff in `message`.
@@ -159,6 +163,7 @@ Dispatch procedure:
 2. READ current collaboration tool declaration into `toolSupport`.
 3. SELECT required SDLC role and task hint into `selectedRole` and `taskHint`.
 4. CALCULATE `selectedModel` and `selectedEffort` from `roleMapping` and hint table.
+   4.1. APPLY `xhigh` minimum to `selectedEffort` for `sdlc_implementation`, `sdlc_validation`, and `sdlc_qa`. Preserve higher selected effort.
 5. ***if*** configuration is missing, hint is invalid, ***or*** selected model/effort is unsupported ***then***
    5.1. STOP before dispatch.
    5.2. RECORD exact missing values, tool declaration, and any tool error.
