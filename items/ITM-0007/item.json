@@ -369,10 +369,16 @@
       "host": "8fd23203e4ed",
       "event": "hardware",
       "detail": "{\"required\":true,\"result\":\"pass\",\"package_path\":\"pkg/scr-raom_1.1.0_all.deb\",\"promotion_commit\":\"27a792c0ea500b9860e3ee3c05d510e21e27801f\",\"package_sha256\":\"216f0177e56c7212d833b457b364471f8d6556f9aed3e63850659ed0d2cd306b\",\"image_identity\":\"SCR-7CCC91; root@192.168.68.52; image 8.26.0; filesystem 8.3.1.199; Debian 8.7; Linux 3.10.105-imx6; armv7l\",\"notes\":\"# ITM-0007 developer hardware acceptance\\n\\nPurpose: RESULT. Stage: implementation. Role: sdlc_follow_up.\\nAcceptance record only. No new tests, network access, device actions, image actions, or source changes.\\n\\n1. Developer acceptance: assistant asked 'Confirm you accept the tested `scr-raom 1.1.0` hardware results and waive the remaining synchronized-NTP threshold hardware test?'.\\n2. Developer replied verbatim: 'I confirm, proote'.\\n3. Effective ledger REVIEW D-11 records acceptance and waiver. Developer also requested \\\"Promote the item to done,\\\".\\n4. Hardware: SCR-7CCC91, root@192.168.68.52. Image label 8.26.0, filesystem 8.3.1.199, Debian 8.7, Linux 3.10.105-imx6, armv7l, MONIT 5.22.0.\\n5. Accepted package: scr-raom 1.1.0, architecture all. Exact archive: /home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0007/implementation/package-layout/scr-raom_1.1.0_all.deb.\\n6. Locally verified archive SHA-256: 216f0177e56c7212d833b457b364471f8d6556f9aed3e63850659ed0d2cd306b.\\n   Retained integration archive has identical verified SHA-256: /home/fudya/devel/scr/.codex/worktrees/ITM-0007/integration/pkg/scr-raom_1.1.0_all.deb. Hardware CLI requires this integration path.\\n7. Approved source_tree: e8f2081cf031c4a37b604eae4cde1c59be3fcdf4. Approved INPUT: 25d4273bab57e1ee7044c26ea054fbccb1859079027f98e1553ecf2ca56b77f8.\\n8. Pinned independent QA RESULT: 5f85263bfc829264c484fcb41ba19d72c9e924810a2d132029f885c8c06a422a. Installed promotion: 27a792c0ea500b9860e3ee3c05d510e21e27801f.\\n9. Hardware report captured earlier tested source_tree 45b25bad7fd7c0dce6c370fe4eee613e53d07f4d and INPUT 2b64d1302142c4b45745064d364904584c390f6a76db4805e287f250e44ead8e. Preserve historical identities.\\n10. Later Debian build-tool style report records equivalent package contents and unchanged exact archive hash. Source input hashes remain in implementation/package-layout/source-inputs-final.txt.\\n\\nAccepted procedure and observations:\\n\\n1. Native dpkg removed baseline scr-resets-monitor 1.0.6 and installed exact scr-raom archive. Native keepalive covered planned MONIT/watchdog handoff.\\n2. Live reset data and rotation policy were preserved. Native MONIT/watchdog diversions belonged to scr-raom. Maintainer callbacks started no services.\\n3. Four fresh controlled boots exercised NTP-timeout policy with MAX_RESETS=100, RESET_WINDOW_SECONDS=30, and three-second readiness budget.\\n4. Expected: false error policy selects normal. True error policy selects safe. Observed: two normal and two safe selections, all reason=ntp_timeout.\\n5. Normal decisions: 3360 ms and 3340 ms. Safe decisions: 3330 ms and 3340 ms. These values exclude synchronized-NTP threshold latency.\\n6. Expected: selected MONIT starts before full watchdog. Observed: safe selection at 19:35:58.203755, full watchdog at 19:35:58.991143.\\n7. Normal restart passed. Safe stop preserved native keepalive and left MONIT/full watchdog absent. Premature watchdog start returned 2 with watchdog_monit_unready.\\n8. Safe stop remained stable for 122.85 seconds with unchanged boot ID. Safe start and force-reload restored selected MONIT and full watchdog.\\n9. Temporary safe test profile requested full watchdog. Shipped safe sample remains keepalive-only. Client owns production profile contents.\\n10. Genuine synchronized-NTP threshold hardware case remains UNRUN and explicitly WAIVED by developer D-11. Waiver is not test success.\\n11. Retained NTP evidence reports leap_alarm, leap=11, and no_sys_peer. No substituted NTP binary, clock, or reset history established threshold hardware success.\\n12. Forced MONIT crash and physical watchdog reset response were not tested. No new success claimed for those cases.\\n\\nRollback and retained evidence:\\n\\n1. Completed native dpkg rollback removed scr-raom and installed scr-resets-monitor 1.0.6, SHA-256 eec9905ebe16f89548543554cc451378bc44d90e5b9048db86d9a626aad59973.\\n2. Latest reset data, rotation policy, original client RAOM policy, and seven native file hashes matched retained rollback evidence. Native MONIT, watchdog, and cron resumed.\\n3. Final report retains unsupported ACL operations from legacy 1.0.6 removal. Data/hash comparisons do not establish ACL restoration.\\n4. Prior failures remain preserved: native ntpd inherited RAOM lock FD 10 and caused storage_unavailable. Later planned MONIT restart caused watchdog PID-gap failure and unexpected reboot. Retained integration fixes and subsequent exact-package retest supersede those failures without deleting history.\\n5. Main report: /home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0007/implementation/hardware-package-layout/report.md.\\n6. Procedure assertions: /home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0007/implementation/hardware-package-layout/executed-assertions.md.\\n7. Same directory retains install.log, normal-boot-1-ready.log, normal-boot-2-ready.log, normal-restart.log, safe-boot-1.log, safe-boot-2.log, safe-order.log, safe-stop.log, safe-resume.log, rollback.log, rollback-stable.log, and rollback-assertions.log.\\n8. Historical reports: implementation/hardware-d05/report.md and implementation/hardware-lockfix/report.md. Hardware backup/archive/log directory retained at /var/tmp/itm-0007-package-layout.\\n9. This record uses explicit developer acceptance for hardware pass. Automated checks and agent observations alone do not establish developer success.\\n10. Coordinator owns task/item DONE bookkeeping. This worker changes no source, promotion, approved INPUT, or pinned QA RESULT.\\n\",\"confirmed_at\":\"2026-11-22T06:15:14.668Z\"}"
+    },
+    {
+      "at": "2026-11-22T06:16:42.649Z",
+      "host": "8fd23203e4ed",
+      "event": "task_status",
+      "detail": "TSK-0001, TSK-0002, TSK-0003, TSK-0004 -> DONE"
     }
   ],
   "created_at": "2026-11-21T05:50:51.912Z",
-  "updated_at": "2026-11-22T06:12:02.758Z",
+  "updated_at": "2026-11-22T06:16:42.649Z",
   "kind": "task",
   "idea": "We now proceed to the second SDLC item that implements tha RAOM safe mode. See docs/emails/RAOM.md that describes the condition for entering the safe mode and the services that need to be invoked there. Next, start planning a new SDLC item in chain 2 that implements a new SysV RAOM startup service according to the instructions below:\n- the service replaces the basic scr-resets-monitor service\n- the service boots as early as possible\n- the service invokes the sc-resets-monitor and tests if the threshold corssed \n- on the crossed threshold the service enters the RAOM safemode, otherwise launches normaly\n- my suggestion: the service launches MONIT in both cases, just points it to two different sets of configurations: safe mode and normal mode\n\nReview and evaluate the above solution against the target machine configuration - use IP of 192.168.68.54",
   "status": "REVIEW",
@@ -392,7 +398,7 @@
       "title": "IMPLEMENT CONFIGURABLE BOOT DECISION",
       "depends_on": [],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0002": {
       "block": "BLK-0001",
@@ -401,7 +407,7 @@
         "TSK-0001"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0003": {
       "block": "BLK-0001",
@@ -410,7 +416,7 @@
         "TSK-0002"
       ],
       "model": "high",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0004": {
       "block": "BLK-0001",
@@ -419,7 +425,7 @@
         "TSK-0003"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "DONE"
     }
   },
   "hardware": {
