@@ -63,10 +63,6 @@ function show_usage() {
         'check exits: 0 not exceeded, 1 exceeded, 2 unavailable.'
 }
 
-# Checks the privilege required for protected history and read-only BMC access.
-# Arguments: none. Returns: 0 for root, 2 otherwise. Output: none.
-function require_root() { [ "$EUID" -eq 0 ] || return 2; }
-
 # Preserves the status JSON contract when command preparation fails.
 # Arguments: $1 - fixed reason code; $2 - diagnostic. Returns: 2.
 # Output: unavailable JSON for status, plus stderr/log diagnostic.

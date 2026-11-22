@@ -1,9 +1,8 @@
-# SCR reset monitor
+# SCR RAOM package
 
-No production release. Previous kernel-module and C utility implementations are discarded.
+`scr-raom` 1.1.0 delivers the SysV MONIT boot gate and reset-history API. Exact-package acceptance remains pending.
 
-Item 1 retains RAOM steps 1 and 2: read BMC output, manage reset history, and return threshold decisions.
-Replacement implementation uses Bash. Sources belong under `src/resets-monitor/{scripts,etc,src}`.
-The planned `./bin/lets deb build src/resets-monitor/etc/deb.conf` command stages files and builds the Debian package under ignored `build/`.
+Build from the repository root with `./bin/lets deb build etc/deb/raom/deb.conf`.
+LETS writes `pkg/scr-raom_1.1.0_all.deb`. The archive contains `src-raom` and `src-resets-monitor`.
 
-New implementation plan and exact-package acceptance remain pending. Original image and kernel files under `var/` remain intact.
+[RAOM operator guide](src/tools/raom/README.md)

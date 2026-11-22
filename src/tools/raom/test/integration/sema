@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Supplies controlled read-only BMC observations to the installed reset CLI.
+# Arguments: $1 - cap; $2 - all. Returns: 0, or 2 for invalid/failed fixture.
+# Output: captured-format BMC fields on stdout; records invocation in fixture data.
+function main() {
+    [ "$#" -eq 2 ] && [ "$1" = cap ] && [ "$2" = all ] || return 2
+    printf 'sema cap all\n' >>/run/scr-raom-integration/calls
+    [ ! -e /run/scr-raom-integration/sema-failed ] || return 2
+    local count
+    read -r count </run/scr-raom-integration/boot-count || return 2
+    printf 'Board version: integration fixture\nSerial number: fixture-controller\nFirmware: fixture-1\nPower cycles: 1\nBoot count: %s\nRestart event: fixture\n' "$count"
+}
+
+main "$@"

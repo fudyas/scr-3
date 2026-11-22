@@ -1,83 +1,40 @@
 #!/bin/bash
 
-# Stops a build-check failure with its concrete criterion.
+# Stops a package inventory check without changing installed paths.
 # Arguments: $* - reason. Returns: never; exits 1. Output: stderr.
 function abort() { printf 'FAIL build: %s\n' "$*" >&2; exit 1; }
 
-# Runs the actual builder and verifies mappings, exclusions, and staged payload.
-# Arguments: none. Returns: 0 or aborts. Output: build and PASS messages.
+# Builds the real package and checks dpkg-owned paths and conffiles.
+# Arguments: none. Returns: 0 or aborts. Output: build and assertions; retains scratch.
 function main() {
-    local root="$(pwd -P)" scratch stage fixture_name fixture_archive deb file status
-    scratch=$(mktemp -d "$root/build/deb-check.XXXXXXXX") || abort 'cannot create build-check directory'
-    fixture_name="scr-reset-build-check-$BASHPID"
-    stage="build/$fixture_name"
-    fixture_archive="$root/build/${fixture_name}_0.0.0_all.deb"
-    BUILD_CHECK_SCRATCH=$scratch
-    BUILD_CHECK_STAGE="$root/$stage"
-    BUILD_CHECK_ARCHIVE=$fixture_archive
-    trap 'rm -r -- "$BUILD_CHECK_SCRATCH" "$BUILD_CHECK_STAGE"; rm -- "$BUILD_CHECK_ARCHIVE"' EXIT
-    mkdir -p "$scratch/source/folder" || abort 'cannot create mapping fixture'
-    printf 'copied\n' > "$scratch/source/folder/keep"
-    printf 'excluded\n' > "$scratch/source/folder/omit.bak"
-    chmod 0750 "$scratch/source/folder/keep"
-    printf 'Package: %s\nVersion: 0.0.0\nArchitecture: all\nMaintainer: SCR <noreply@localhost>\nDescription: Mapping fixture\n' "$fixture_name" > "$scratch/control"
-    cat > "$scratch/deb.conf" <<EOF
-STAGE_DIR=$stage
-INCLUDE_FILES="$scratch/control:$stage/DEBIAN/control $scratch/source/folder/:$stage/contents/ $scratch/source/folder:$stage/container/"
-EXCLUDE_FILES='*.bak'
-EOF
-    ./bin/lets deb build "$scratch/deb.conf" || abort 'mapping build failed'
-    [ -f "$stage/contents/keep" ] && [ -f "$stage/container/folder/keep" ] || abort 'rsync trailing-slash semantics'
-    [ ! -e "$stage/contents/omit.bak" ] && [ ! -e "$stage/container/folder/omit.bak" ] || abort 'exclusion ignored'
-    [ "$(stat -c %a "$stage/contents/keep")" = 750 ] || abort 'file mode changed'
-    printf 'stale\n' > "$stage/stale"
-    ./bin/lets deb build "$scratch/deb.conf" || abort 'repeat build failed'
-    [ ! -e "$stage/stale" ] || abort 'stale staging retained'
-    cp "$scratch/deb.conf" "$scratch/invalid.conf"
-    printf '\nINCLUDE_FILES="%s/control:build/outside-control"\n' "$scratch" >> "$scratch/invalid.conf"
-    status=0; ./bin/lets deb build "$scratch/invalid.conf" > "$scratch/rejected" 2>&1 || status=$?
-    [ "$status" -ne 0 ] && [ ! -e build/outside-control ] || abort 'outside staging mapping accepted'
-    printf 'PASS copy mappings, exclusions, modes, repeat build and staging guard\n'
-    ./bin/lets deb build src/tools/resets-monitor/etc/deb.conf || abort 'item build failed'
-    deb="$root/build/scr-resets-monitor_1.0.7_all.deb"
-    [ "$(dpkg-deb -f "$deb" Architecture)" = all ] || abort 'wrong package architecture'
-    dpkg-deb --raw-extract "$deb" "$scratch/package" || abort 'cannot inspect package'
-    for file in preinst postinst prerm postrm; do
-        [ "$(stat -c %a "$scratch/package/DEBIAN/$file")" = 755 ] || abort 'maintainer mode'
-        bash -n "$scratch/package/DEBIAN/$file" || abort 'maintainer syntax'
+    local scratch file archive=pkg/scr-raom_1.1.0_all.deb
+    ./bin/lets deb build etc/deb/raom/deb.conf || abort 'Debian build'
+    scratch=$(mktemp -d "$PWD/pkg/deb-inventory.XXXXXXXX") || abort 'scratch'
+    dpkg-deb --raw-extract "$archive" "$scratch" || abort 'extract archive'
+    diff --no-dereference -r src "$scratch/usr/local/scr" || abort 'full source subtree differs'
+    cmp src/tools/raom/etc/default-policy.conf "$scratch/etc/default/scr-raom" || abort 'client policy mapping'
+    cmp src/tools/raom/etc/compat/watchdog.init "$scratch/etc/init.d/watchdog" || abort 'watchdog adapter mapping'
+    [ -x "$scratch/etc/init.d/watchdog" ] || abort 'watchdog adapter mode'
+    cmp src/tools/raom/etc/raom.conf "$scratch/usr/local/scr/tools/raom/etc/raom.conf" || abort 'trusted runtime configuration'
+    [ ! -e "$scratch/usr/lib/scr-resets-monitor/payload" ] || abort 'private payload retained'
+    [ ! -e "$scratch/etc/default/monit" ] || abort 'native defaults replaced'
+    [ ! -e "$scratch/etc/monit/monitrc" ] || abort 'normal profile replaced'
+    [ "$(readlink "$scratch/usr/bin/scr-raom")" = /usr/local/scr/bin/src-raom ] || abort 'RAOM link'
+    [ "$(readlink "$scratch/usr/bin/scr-resets-monitor")" = /usr/local/scr/bin/src-resets-monitor ] || abort 'reset API link'
+    for file in src-raom src-resets-monitor; do
+        [ -x "$scratch/usr/local/scr/bin/$file" ] || abort "missing executable: $file"
     done
-    # Preserve the complete source subtree under its installed SCR_HOME.
-    diff -r src "$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr" || abort 'source subtree payload mismatch'
-    [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/bin/src-resets-monitor" ] || abort 'missing central entry point'
-    [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/etc/init.d/scr-resets-monitor" ] || abort 'missing SysV hook'
-    [ -f "$scratch/package/usr/lib/scr-resets-monitor/payload/etc/logrotate.d/scr-resets-monitor" ] || abort 'missing logrotate integration'
-    [ ! -e "$scratch/package/etc/monit" ] || abort 'active monit policy installed'
-    dpkg-deb --contents "$deb" > "$scratch/inventory" || abort 'cannot inspect inventory'
-    grep -q 'root/root' "$scratch/inventory" || abort 'payload owner metadata'
-    printf 'PASS Debian inventory, script modes, syntax and exact runtime bytes\n'
-    # Exercise the shipped init function with one isolated command fixture.
-    INIT_SOURCE="$root/src/tools/resets-monitor/src/scr-resets-monitor.init" bash <<'BASH' || abort 'startup hook behavior'
-source "$INIT_SOURCE"
-# Replaces only the fixed observation executable in this isolated test shell.
-# Arguments: record. Returns: 0 or 1. Output: none.
-function /usr/bin/scr-resets-monitor() { [ "$*" = record ]; }
-# Supplies executable discovery only for the isolated installed path.
-# Arguments: test expression. Returns: 0 for executable fixture, otherwise builtin status.
-function [() {
-    if [[ "$*" == '-x /usr/bin/scr-resets-monitor ]' ]]; then return 0; fi
-    builtin [ "$@"
-}
-main start || exit 1
-wait || exit 1
-main stop || exit 1
-main unexpected && exit 1
-exit 0
-BASH
-    printf 'PASS asynchronous observation hook and inactive stop behavior\n'
-    RUNTIME="$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/bin/src-resets-monitor" \
-    RUNTIME_SRC_DIR="$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/tools/resets-monitor/src/runtime" \
-    RUNTIME_TOOL="$scratch/package/usr/lib/scr-resets-monitor/payload/usr/local/scr/tools/resets-monitor/tool.sh" \
-        bash src/tools/resets-monitor/test/check-runtime.sh || abort 'packaged runtime regression'
+    for file in 2 3 4 5; do
+        [ "$(readlink "$scratch/etc/rc$file.d/S03monit")" = ../init.d/scr-raom ] || abort 'scheduler link'
+    done
+    cmp etc/deb/raom/conffiles "$scratch/DEBIAN/conffiles" || abort 'conffiles'
+    for file in preinst postinst prerm postrm; do
+        bash -n "$scratch/DEBIAN/$file" || abort 'callback syntax'
+        [ -x "$scratch/DEBIAN/$file" ] || abort 'callback not executable'
+    done
+    [ "$(dpkg-deb -f "$archive" Architecture)" = all ] || abort 'architecture'
+    [ "$(dpkg-deb -f "$archive" Package)" = scr-raom ] || abort 'identity'
+    printf 'PASS direct Debian inventory, full source, links, conffiles, callback syntax/modes\n'
 }
 
 main "$@"

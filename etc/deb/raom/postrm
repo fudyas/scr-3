@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# dpkg integration callback; never activates services.
+package_main postrm "$@"

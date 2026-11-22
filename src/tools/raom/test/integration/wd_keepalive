@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Rejects all service actions; this fixture exists for real syntax validation only.
+# Arguments: any. Returns: 99. Output: forbidden-action diagnostic on stderr.
+# Side effects: none; never starts a daemon or accesses watchdog devices.
+function main() {
+    printf 'forbidden integration service action: wd_keepalive %s\n' "$*" >&2
+    return 99
+}
+
+main "$@"

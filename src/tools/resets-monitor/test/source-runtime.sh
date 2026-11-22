@@ -4,6 +4,10 @@
 TEST_DIR=$(cd -- "${BASH_SOURCE[0]%/*}" && pwd) || return 2 2>/dev/null || exit 2
 RUNTIME_SRC_DIR=${RUNTIME_SRC_DIR:-$TEST_DIR/../src/runtime}
 RUNTIME_TOOL=${RUNTIME_TOOL:-$TEST_DIR/../tool.sh}
+
+# The command layer consumes the same shared privilege helper as installed entry points.
+source "$TEST_DIR/../../../lib/run.sh" || return 2 2>/dev/null || exit 2
+
 for module in "$RUNTIME_SRC_DIR"/*.sh; do
     source "$module" || return 2 2>/dev/null || exit 2
 done

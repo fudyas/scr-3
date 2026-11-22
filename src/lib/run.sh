@@ -198,3 +198,10 @@ function stop_proc() {
     wait "$pid" 2>/dev/null
     return 0
 }
+
+# Checks root authority without changing traps or exiting the caller.
+# Arguments: none. Returns: 0 for root, 2 otherwise. Output: none.
+# Side effects: none; callers retain their command-specific failure handling.
+function require_root() {
+    [ "$EUID" -eq 0 ] || return 2
+}

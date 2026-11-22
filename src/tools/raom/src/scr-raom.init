@@ -1,0 +1,24 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          scr-raom
+# Required-Start:    $local_fs $remote_fs $network rsyslog wd_keepalive
+# Required-Stop:     $remote_fs
+# X-Start-Before:    monit rc.local
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Selects the boot profile before MONIT starts
+### END INIT INFO
+
+# Routes lifecycle actions through RAOM. Watchdog reads native MONIT status.
+# Arguments: $1 - start, stop, status, reload, restart, or force-reload.
+# Returns: delegated status, or 2 for invalid input. Output: delegated diagnostics.
+function main() {
+    [ "$#" -eq 1 ] || return 2
+    case "$1" in
+    start | stop | restart | force-reload | reload) /usr/bin/scr-raom monit "$1" ;;
+    status) /etc/init.d/monit "$1" ;;
+    *) return 2 ;;
+    esac
+}
+
+[ "${BASH_SOURCE[0]}" != "$0" ] || main "$@"

@@ -13,12 +13,14 @@ import re
 import shlex
 import shutil
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
 import time
 import uuid
 from abc import ABC
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
@@ -40,14 +42,16 @@ class SDLCError(RuntimeError):
 class Context:
     """Repository configuration and shared host locks."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, command_root: Optional[Path] = None) -> None:
         """Initializes repository configuration and shared lock and runtime paths.
 
         Args:
             root: Identifies the repository or filesystem root.
+            command_root: Selects the checkout providing package verification commands.
         """
         # Loads host configuration before deriving any shared paths
         self.root = root.resolve()
+        self.command_root = (command_root or root).resolve()
         self.conf = SdlcRuntimeHelper.parse_conf(self.root / "etc/sdlc.conf")
 
         # Resolves shared host paths through the configuration contract
@@ -334,7 +338,12 @@ class SdlcPackageHelper(ABC):
             raise
 
     @staticmethod
-    def fingerprint_tree(root: Path, excludes: List[str]) -> Dict[str, Dict[str, Any]]:
+    def _raise_walk_error(error: OSError) -> None:
+        """Propagates an unreadable subtree during payload verification."""
+        raise error
+
+    @staticmethod
+    def fingerprint_tree(root: Path, excludes: List[str], native_dpkg: bool = False) -> Dict[str, Dict[str, Any]]:
         """Returns content and restoration metadata for a filesystem tree.
 
         Steps:
@@ -345,9 +354,10 @@ class SdlcPackageHelper(ABC):
         Args:
             root: Identifies the repository or filesystem root.
             excludes: Lists absolute paths excluded by the restoration contract.
+            native_dpkg: Compares payload and ownership under the native purge contract.
 
         Returns:
-            Path-keyed fingerprints with timestamps, xattrs, and hard-link groups.
+            Path-keyed fingerprints for the selected restoration contract.
         """
         result: Dict[str, Dict[str, Any]] = {}
         inode_paths: Dict[Tuple[int, int], List[str]] = {}
@@ -359,7 +369,8 @@ class SdlcPackageHelper(ABC):
                        "atime_ns": root_stat.st_atime_ns, "mtime_ns": root_stat.st_mtime_ns,
                        "xattrs": SdlcPackageHelper.fingerprint_xattrs(root)}
         # Traverses included paths without following directory symlinks
-        for base, dirs, files in os.walk(root, topdown=True, followlinks=False):
+        onerror = SdlcPackageHelper._raise_walk_error if native_dpkg else None
+        for base, dirs, files in os.walk(root, topdown=True, followlinks=False, onerror=onerror):
             base_path = Path(base)
             rel_base = "/" + str(base_path.relative_to(root)) if base_path != root else ""
             included_dirs = [d for d in dirs if not any((rel_base + "/" + d == x or
@@ -372,6 +383,8 @@ class SdlcPackageHelper(ABC):
                 path = base_path / name
                 rel = "/" + str(path.relative_to(root))
                 st = path.lstat()
+                if native_dpkg and st.st_nlink > 1:
+                    inode_paths.setdefault((st.st_dev, st.st_ino), []).append(rel)
                 result[rel] = {"type": "symlink", "link": os.readlink(path),
                                "mode": st.st_mode, "uid": st.st_uid, "gid": st.st_gid,
                                "size": st.st_size, "atime_ns": st.st_atime_ns,
@@ -388,15 +401,19 @@ class SdlcPackageHelper(ABC):
                 if any(rel == x or rel.startswith(x + "/") for x in normalized):
                     continue
                 initial_stat = path.lstat()
-                entry = {"type": "symlink" if path.is_symlink() else "file"}
-                if path.is_symlink():
+                entry: Dict[str, Any] = {"type": "symlink" if stat.S_ISLNK(initial_stat.st_mode) else "file"}
+                if stat.S_ISLNK(initial_stat.st_mode):
                     entry["link"] = os.readlink(path)
-                elif path.is_file():
+                elif stat.S_ISREG(initial_stat.st_mode):
                     digest = hashlib.sha256()
                     with path.open("rb") as handle:
                         for block in iter(lambda: handle.read(1024 * 1024), b""):
                             digest.update(block)
                     entry["sha256"] = digest.hexdigest()
+                elif native_dpkg and (stat.S_ISBLK(initial_stat.st_mode) or stat.S_ISCHR(initial_stat.st_mode)):
+                    entry["rdev"] = initial_stat.st_rdev
+                # Records shared inodes by path so equivalent replacements compare equal
+                if stat.S_ISREG(initial_stat.st_mode) or (native_dpkg and initial_stat.st_nlink > 1):
                     inode_paths.setdefault((initial_stat.st_dev, initial_stat.st_ino), []).append(rel)
                 # Captures timestamps after reads so fingerprinting does not report its own atime update
                 st = path.lstat()
@@ -415,7 +432,32 @@ class SdlcPackageHelper(ABC):
                 group = sorted(paths)
                 for rel in group:
                     result[rel]["hardlink_group"] = group
+        # Keeps file type independent of permissions and times for native dpkg purge
+        if native_dpkg:
+            for entry in result.values():
+                entry["type"] = stat.S_IFMT(entry.pop("mode"))
+                del entry["atime_ns"], entry["mtime_ns"]
         return result
+
+    @staticmethod
+    def require_fresh_package(root: Path, name: str) -> None:
+        """Refuses to purge package state that predates the verification run.
+
+        Args:
+            root: Identifies the disposable target root.
+            name: Names the package that verification will install and purge.
+
+        Raises:
+            SDLCError: The target inventory is empty or already contains the package.
+            subprocess.CalledProcessError: The target package query fails.
+        """
+        # Reads all package records, including retained conffiles and foreign architectures
+        inventory = SdlcRuntimeHelper.run(["chroot", str(root), "/usr/bin/dpkg-query", "-W", "-f=${Package}\\n"])
+        packages = inventory.stdout.splitlines()
+        if not packages:
+            raise SDLCError("cannot establish fresh install from empty target package inventory")
+        if name in packages:
+            raise SDLCError(f"native purge requires a fresh install: target already has a package record for {name}")
 
     @staticmethod
     def package_name(deb: Path) -> str:
@@ -523,12 +565,12 @@ class SdlcPackageHelper(ABC):
 
     @staticmethod
     def cmd_verify_package(ctx: Context, args: argparse.Namespace) -> None:
-        """Installs and removes a package while proving whole-tree restoration under the image lock.
+        """Verifies package installation and rollback under the image lock.
 
         Steps:
             1. HOLD the image lock and check quarantine.
             2. INSTALL the package and run its test command.
-            3. REMOVE the package and compare restoration fingerprints.
+            3. REMOVE the package and verify the selected rollback contract.
             4. QUARANTINE failed restoration before reporting test errors.
 
         Args:
@@ -543,6 +585,10 @@ class SdlcPackageHelper(ABC):
         deb = Path(args.deb).resolve()
         if not root.is_dir() or not deb.is_file():
             raise SDLCError("--root must be a mounted directory and --deb must be a file")
+        # Selects native dpkg purge and the additional project rollback assertions
+        rollback_command = getattr(args, "rollback_command", None)
+        if rollback_command and args.recover:
+            raise SDLCError("--rollback-command cannot release a quarantined image")
         identity = hashlib.sha256(str(root).encode()).hexdigest()[:20]
         quarantine = ctx.lock_root / "quarantine" / f"image-{identity}.json"
         dirty = ctx.lock_root / "quarantine" / "image-dirty.json"
@@ -551,16 +597,21 @@ class SdlcPackageHelper(ABC):
         excludes = [x for x in ctx.conf.get("SDLC_VERIFY_EXCLUDES", "").split(",") if x]
         name = SdlcPackageHelper.package_name(deb)
         journal = {"run": str(uuid.uuid4()), "host": socket.gethostname(), "root": str(root),
-                   "deb": str(deb), "package": name, "started": SdlcRuntimeHelper.now(), "phase": "waiting-lock"}
+                   "deb": str(deb), "package": name, "started": SdlcRuntimeHelper.now(), "phase": "waiting-lock",
+                   "rollback_command": rollback_command}
         journal_path = ctx.runtime / f"verify-{journal['run']}.json"
         SdlcRuntimeHelper.atomic_json(journal_path, journal)
         lock_context = contextlib.nullcontext() if os.environ.get("SDLC_IMAGE_LOCK_HELD") == "1" else ctx.lock("image")
         with lock_context:
             # Rechecks both quarantine scopes after caller or local flock acquisition
             ctx.assert_image_available(identity, args.recover)
+            fingerprint = SdlcPackageHelper.fingerprint_tree
+            if rollback_command:
+                SdlcPackageHelper.require_fresh_package(root, name)
+                fingerprint = partial(fingerprint, native_dpkg=True)
             # Captures the original tree before any package operation
             try:
-                before = SdlcPackageHelper.fingerprint_tree(root, excludes)
+                before = fingerprint(root, excludes)
             # Quarantines any fingerprint failure before reporting its cause
             except Exception as exc:
                 journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "error": str(exc)})
@@ -569,13 +620,22 @@ class SdlcPackageHelper(ABC):
                 SdlcRuntimeHelper.atomic_json(dirty, journal)
                 raise SDLCError(f"initial image fingerprint failed and was quarantined: {exc}") from exc
             install_attempted = False
+            archive_created = False
+            native_archive = root / f".sdlc-{journal['run']}.deb"
             primary_error: Optional[Exception] = None
             cleanup_error: Optional[Exception] = None
             try:
                 journal["phase"] = "installing"
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
+                install_command = SdlcPackageHelper.package_install_command(root, deb)
+                # Uses the image's dpkg and account database for Debian-native verification
+                if rollback_command:
+                    with deb.open("rb") as source, native_archive.open("xb") as destination:
+                        archive_created = True
+                        shutil.copyfileobj(source, destination)
+                    install_command = ["chroot", str(root), "/usr/bin/dpkg", "-i", f"/{native_archive.name}"]
                 install_attempted = True
-                SdlcRuntimeHelper.run(SdlcPackageHelper.package_install_command(root, deb), capture=False)
+                SdlcRuntimeHelper.run(install_command, capture=False)
                 journal["phase"] = "testing"
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
                 if args.test_command:
@@ -587,15 +647,31 @@ class SdlcPackageHelper(ABC):
                 journal["phase"] = "uninstalling"
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
                 if install_attempted:
-                    removed = SdlcRuntimeHelper.run(["dpkg", f"--root={root}", f"--admindir={root / 'var/lib/dpkg'}", "-r", name],
-                                  check=False, capture=False)
-                    if removed.returncode:
-                        cleanup_error = SDLCError(f"dpkg removal failed with exit code {removed.returncode}")
+                    remove_command = (["chroot", str(root), "/usr/bin/dpkg", "--purge", name] if rollback_command else
+                                      ["dpkg", f"--root={root}", f"--admindir={root / 'var/lib/dpkg'}", "-r", name])
+                    try:
+                        removed = SdlcRuntimeHelper.run(remove_command, check=False, capture=False)
+                        if removed.returncode:
+                            cleanup_error = SDLCError(f"dpkg removal failed with exit code {removed.returncode}")
+                    except OSError as exc:
+                        cleanup_error = exc
+                # Removes only the temporary archive created by this verification run
+                if archive_created:
+                    try:
+                        native_archive.unlink()
+                    except OSError as exc:
+                        cleanup_error = exc
             journal["phase"] = "verifying-clean"
             SdlcRuntimeHelper.atomic_json(journal_path, journal)
+            # Includes effects of the project rollback assertions in the final fingerprint
+            if rollback_command:
+                try:
+                    SdlcRuntimeHelper.run(["chroot", str(root), "/bin/sh", "-c", rollback_command], capture=False)
+                except Exception as exc:
+                    cleanup_error = exc
             # Requires restoration proof even after functional installation or test failure
             try:
-                after = SdlcPackageHelper.fingerprint_tree(root, excludes)
+                after = fingerprint(root, excludes)
             # Quarantines any fingerprint failure before reporting its cause
             except Exception as exc:
                 journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "error": str(exc)})
@@ -607,7 +683,8 @@ class SdlcPackageHelper(ABC):
             if before != after or cleanup_error is not None:
                 changed = sorted(set(before) ^ set(after) |
                                  {p for p in set(before) & set(after) if before[p] != after[p]})
-                journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "changed_paths": changed[:500]})
+                journal.update({"phase": "quarantined", "finished": SdlcRuntimeHelper.now(), "changed_paths": changed[:500],
+                                "cleanup_error": str(cleanup_error) if cleanup_error else None})
                 SdlcRuntimeHelper.atomic_json(journal_path, journal)
                 SdlcRuntimeHelper.atomic_json(quarantine, journal)
                 SdlcRuntimeHelper.atomic_json(dirty, journal)
@@ -675,13 +752,15 @@ class SdlcPackageHelper(ABC):
                     cwd=ctx.root, capture=False)
                 env = os.environ.copy()
                 env["SDLC_IMAGE_LOCK_HELD"] = "1"
-                command = [str(ctx.root / "bin/lets"), "sdlc", "verify-package", args.id,
+                command = [str(ctx.command_root / "bin/lets"), "sdlc", "verify-package", args.id,
                            "--root", str(ctx.root / "image"), "--deb", str(deb)]
                 if args.test_command:
                     command.extend(["--test-command", args.test_command])
+                if getattr(args, "rollback_command", None):
+                    command.extend(["--rollback-command", args.rollback_command])
                 journal["phase"] = "install-test-remove"
                 SdlcRuntimeHelper.atomic_json(scratch / "journal.json", journal)
-                completed = subprocess.run(command, cwd=ctx.root, env=env, check=False)
+                completed = subprocess.run(command, cwd=ctx.command_root, env=env, check=False)
                 if completed.returncode:
                     raise SDLCError(f"package verification failed with exit code {completed.returncode}")
             # Preserves cleanup and quarantine after any command failure
@@ -727,6 +806,7 @@ class SdlcPackageHelper(ABC):
             if functional_error is not None:
                 raise SDLCError(f"package test failed; disposable image was cleaned: {functional_error}")
         print("package passed disposable-image restoration test; source image unchanged")
+        print(f"source image SHA-256: {original_hash}")
 
     @staticmethod
     def cmd_lock_run(ctx: Context, args: argparse.Namespace) -> None:
@@ -963,6 +1043,8 @@ class SdlcCliHelper(ABC):
         vp.add_argument("--root", required=True)
         vp.add_argument("--deb", required=True)
         vp.add_argument("--test-command")
+        rollback_help = "Uses native dpkg for a fresh install and purge, then checks the command and whole-tree payload"
+        vp.add_argument("--rollback-command", help=rollback_help)
         vp.add_argument("--recover", action="store_true")
         vp.set_defaults(func=SdlcPackageHelper.cmd_verify_package)
         it = sub.add_parser("test-package")
@@ -970,6 +1052,7 @@ class SdlcCliHelper(ABC):
         it.add_argument("--image", required=True)
         it.add_argument("--deb", required=True)
         it.add_argument("--test-command")
+        it.add_argument("--rollback-command", help=rollback_help)
         it.set_defaults(func=SdlcPackageHelper.cmd_test_package)
         lr = sub.add_parser("lock-run")
         lr.add_argument("--image", required=True)

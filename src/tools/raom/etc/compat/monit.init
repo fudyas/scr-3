@@ -1,0 +1,21 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          monit
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Should-Start:      $all
+# Should-Stop:       $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: MONIT with per-boot RAOM profile selection
+### END INIT INFO
+
+# Live Debian diversion adapter, not an inactive compatibility example.
+# Keep status lock-free for the native watchdog test. Serialize planned PID gaps.
+# Arguments: one native service action. Returns: delegated status, or 2 for usage.
+# Output: delegated diagnostics; explicit actions can change native service state.
+case "$1" in
+    start|stop|restart|force-reload|reload|syntax) exec /usr/bin/scr-raom monit "$1" ;;
+    status) exec /usr/share/scr-raom/diverted/etc/init.d/monit "$@" ;;
+    *) printf 'Usage: %s {start|stop|status|restart|force-reload|reload|syntax}\n' "$0" >&2; exit 2 ;;
+esac

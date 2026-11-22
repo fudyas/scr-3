@@ -1,0 +1,4 @@
+# Default CLI uses only the validated runtime selection.
+# Missing include must fail the final poll-time check, not start an empty daemon.
+set daemon 0
+include /run/scr-raom/monitrc
