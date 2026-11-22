@@ -22,6 +22,13 @@
 11. PRESERVE unrelated staged, unstaged, and untracked main edits. Never stash, force, reset hard, or copy those edits into item worktrees.
 12. KEEP retired REQ history and existing artifacts intact. Legacy round commands no longer operate active workflow. Do not convert or resume an old requirement silently.
 
+## Remote target access
+
+1. USE repository SSH key `admin/hw_ed25519` for remote hardware access. Never print or copy private key contents into logs or artifacts.
+2. USE latest target IP supplied by developer. Current target: `192.168.68.52`.
+3. CONNECT from repository root with `ssh -i admin/hw_ed25519 -o IdentitiesOnly=yes root@192.168.68.52`.
+4. KEEP planning inspection read-only. SSH credentials do not authorize installation, service changes, watchdog changes, or reboot.
+
 ## Image and hardware safety
 
 1. PRESERVE all original hardware-image and kernel files under `var/`, including their bytes and metadata. Never clear or replace `var/` for a gate.
