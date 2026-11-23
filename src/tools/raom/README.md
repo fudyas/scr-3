@@ -1,14 +1,228 @@
-# RAOM boot selection
+# 1. Overview
 
-`scr-raom` 1.1.0 delivers RAOM selector and reset-history API in one Debian package. RAOM starts one MONIT with selected safe or normal profile.
+RAOM selects safe or normal operation before MONIT starts. Recent reset history determines whether normal services can start.
+On excessive resets, RAOM selects safe mode. On unavailable evidence, configurable error policy selects safe or normal mode.
 
-Client owns production profile contents. Shipped safe sample supervises existing `wd_keepalive` only.
+RAOM starts one MONIT instance with selected profile. MONIT supervises services defined by that profile.
+RAOM coordinates native watchdog and `wd_keepalive` so hardware feeding continues during boot decisions and planned MONIT stops.
 
-## Configuration
+| # | Mode | Purpose | Default profile |
+| --- | --- | --- | --- |
+| 1 | Normal | Run client production services. Platform supplies profile contents. | `/etc/monit/monitrc` |
+| 2 | Safe | Run client recovery services. Shipped sample supervises only `wd_keepalive`. | `/etc/monit/raom/safe.monitrc` |
 
-`tool.sh` loads trusted `etc/raom.conf` for runtime paths and fallback profile paths. Shared SCR libraries supply logging and root checks.
-Client policy lives in `/etc/default/scr-raom`. This file contains data, never shell code. All six keys required.
-Values use unquoted `KEY=value` lines. Blank lines and whole-line comments allowed.
+Client owns production profiles. Shipped safe sample provides hardware feeding, not a complete recovery environment.
+Mode and profile path stay fixed for current kernel boot. Next boot evaluates retained reset history again.
+
+Debian package `scr-raom` 1.1.0 delivers RAOM and [reset-history API](../resets-monitor/README.md).
+
+<div style="page-break-after: always;"></div>
+
+# 2. High Level & Low Level Design
+
+## 2.1 High-level architecture
+
+RAOM combines client policy, NTP readiness, and reset API result into one boot selection.
+Reset API owns reset counts, history refresh, and evidence quality. RAOM owns mode selection and MONIT startup.
+
+```mermaid
+flowchart TD
+    Boot["SysV startup / MONIT service action"] --> RAOM["RAOM boot selector"]
+    Policy["Client policy"] --> RAOM
+    NTP["Local NTP readiness"] --> RAOM
+    History["Retained reset history"] --> API["Reset-history API"]
+    API -->|"threshold result or error"| RAOM
+    RAOM -->|"one selection per boot"| Selection["Mode, profile path, reason"]
+    Selection -->|"validate and start"| MONIT["One MONIT instance"]
+    MONIT -->|"selected profile defines services"| Services["Normal services or safe services"]
+    RAOM -->|"coordinate hardware feeding"| Feeders["Native watchdog / wd_keepalive"]
+```
+
+## 2.2 Boot process
+
+Runlevels 2–5 retain scheduler identity `monit`. Legacy `S03monit` links target `scr-raom`.
+Dependency-based startup uses adapted `/etc/init.d/monit`. Both routes reach RAOM before MONIT starts.
+
+Diagram shows first service start in a new boot. Startup errors can stop launch at each validation or handoff boundary.
+
+```mermaid
+flowchart TD
+    Boot["Enter runlevel 2–5"] --> Stop["K01watchdog stop: hand off to wd_keepalive"]
+    Stop --> Keepalive["S01wd_keepalive start: retain feeding"]
+    Keepalive --> Entry["MONIT startup enters RAOM"]
+    Entry --> Lock["Acquire lock and read kernel boot ID"]
+    Lock --> Bootstrap["Verify keepalive; start logging and NTP"]
+    Bootstrap --> Decide["Select safe or normal profile"]
+    Decide --> Save["Atomically publish selection; record timing"]
+    Save --> Validate["Check START flag, storage, and profile syntax"]
+    Validate --> Pointer["Publish runtime profile link"]
+    Pointer --> Start["Start MONIT through start-stop-daemon"]
+    Start --> Verify["Verify executable, PID, and selected -c argument"]
+    Verify --> Request{"Profile requests full watchdog?"}
+    Request -->|"Yes: gated request verifies MONIT"| Watchdog["Native watchdog takes over feeding"]
+    Request -->|"No"| Retain["wd_keepalive continues feeding"]
+```
+
+RAOM holds one lock through bootstrap, selection, publication, and service action.
+Later service starts reuse current-boot selection. They validate selected profile without repeating reset evaluation.
+Configuration edits affect selection on next boot. Profile contents remain client-managed and can change at selected path.
+
+Native logging and NTP startup each use separate 10-second command budgets.
+NTP readiness deadline starts at decision entry, after bootstrap attempt.
+`NTP_SYNC_TIMEOUT_SECONDS` covers readiness wait, not complete boot duration.
+Linux `/proc/uptime` supplies monotonic time. Wall-clock changes cannot extend this wait.
+
+## 2.3 Safe and normal mode selection
+
+NTP readiness requires local `ntpq -c 'rv 0'` output with both `leap_none,` and `sync_ntp,`.
+Each probe uses at most two seconds, capped by remaining readiness budget.
+After readiness, RAOM calls reset API with a separate 15-second command budget:
+
+```bash
+/usr/bin/scr-resets-monitor check --max-resets "$MAX_RESETS" --window "$RESET_WINDOW_SECONDS"
+```
+
+Diagram applies to a new decision. Existing valid selection bypasses this decision flow.
+
+```mermaid
+flowchart TD
+    Config{"Complete valid policy?"}
+    Config -->|"No"| Defaults["Built-in defaults: safe mode"]
+    Config -->|"Yes"| Ready{"Clock, bootstrap, and NTP readiness succeed?"}
+    Ready -->|"No"| Error{"SAFE_MODE_ON_ERROR?"}
+    Ready -->|"Yes"| API["Call reset-history API"]
+    API -->|"Exit 0: limit not exceeded"| Normal["Normal mode"]
+    API -->|"Exit 1: limit exceeded"| Safe["Safe mode"]
+    API -->|"Exit 2 or unexpected exit"| Error
+    Error -->|"true"| Safe
+    Error -->|"false"| Normal
+    Defaults --> Save["Publish mode, profile path, and reason"]
+    Safe --> Save
+    Normal --> Save
+```
+
+| # | Evidence | Stored reason | Selection |
+| --- | --- | --- | --- |
+| 1 | API exit `0` | `below_threshold` | Normal. Limit is not exceeded. |
+| 2 | API exit `1` | `threshold_exceeded` | Safe, regardless of error policy. |
+| 3 | API exit `2` | `reset_evidence_unavailable` | Error policy selects safe or normal. |
+| 4 | Unexpected API exit, including command timeout | `reset_api_failed` | Error policy selects safe or normal. |
+| 5 | NTP readiness deadline expires | `ntp_timeout` | Error policy selects safe or normal. |
+| 6 | Native logging or NTP bootstrap fails | `ntp_start_failed` | Error policy selects safe or normal. |
+| 7 | Invalid client configuration | `configuration_invalid` | Complete built-in defaults select safe. |
+| 8 | Monotonic clock unavailable or invalid | `clock_unavailable` | If state publication remains possible, error policy applies. |
+
+Threshold uses strictly more than `MAX_RESETS`. With default limit `5`, five resets do not exceed threshold. Six resets do.
+API still requires sufficient reliable evidence for its result.
+Error-permitted normal mode does not mean reliable evidence proved reset count acceptable. Stored reason preserves this distinction.
+
+If keepalive, runtime storage, boot identity, or atomic publication is unavailable, selection can fail entirely.
+Successful selection does not prove MONIT launch. Missing binary/profile, invalid syntax, or unusable runtime storage can still prevent launch.
+Failed safe launch never substitutes normal profile.
+
+## 2.4 Low-level components and state
+
+| # | Source | Responsibility |
+| --- | --- | --- |
+| 1 | [`../../bin/src-raom`](../../bin/src-raom) | Load shared SCR libraries, reset numeric parser, and RAOM modules. |
+| 2 | [`tool.sh`](tool.sh) | Parse commands, require root, hold invocation lock, and dispatch actions. |
+| 3 | [`src/decision.sh`](src/decision.sh) | Parse policy, wait for NTP, consume reset result, and publish selection. |
+| 4 | [`src/monit.sh`](src/monit.sh) | Bootstrap services, validate MONIT, coordinate feeders, and record decision timing. |
+| 5 | [`src/scr-raom.init`](src/scr-raom.init) | Route SysV lifecycle actions through RAOM. |
+| 6 | [`etc/raom.conf`](etc/raom.conf) | Define trusted internal paths and fallback profile paths. |
+| 7 | [`etc/default-policy.conf`](etc/default-policy.conf) | Supply default client policy. |
+| 8 | [`etc/runlevels.conf`](etc/runlevels.conf) | Define startup links while retaining scheduler identity `monit`. |
+
+Shared SCR libraries supply logging and root checks. Client policy contains data only. RAOM never sources it as shell code.
+
+| # | Runtime path | Contract |
+| --- | --- | --- |
+| 1 | `/run/scr-raom/` | Root-owned private directory, mode `0700`. |
+| 2 | `/run/scr-raom/lock` | Serializes RAOM operations. Lock acquisition waits at most two seconds. |
+| 3 | `/run/scr-raom/selection` | Atomic five-field record: `schema`, `boot_id`, `mode`, `profile`, `reason`. |
+| 4 | `/run/scr-raom/monitrc` | Link to selected profile, published only after syntax validation. |
+| 5 | `/proc/sys/kernel/random/boot_id` | Identifies current kernel boot. |
+| 6 | `/run/monit.pid` | Native MONIT PID file, used with executable and command-line checks. |
+
+Lock and selection files require owner root, mode `0600`, and one hard link. RAOM rejects redirected or unsafe state paths.
+Atomic rename publishes complete selection. Corrupt selection fails instead of silently choosing normal.
+Valid current-boot selection fixes mode and profile path. RAOM provides no automatic same-boot return to normal.
+
+## 2.5 Native startup adapters
+
+[`etc/compat/`](etc/compat/) contains installed adapters. Debian diversions retain native files under `/usr/share/scr-raom/diverted/`.
+
+| # | Source | Installed path | Purpose |
+| --- | --- | --- | --- |
+| 1 | `monit.init` | `/etc/init.d/monit` | Route lifecycle actions through RAOM. Native status stays lock-free for watchdog checks. |
+| 2 | `monitrc` | `/etc/monitrc` | Include validated `/run/scr-raom/monitrc` for default MONIT CLI calls. |
+| 3 | `monitstate.sh` | `/sbin/monitstate.sh` | Start MONIT through gated init entry. |
+| 4 | `rc.local` | `/etc/rc.local` | Run gated startup and platform setup while preserving MONIT state. |
+| 5 | `watchdog.init` | `/etc/init.d/watchdog` | Gate activation on selected running MONIT. Stop transfers feeding to native keepalive. |
+
+Missing runtime profile link makes default MONIT CLI configuration fail closed.
+`/etc/default/monit` supplies native `START` flag. Startup requires `START=yes`.
+Conflicting `MONIT_OPTS` profile/PID arguments fail startup. Running instance must expose exactly one selected explicit `-c` path.
+
+## 2.6 Watchdog protection
+
+Normal profile on SCR-7CCC91 requests full watchdog through `99-watchdog`.
+That daemon checks MONIT PID file and runs `/sbin/monit-status.sh`.
+Stock safe profile supervises only `wd_keepalive`, which feeds hardware timer without full watchdog checks on MONIT.
+
+Client safe profile can request full watchdog through `/etc/init.d/watchdog start`.
+Same selection and process checks apply in both modes. Native watchdog takes over hardware feeding from keepalive.
+Client profile must choose which feeder it supervises.
+
+Before planned MONIT stop or restart, RAOM requires keepalive executable, stops full watchdog, and verifies its absence.
+RAOM then starts or verifies native keepalive through bounded `start-stop-daemon --status --exec` checks.
+Only successful handoff permits MONIT stop. Parent retains lock through restart, so concurrent watchdog requests cannot bypass this transition.
+
+After restart, selected profile can request full watchdog again. If MONIT stays stopped, keepalive continues feeding.
+If handoff fails, RAOM preserves MONIT PID and reports failure.
+RAOM attempts to restore previous full watchdog only against verified selected MONIT. If neither feeder can be verified, hardware feeding is unconfirmed.
+
+## 2.7 Verification boundaries
+
+Decision and boot checks cover selection, bounded waits, startup order, and launch failures. Package checks cover dpkg lifecycle and configuration preservation.
+[`test/check-integration.sh`](test/check-integration.sh) installs application and dependency fixtures through real `.deb` archives in approved disposable Debian root.
+Installed selector consumes installed reset CLI. SEMA/NTP fixtures supply controlled observations without hardware access.
+Private mount/PID namespace supplies `/proc`. Real MONIT syntax checks do not start daemons.
+Physical boot and watchdog behavior require hardware acceptance with exact package.
+
+<div style="page-break-after: always;"></div>
+
+# 3. User Manual
+
+## 3.1 Build and install
+
+Package installs operational files under `/usr/local/scr/`.
+`/usr/bin/scr-raom` links to `/usr/local/scr/bin/src-raom`.
+`/usr/bin/scr-resets-monitor` links to `/usr/local/scr/bin/src-resets-monitor`.
+Platform supplies normal MONIT profile, MONIT/watchdog binaries, and native watchdog checks.
+
+1. BUILD package from repository root:
+
+   ```bash
+   ./bin/lets deb build etc/deb/raom/deb.conf
+   ```
+
+2. On authorized target, INSTALL built archive as root:
+
+   ```bash
+   dpkg --install src/pkg/scr-raom_1.1.0_all.deb
+   ```
+
+   Path assumes archive exists under `src/pkg/` in current directory. For transferred archive, use its target path.
+
+Package callbacks never start services, feed watchdog, or reboot.
+Foreign ownership, another package's active diversions, and unsupported native integration files stop installation.
+Standard conffiles preserve client configuration.
+
+## 3.2 Configure policy and profiles
+
+Client policy lives in `/etc/default/scr-raom`. All six keys required. Values use unquoted `KEY=value` lines.
+Blank lines and whole-line comments allowed. Default policy:
 
 ```text
 MAX_RESETS=5
@@ -28,118 +242,95 @@ NORMAL_PROFILE=/etc/monit/monitrc
 | 5 | `SAFE_PROFILE` | Absolute safe-profile path. Built-in path `/etc/monit/raom/safe.monitrc`. |
 | 6 | `NORMAL_PROFILE` | Absolute normal-profile path. Built-in path `/etc/monit/monitrc`. |
 
-Missing, unreadable, malformed, partial, duplicate-key, or unknown-key configuration discards all supplied values. Complete built-in defaults apply, including `SAFE_MODE_ON_ERROR=true`.
-Quoted values, shell expansions, and inline comments are not shell syntax here. Profile paths cannot contain control characters or equal `/`.
-Numeric limits prevent overflow. Client selects production threshold, reset window, and NTP timeout.
+Missing, unreadable, malformed, partial, duplicate-key, or unknown-key configuration discards all supplied values.
+Complete built-in defaults apply, including `SAFE_MODE_ON_ERROR=true`.
+Quoted values, shell expansions, and inline comments receive no shell interpretation.
+Profile paths cannot contain control characters or equal `/`. Numeric limits prevent overflow.
 
-## Boot behavior
+1. SET production threshold, reset window, and NTP timeout in `/etc/default/scr-raom`.
+2. DEFINE production services in normal profile.
+3. DEFINE required recovery services and feeder in safe profile.
+4. SET `START=yes` in `/etc/default/monit` to enable MONIT startup.
 
-1. HAND OFF full watchdog to native `wd_keepalive` at runlevel `K01watchdog stop`. The following `S01wd_keepalive start` keeps that feeder running.
-2. START native logging and NTP through bounded init operations.
-3. START monotonic `NTP_SYNC_TIMEOUT_SECONDS` deadline at decision entry, after native bootstrap attempt.
-4. ***if*** bootstrap succeeds ***then*** POLL local `ntpq -c 'rv 0'` until ready or deadline.
-5. ***if*** NTP is ready ***then*** CALL reset API with `MAX_RESETS` and `RESET_WINDOW_SECONDS`.
-6. SELECT profile from API result and error policy.
-7. STORE complete selection atomically under `/run/scr-raom/selection`, with kernel boot identity.
-8. VALIDATE selected MONIT profile before launch.
-9. START selected instance through native `start-stop-daemon`.
-10. VERIFY native MONIT executable, PID, and selected `-c` argument while RAOM holds its lock.
-11. ***if*** selected profile requests watchdog startup ***then*** TRANSFER feeding to native watchdog after verification of selected MONIT.
+Policy changes affect next boot selection. Restart or reload retains current mode and profile path.
+No command forces a new mode during current boot.
 
-Keepalive remains active during wait. Native bootstrap uses separate bounded budgets. `NTP_SYNC_TIMEOUT_SECONDS` covers NTP readiness after bootstrap.
-Linux `/proc/uptime` supplies deadline. Wall-clock jumps cannot extend wait. Reset API alone calculates reset threshold and refreshes history.
+## 3.3 Inspect current boot
 
-Each new service decision writes one timing record to stderr and native syslog with tag `scr-raom`.
-Fields are `boot_id`, `mode`, `reason`, and `decision_ms`. Elapsed time starts before the service hands feeding to keepalive and bootstraps logging and NTP.
-Timing ends immediately after selection publication. It includes NTP readiness wait and any reset API call. Clock resolution is 10 ms.
-Earlier SysV actions, lock wait, MONIT startup, and cached service calls are outside this measurement.
-If timing is unavailable, `decision_ms=unavailable`. A logging error leaves the decision intact. Compare fresh decisions with the same NTP conditions and policy.
-
-| # | Evidence | Selection |
-| --- | --- | --- |
-| 1 | API exit `0` | Normal, `reason=below_threshold`. |
-| 2 | API exit `1` | Safe, `reason=threshold_exceeded`, regardless of error flag. |
-| 3 | API exit `2` | Error, `reason=reset_evidence_unavailable`. Flag chooses safe/normal. |
-| 4 | Unexpected API exit | Error, `reason=reset_api_failed`. Flag chooses safe/normal. |
-| 5 | NTP timeout/bootstrap failure | Error, `reason=ntp_timeout` or `ntp_start_failed`. Flag chooses safe/normal. |
-| 6 | Invalid configuration | Safe with complete built-in defaults, `reason=configuration_invalid`. |
-| 7 | Unavailable clock | Error, `reason=clock_unavailable`. Flag chooses safe/normal where state publication remains possible. |
-
-Errors remain visible on stderr and in retained reason. Error-permitted normal selection never means reliable evidence proved threshold clear.
-Unavailable keepalive, runtime storage, boot identity, or selection publication can prevent startup entirely.
-
-Selection fixes mode and profile path for current boot. Repeated starts/restarts reuse selection. Configuration edits take effect on next boot.
-Selected profile contents remain client-managed. No automatic same-boot return to normal. New boot reevaluates retained reset history.
-
-## Installed interfaces
-
-Help works without root or runtime access. Other commands require root. Inspection commands do not start services:
+Help works without root or runtime access. Other RAOM commands require root.
+These commands do not start services:
 
 ```bash
 /usr/bin/scr-raom --help
 /usr/bin/scr-raom status
 /usr/bin/scr-raom profile
 /usr/bin/scr-resets-monitor status --json
+/etc/init.d/monit status
 ```
 
-`status` prints `schema`, `boot_id`, `mode`, `profile`, and `reason`. `profile` prints selected path. Both require existing current-boot selection.
-`select` creates selection without MONIT launch. Service entry handles native bootstrap before first selection.
-If full watchdog is active, standalone `select` returns `watchdog_not_idle`. The service entry can perform the required handoff.
-Exit `0` means complete selection, including safe mode. Exit `2` means unavailable operation. Selection alone never proves successful MONIT launch.
+`status` prints `schema`, `boot_id`, `mode`, `profile`, and `reason`. `profile` prints selected path.
+Both require existing current-boot selection. Native MONIT `status` reports process state without RAOM lock.
+Selection status and process status answer different questions: which profile was selected, and whether MONIT runs.
 
-MONIT `start`, `stop`, `restart`, `force-reload`, `reload`, and `syntax` use RAOM. Native MONIT `status` reads process state without taking the RAOM lock.
-`/etc/default/monit` supplies the native `START` enable flag.
-Conflicting `MONIT_OPTS` profile/PID arguments fail startup. Running instance must expose selected explicit `-c` path.
+## 3.4 Manage services
 
-`/sbin/monitstate.sh` uses gated start. Default `/etc/monitrc` includes `/run/scr-raom/monitrc`, published after syntax validation.
-Missing runtime selection makes default CLI configuration fail closed. `/etc/rc.local` preserves MONIT state and invokes gated startup.
-Runlevels 2–5 use scheduler identity `monit`; `S03monit` targets `scr-raom`. RAOM owns automatic reset evaluation during boot.
+Following commands change service state. They require authorization for target service operations.
 
-Missing binary/profile, invalid MONIT syntax, or unusable runtime filesystem means failed launch. Failed safe launch never substitutes normal profile.
-Platform supplies normal `/etc/monit/monitrc`, MONIT and watchdog binaries, and native watchdog checks.
+| # | Command | Behavior |
+| --- | --- | --- |
+| 1 | `/etc/init.d/monit start` | Create or reuse selection, validate profile, and start selected MONIT. |
+| 2 | `/etc/init.d/monit stop` | Transfer feeding to keepalive before stopping MONIT. |
+| 3 | `/etc/init.d/monit restart` | Retain selection and coordinate feeding across MONIT restart. |
+| 4 | `/etc/init.d/monit force-reload` | Use same stop/start path as restart. |
+| 5 | `/etc/init.d/monit reload` | Validate selected profile and send HUP. Requires existing selection. |
+| 6 | `/etc/init.d/watchdog start` | Verify selected MONIT before native watchdog takes over feeding. |
+| 7 | `/etc/init.d/watchdog stop` | Transfer feeding to native keepalive. |
 
-## Watchdog protection
+`/usr/bin/scr-raom monit ACTION` exposes same MONIT actions, including `syntax`.
+`/etc/init.d/monit syntax` validates existing selected profile and publishes runtime profile link without launching MONIT.
+Watchdog interface also accepts `restart` and `force-reload` through same guarded handoff.
 
-The normal profile on SCR-7CCC91 requests full watchdog through `99-watchdog`. That daemon checks the MONIT PID file and runs `/sbin/monit-status.sh`.
-The stock safe profile supervises only `wd_keepalive`. This feeds the hardware timer. Full watchdog does not check MONIT in stock safe mode.
-A client safe profile can request full watchdog through `/etc/init.d/watchdog start`. The same selection and process checks apply in both modes.
-The native watchdog takes over hardware feeding from keepalive. A client profile must choose the feeder it supervises.
+Standalone `/usr/bin/scr-raom select` creates selection without MONIT launch. Caller must first complete bounded native NTP bootstrap.
+`select --ntp-start-failed` records bootstrap failure for error policy. Service entry performs bootstrap automatically.
+If full watchdog is active, standalone `select` returns `watchdog_not_idle`. Service entry can perform required handoff.
 
-Before planned MONIT stop or restart, RAOM stops full watchdog and verifies its absence. RAOM then starts or verifies native keepalive before MONIT can stop.
-RAOM requires the keepalive executable before stopping full watchdog. Bounded `start-stop-daemon --status --exec` verifies the actual keepalive process after handoff.
-The parent holds the same lock through restart. A concurrent watchdog request must acquire this lock and verify the current selected daemon.
-After restart, the selected profile can request full watchdog again. If MONIT stays stopped, keepalive continues feeding.
-If keepalive handoff fails, RAOM preserves the MONIT PID and reports failure. It attempts to restore the previous full watchdog only against the verified selected MONIT.
-If neither feeder can be verified, hardware feeding is unconfirmed.
+RAOM exit `0` means requested operation succeeded. For `select`, safe mode is also success.
+Exit `2` means unavailable operation or invalid arguments. These codes differ from reset API threshold codes in section 2.3.
 
-## Startup adapters
+## 3.5 Diagnose selection and startup
 
-`etc/compat/` contains installed adapters for existing OS entry points. These files keep native startup and CLI calls on selected RAOM profile.
+1. READ `/usr/bin/scr-raom status` output for selected mode and reason.
+2. READ `/etc/init.d/monit status` output for native process state.
+3. READ stderr and native syslog entries tagged `scr-raom` for decision and launch diagnostics.
 
-| # | Source | Installed path | Purpose |
-| --- | --- | --- | --- |
-| 1 | `monit.init` | `/etc/init.d/monit` | Routes lifecycle actions through RAOM. Native status stays lock-free for watchdog checks. |
-| 2 | `monitrc` | `/etc/monitrc` | Includes validated `/run/scr-raom/monitrc` for default MONIT CLI calls. |
-| 3 | `monitstate.sh` | `/sbin/monitstate.sh` | Starts MONIT through gated init entry. |
-| 4 | `rc.local` | `/etc/rc.local` | Runs gated startup and platform setup while preserving MONIT state. |
-| 5 | `watchdog.init` | `/etc/init.d/watchdog` | Gates activation on selected running MONIT. Stop hands feeding to native keepalive. |
+| # | Symptom or reason | Meaning / action |
+| --- | --- | --- |
+| 1 | `threshold_exceeded` | Reset API proved limit exceeded. Inspect reset history and reset cause. |
+| 2 | `configuration_invalid` | Entire policy rejected. Verify all six keys and literal value format. |
+| 3 | `ntp_start_failed` / `ntp_timeout` | Bootstrap or readiness failed. Inspect native logging, NTP, and local `ntpq` output. |
+| 4 | `reset_evidence_unavailable` / `reset_api_failed` | Reset API supplied no usable decision. Inspect reset CLI status and diagnostics. |
+| 5 | `selection_unavailable` | Selection absent, invalid, or from another boot. Inspection commands do not create one. |
+| 6 | `monit_disabled` / `conflicting_monit_options` | Native MONIT defaults block startup. Verify `START` and `MONIT_OPTS`. |
+| 7 | `selected_profile_unavailable` / `selected_profile_invalid` | Selected profile missing, unreadable, or invalid. Repair selected profile. |
+| 8 | `running_profile_mismatch` / `running_profile_unverified` | Existing MONIT does not prove selected profile identity. Inspect PID and command line. |
+| 9 | `keepalive_unavailable` / `watchdog_stop_unverified` | Feeder handoff failed. Hardware feeding needs verification through native process evidence. |
 
-## Debian delivery
+Each new service decision writes one timing record to stderr and native syslog.
+Fields: `boot_id`, `mode`, `reason`, and `decision_ms`.
+Measurement starts before keepalive handoff and logging/NTP bootstrap. It ends immediately after selection publication.
+Measurement includes readiness wait and reset API call, with 10 ms clock resolution.
+Earlier SysV actions, lock wait, MONIT startup, and cached service calls remain outside measurement.
 
-Package installs operational files directly under `/usr/local/scr/`. `/usr/bin/scr-raom` links to `/usr/local/scr/bin/src-raom`.
-Reset CLI remains `/usr/bin/scr-resets-monitor`, linked to `/usr/local/scr/bin/src-resets-monitor`.
-Debian diversions retain native compatibility paths under `/usr/share/scr-raom/diverted/`. Standard conffiles preserve client configuration.
-Package callbacks never start services, feed watchdog, or reboot. Build both commands with `./bin/lets deb build etc/deb/raom/deb.conf`.
-On an authorized system, install `pkg/scr-raom_1.1.0_all.deb` with `dpkg --install`.
-Foreign ownership, active diversions from another package, and unsupported native integration files stop installation.
-For a same-package rollback, install the retained `scr-raom` archive with dpkg. Keep local conffiles when prompted.
-`dpkg --remove scr-raom` restores native startup paths and retains client policy. Purge deletes package conffiles.
-Before a change of package owner, keep an offline copy of live reset data and client configuration through rollback.
+If timing is unavailable, record contains `decision_ms=unavailable`. Logging error leaves selection intact.
+Comparable timings require fresh decisions with same NTP conditions and policy.
 
-## Focused verification and acceptance limits
+## 3.6 Roll back or remove package
 
-`test/check-integration.sh` installs built application and dependency fixtures through real `.deb` archives in approved disposable Debian root.
-Actual installed selector consumes actual reset CLI. SEMA/NTP fixture dependencies supply controlled observations without hardware access.
-Private mount/PID namespace supplies `/proc`. Real MONIT syntax checks never start daemons.
-Decision and boot checks cover selection, bounded waits, startup ordering, and launch failures. Package checks cover dpkg lifecycle and configuration preservation.
-Physical boot and watchdog behavior require hardware acceptance with exact package.
+For same-package rollback, retained `scr-raom` archive restores earlier package version. Local conffiles can remain in place.
+
+1. Before package-owner change, SAVE offline copy of live reset data and client configuration through rollback.
+2. For version rollback, INSTALL retained archive with `dpkg --install`.
+3. When dpkg prompts during rollback, KEEP local conffiles.
+
+`dpkg --remove scr-raom` restores native startup paths and retains client policy.
+`dpkg --purge scr-raom` deletes package conffiles.
