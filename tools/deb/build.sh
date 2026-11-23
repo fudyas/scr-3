@@ -27,17 +27,18 @@ function deb_safe_ancestry() {
     done
 }
 
-# Validates trusted mappings and builds a script-only archive below build/ or pkg/.
+# Validates trusted mappings and builds a script-only archive.
 # Arguments: $1 - required trusted Bash configuration inside the project.
 # Returns: final hash command status; exits 2 for usage or aborts on build errors.
 # Output: build diagnostics and archive hash on stdout; tool errors on stderr.
-# Side effects: replaces configured staging tree and writes its sibling archive.
+# Side effects: replaces staging tree and writes the archive in ARCHIVE_DIR.
+# ARCHIVE_DIR defaults to the staging parent when configuration omits it.
 function main() {
     [ "$#" -eq 1 ] || lets_usage 'one configuration required'
     local project config stage mapping source_path destination resolved
-    local name version architecture archive script temporary
+    local name version architecture archive archive_dir script temporary
     local -a mappings exclusions rsync_args sources destinations
-    local STAGE_DIR='' INCLUDE_FILES='' EXCLUDE_FILES='' MAINTAINER_COMMON=''
+    local STAGE_DIR='' ARCHIVE_DIR='' INCLUDE_FILES='' EXCLUDE_FILES='' MAINTAINER_COMMON=''
 
     # Resolve trusted inputs before preparing any build output.
     project=$(pwd -P) || abort 'cannot resolve project directory'
@@ -51,6 +52,14 @@ function main() {
 
     stage="$project/$STAGE_DIR"
     deb_safe_ancestry "$stage" || abort 'unsafe staging ancestry'
+    ARCHIVE_DIR=${ARCHIVE_DIR:-${STAGE_DIR%/*}}
+    case "$ARCHIVE_DIR" in
+        build|pkg|src/pkg) ;;
+        *) abort 'ARCHIVE_DIR must be build, pkg, or src/pkg' ;;
+    esac
+    archive_dir="$project/$ARCHIVE_DIR"
+    deb_safe_ancestry "$archive_dir" || abort 'unsafe archive ancestry'
+
     IFS=$' \t\n' read -r -d '' -a mappings <<< "$INCLUDE_FILES" || :
     IFS=$' \t\n' read -r -d '' -a exclusions <<< "$EXCLUDE_FILES" || :
     [ "${#mappings[@]}" -gt 0 ] || abort 'INCLUDE_FILES is empty'
@@ -122,7 +131,8 @@ function main() {
     [[ "$name" =~ ^[a-z0-9][a-z0-9+.-]+$ ]] && [[ "$version" =~ ^[0-9][a-zA-Z0-9.+:~_-]*$ ]] || abort 'invalid package identity'
     [ "$architecture" = all ] || abort 'Bash package must use Architecture: all'
 
-    archive="${stage%/*}/${name}_${version}_all.deb"
+    mkdir -p -- "$archive_dir" || abort 'cannot create archive directory'
+    archive="$archive_dir/${name}_${version}_all.deb"
     deb_safe_ancestry "$archive" || abort 'unsafe archive path'
     info "building $archive" 2>&1
     dpkg-deb --root-owner-group -Zgzip --build "$stage" "$archive" || abort 'Debian build failed'

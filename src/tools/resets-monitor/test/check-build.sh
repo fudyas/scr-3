@@ -7,11 +7,14 @@ function abort() { printf 'FAIL build: %s\n' "$*" >&2; exit 1; }
 # Builds the real package and checks dpkg-owned paths and conffiles.
 # Arguments: none. Returns: 0 or aborts. Output: build and assertions; retains scratch.
 function main() {
-    local scratch file archive=pkg/scr-raom_1.1.0_all.deb
+    local scratch file differences archive=src/pkg/scr-raom_1.1.0_all.deb
     ./bin/lets deb build etc/deb/raom/deb.conf || abort 'Debian build'
-    scratch=$(mktemp -d "$PWD/pkg/deb-inventory.XXXXXXXX") || abort 'scratch'
+    scratch=$(mktemp -d "$PWD/build/deb-inventory.XXXXXXXX") || abort 'scratch'
     dpkg-deb --raw-extract "$archive" "$scratch" || abort 'extract archive'
-    diff --no-dereference -r src "$scratch/usr/local/scr" || abort 'full source subtree differs'
+    # Compare source payload while excluding locally generated package archives.
+    differences=$(rsync -rlicn --delete --exclude=/pkg/ src/ "$scratch/usr/local/scr/") || abort 'source comparison'
+    [ -z "$differences" ] || abort 'source subtree differs'
+    [ ! -e "$scratch/usr/local/scr/pkg" ] || abort 'generated archives included'
     cmp src/tools/raom/etc/default-policy.conf "$scratch/etc/default/scr-raom" || abort 'client policy mapping'
     cmp src/tools/raom/etc/compat/watchdog.init "$scratch/etc/init.d/watchdog" || abort 'watchdog adapter mapping'
     [ -x "$scratch/etc/init.d/watchdog" ] || abort 'watchdog adapter mode'

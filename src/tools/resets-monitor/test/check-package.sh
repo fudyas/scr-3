@@ -256,7 +256,7 @@ function check_conflicts() {
 # Output: package/test evidence. No host services or hardware; dependencies forced only in fixtures.
 function main() {
     [ "$EUID" -eq 0 ] || exec sudo -n bash "$0" "$@"
-    DEB="$PWD/pkg/scr-raom_1.1.0_all.deb"
+    DEB="$PWD/src/pkg/scr-raom_1.1.0_all.deb"
     EVIDENCE=
     while [ "$#" -gt 0 ]; do
         [ "$#" -ge 2 ] || abort 'missing argument'

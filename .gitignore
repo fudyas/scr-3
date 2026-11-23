@@ -9,6 +9,7 @@ materials/
 /var
 /backup/
 /pkg
+/src/pkg
 # Loop-mount point for 'lets scr image mount' (a mounted filesystem, never source).
 /image/
 *-PROGRESS.md

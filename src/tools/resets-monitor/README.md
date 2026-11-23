@@ -54,7 +54,8 @@ flowchart LR
 ./bin/lets deb build etc/deb/raom/deb.conf
 ```
 
-LETS stages files in `pkg/scr-raom/` and writes `pkg/scr-raom_1.1.0_all.deb`. Git ignores the generated `pkg/` directory.
+LETS stages files in `build/scr-raom/` and writes `src/pkg/scr-raom_1.1.0_all.deb`. Git ignores both generated directories.
+Generated archives under `src/pkg/` are excluded from the package payload.
 Architecture is `all` because application contains shell scripts. Target still needs compatible SEMA and native runtime prerequisites.
 
 dpkg installs operational source directly under `/usr/local/scr/`.

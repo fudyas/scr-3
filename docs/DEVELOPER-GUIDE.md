@@ -13,7 +13,8 @@ All workflow commands use `./bin/lets sdlc`.
 RAOM delegates threshold calculation to actual reset CLI. Client owns production profiles. Keepalive-only safe sample supplies no remote-service guarantee.
 
 Build both commands with `./bin/lets deb build etc/deb/raom/deb.conf`. Package definitions live in `etc/deb/raom/`.
-LETS writes staging files and the finished archive under ignored `pkg/`.
+LETS stages files under `build/scr-raom/` and writes the finished archive under `src/pkg/`. Git ignores both generated directories.
+The source payload excludes `src/pkg/`, so repeat builds do not include previous archives.
 Delivery uses standard dpkg ownership, conffiles, and diversions. Package verification exercises real Debian archive installation and lifecycle operations.
 Trusted `src/tools/raom/etc/raom.conf` centralizes runtime paths and fallback profile paths. Client policy comes from data-only `/etc/default/scr-raom`.
 RAOM serializes native watchdog requests and MONIT lifecycle actions under one lock. Native MONIT status remains available during handoff.
