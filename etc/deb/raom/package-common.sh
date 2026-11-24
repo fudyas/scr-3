@@ -80,6 +80,19 @@ function check_owner() {
     [[ -n "${2:-}" && "$owners" = "$2: $1" ]] || abort "package ownership conflict: $1 ($owners)"
 }
 
+# Protects a local or foreign file at the newly installed keepalive provider path.
+# Arguments: none. Returns: 0 unoccupied/package-owned, or aborts on conflict.
+# Output: stderr on refusal. Reads target package ownership without changing files.
+function check_adapter() {
+    check_parent "$ADAPTER"
+    check_owner "$ADAPTER" "$PKG"
+    if [ -e "$ROOT$ADAPTER" ] || [ -L "$ROOT$ADAPTER" ]; then
+        [[ ! -L "$ROOT$ADAPTER" && -f "$ROOT$ADAPTER" ]] || abort 'unsafe keepalive provider'
+        [ "$(dpkg-query --admindir="$ROOT/var/lib/dpkg" -S "$ADAPTER" 2>/dev/null)" = "$PKG: $ADAPTER" ] ||
+            abort "keepalive provider path occupied: $ADAPTER"
+    fi
+}
+
 # Checks all existing diversions before changing any path.
 # Arguments: none. Returns: 0 or aborts. Output: none.
 function check_diversions() {
@@ -302,6 +315,7 @@ function package_main() {
             [[ -f "$ROOT$STATE/decision" && ! -L "$ROOT$STATE/decision" ||
                 -f "$ROOT$PENDING_INIT" && ! -L "$ROOT$PENDING_INIT" ]] || abort 'established decision unavailable'
         fi
+        check_adapter
         add_diversions
         # configure receives the last configured version even after remove/install.
         # Only preinst knows this transaction acquired a new, unoccupied state path.

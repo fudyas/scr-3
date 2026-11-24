@@ -310,7 +310,21 @@ function check_legacy() {
 # Verifies Debian ownership and diversion conflicts without invented owner claims.
 # Arguments: none. Returns: 0 or aborts. Output: conflict evidence.
 function check_conflicts() {
-    local status stage="$EVIDENCE/conflict-package"
+    local status stage="$EVIDENCE/conflict-package" provider digest diversions
+    local previous=/home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0007/implementation/package-layout/scr-raom_1.1.0_all.deb
+    prepare_root provider-conflict
+    package_dpkg --install "$previous" || abort 'install prior release for provider collision'
+    provider="$TEST_ROOT/usr/local/scr/tools/raom/etc/compat/wd_keepalive.init"
+    printf 'client-owned adapter data\n' >"$provider"
+    digest=$(sha256sum "$provider")
+    diversions=$(dpkg-divert --root "$TEST_ROOT" --list | sort)
+    if package_dpkg --install "$DEB"; then abort 'local keepalive provider overwritten'; fi
+    [ "$digest" = "$(sha256sum "$provider")" ] || abort 'rejected upgrade changed local provider'
+    [ "$diversions" = "$(dpkg-divert --root "$TEST_ROOT" --list | sort)" ] || abort 'provider rejection changed diversions'
+    # dpkg-query expands this field name, not the shell.
+    # shellcheck disable=SC2016
+    [ "$(dpkg-query --admindir="$TEST_ROOT/var/lib/dpkg" -W -f='${Version}' scr-raom)" = 1.1.0 ] || abort 'provider rejection changed installed version'
+
     prepare_root group-conflict
     update-alternatives --root "$TEST_ROOT" --install /etc/init.d/foreign scr-raom-wd-keepalive /etc/init.d/watchdog 10 || abort 'fixture foreign alternatives group'
     if package_dpkg --install "$DEB"; then abort 'foreign keepalive group accepted'; fi
