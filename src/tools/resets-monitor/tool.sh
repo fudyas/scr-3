@@ -58,7 +58,8 @@ function parse_args() {
                 ;;
             --switch-reboot)
                 [ -z "$SWITCH_BEFORE" ] && [ "$#" -ge 3 ] || return 2
-                parse_record "$2" && parse_record "$3" || return 2
+                parse_record "$2" || return 2
+                [ "$3" = unavailable ] || parse_record "$3" || return 2
                 SWITCH_BEFORE=$2
                 SWITCH_AFTER=$3
                 shift
@@ -81,6 +82,8 @@ function show_usage() {
         '       scr-resets-monitor status --json' \
         '       scr-resets-monitor check --max-resets N --window SECONDS [--after-observation ACK] [--switch-reboot BEFORE AFTER]' \
         'Pass each observation as one argument containing its committed JSON record.' \
+        'When the destination observation is missing or its reboot is uncertain, pass unavailable for AFTER.' \
+        'This grants no exemption. A full trustworthy window must follow the first retained observation on a later boot.' \
         'N: 0..2147483647; SECONDS: 1..2147483647. Both arguments required.' \
         'check exits: 0 not exceeded, 1 exceeded, 2 unavailable.'
 }

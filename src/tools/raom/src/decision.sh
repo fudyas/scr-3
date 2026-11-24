@@ -474,9 +474,9 @@ function identified_reboot() (
     set -o pipefail
     tail -c "+$((offset + 1))" -- "$RAOM_WTMP" | utmpdump 2>/dev/null |
         awk -F '[][]' '
-            $2 == 1 && $8 ~ /^shutdown *$/ { if (boot) bad=1; down=1 }
-            $2 == 2 { if (!down || $8 !~ /^reboot *$/) bad=1; boot++ }
-            END { exit (bad || boot != 1) }
+            $2 == 1 && $8 ~ /^shutdown *$/ { down++ }
+            $2 == 2 { if (down != 1 || $8 !~ /^reboot *$/) bad=1; boot++ }
+            END { exit (bad || down != 1 || boot != 1) }
         ' || return 2
 )
 
@@ -580,14 +580,8 @@ function check_reset_window() {
     if [ "$1" = true ]; then
         ack=${DECISION[capture]} before=${DECISION[capture]} after=${DECISION[endpoint]}
     fi
-    if [ "$after" = unavailable ]; then
-        # This boot started at or after the affected reboot. A full later window
-        # can use plain timed evidence; never relabel a later sample as its endpoint.
-        [ "$RAOM_NOW" -ge "$((RESET_WINDOW_SECONDS * 100))" ] || return 2
-    else
-        [ -z "$ack" ] || evidence+=(--after-observation "$ack")
-        [ -z "$before" ] || evidence+=(--switch-reboot "$before" "$after")
-    fi
+    [ -z "$ack" ] || evidence+=(--after-observation "$ack")
+    [ -z "$before" ] || evidence+=(--switch-reboot "$before" "$after")
     local result=0
     bounded_command 15 "$RAOM_RESETS_MONITOR" check --max-resets "$MAX_RESETS" --window "$RESET_WINDOW_SECONDS" "${evidence[@]}" || result=$?
     if [ "$after" = unavailable ] && [ "$result" -eq 0 ] && [ "$1" = false ]; then

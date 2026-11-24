@@ -114,9 +114,9 @@ function finish_clock() {
 
 # Resolves acknowledgment and switch endpoints against the refreshed history.
 # Arguments: none. Sets ACK_COUNT, EXEMPT_COUNT, and UNAVAILABLE_THROUGH.
-# Returns: 0 on classification, 2 for corrupt history. Output: none.
+# Returns: 0 on classification, 2 for corrupt history or a missing later boot. Output: none.
 function resolve_window_evidence() {
-    local before_sequence before_count before_boot after_sequence after_count index first_sequence comparable=1
+    local before_sequence before_count before_boot after_sequence after_count index first_sequence line comparable=1
     ACK_COUNT=
     EXEMPT_COUNT=0
     UNAVAILABLE_THROUGH=0
@@ -133,6 +133,19 @@ function resolve_window_evidence() {
     before_sequence=${RECORD[sequence]}
     before_count=${RECORD[boot_count]}
     before_boot=${RECORD[boot_id]}
+    if [ "$SWITCH_AFTER" = unavailable ]; then
+        # A later boot bounds the unknown interval but cannot identify its reset.
+        # Only trustworthy coverage from this point can restore timed evaluation.
+        for line in "${HISTORY[@]}"; do
+            parse_record "$line" || return 2
+            [ "${RECORD[sequence]}" -gt "$before_sequence" ] || continue
+            [ "${RECORD[boot_id]}" != "$before_boot" ] || continue
+            [ "$UNAVAILABLE_THROUGH" -ge "${RECORD[sequence]}" ] || UNAVAILABLE_THROUGH=${RECORD[sequence]}
+            return 0
+        done
+        return 2
+    fi
+
     retained_observation "$SWITCH_AFTER" || comparable=0
     after_sequence=${RECORD[sequence]}
     after_count=${RECORD[boot_count]}

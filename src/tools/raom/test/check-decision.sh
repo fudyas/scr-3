@@ -78,6 +78,7 @@ if [ -f "$fixture/require-evidence" ]; then
     [ "$#" -eq 10 ] && [ "$6" = --after-observation ] && [ "$7" = "$(<"$fixture/ack")" ] &&
         [ "$8" = --switch-reboot ] && [ "$9" = "$7" ] && [ "${10}" = "$(<"$fixture/end")" ] || exit 2
 fi
+[ "${10:-}" != unavailable ] || exit 2
 exit "$(<"$fixture/api-status")"
 FIXTURE
     cat >"$WORK/ntpq" <<'FIXTURE'
@@ -379,13 +380,21 @@ function sample() {
         "$1" "$(<"$WORK/boot")" "$2" >"$WORK/observation"
 }
 
-# Appends native-format shutdown/boot records and recreates volatile boot state.
-# Arguments: $1 - single-digit boot number. Returns: 0 or exits 1. Output: fixture files.
+# Recreates volatile boot state with the specified native accounting records.
+# Arguments: $1 - boot number; remaining - record names (default: shutdown reboot).
+# Returns: 0 or exits 1. Output: fixture boot ID and wtmp; removes volatile state.
 function next_boot() {
-    printf '%s\n' '[1] [00000] [~~  ] [shutdown] [~           ] [                ] [0.0.0.0        ] [2026-01-01T00:00:01,000000+00:00]' \
-        '[2] [00000] [~~  ] [reboot  ] [~           ] [                ] [0.0.0.0        ] [2026-01-01T00:00:02,000000+00:00]' |
-        utmpdump -r >>"$RAOM_WTMP" 2>/dev/null || fail 'SysV boot accounting fixture'
-    printf '00000000-0000-0000-0000-%012d\n' "$1" >"$WORK/boot"
+    local boot_number=$1 event
+    local -A records=(
+        [shutdown]='[1] [00000] [~~  ] [shutdown] [~           ] [                ] [0.0.0.0        ] [2026-01-01T00:00:01,000000+00:00]'
+        [reboot]='[2] [00000] [~~  ] [reboot  ] [~           ] [                ] [0.0.0.0        ] [2026-01-01T00:00:02,000000+00:00]'
+    )
+    shift
+    [ "$#" -gt 0 ] || set -- shutdown reboot
+    for event in "$@"; do
+        printf '%s\n' "${records[$event]}"
+    done | utmpdump -r >>"$RAOM_WTMP" 2>/dev/null || fail 'SysV boot accounting fixture'
+    printf '00000000-0000-0000-0000-%012d\n' "$boot_number" >"$WORK/boot"
     rm -rf -- "$WORK/run"
 }
 
@@ -560,11 +569,15 @@ function test_request_failures() {
 # Arguments: none. Returns: 0 or exits 1. Output: fixture decisions and reset call trace.
 function test_destination_failures() {
     local scenario
-    for scenario in missing skipped missing_accounting startup threshold timeout policy_false; do
+    for scenario in missing skipped missing_accounting duplicate_shutdown missing_boot startup threshold timeout policy_false; do
         (
             setup
             request_recovery
-            next_boot 2
+            case "$scenario" in
+            duplicate_shutdown) next_boot 2 shutdown shutdown reboot ;;
+            missing_boot) next_boot 2 shutdown ;;
+            *) next_boot 2 ;;
+            esac
             [ "$scenario" != skipped ] || next_boot 3
             sample 11 101
             printf '0\n' >"$WORK/api-status"
@@ -579,7 +592,9 @@ function test_destination_failures() {
             [ "$scenario" != policy_false ] || config_value SAFE_MODE_ON_ERROR false
             expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
             case "$scenario" in
-            missing | skipped | missing_accounting | policy_false) grep -qx reason=reset_evidence_unavailable "$WORK/out" || fail "$scenario evidence" ;;
+            missing | skipped | missing_accounting | duplicate_shutdown | missing_boot | policy_false)
+                grep -qx reason=reset_evidence_unavailable "$WORK/out" || fail "$scenario evidence"
+                [ "$(tail -n 1 "$WORK/api-calls")" = unavailable ] || fail "$scenario claimed a switch endpoint" ;;
             startup) grep -qx reason=below_threshold "$WORK/out" || fail 'recovery boot evaluation' ;;
             threshold) grep -qx reason=threshold_exceeded "$WORK/out" || fail 'new threshold hidden' ;;
             timeout) grep -qx reason=ntp_timeout "$WORK/out" || fail 'recovery timeout hidden' ;;
@@ -595,6 +610,75 @@ function test_destination_failures() {
             [ ! -s "$WORK/events" ] || fail "$scenario rebound first endpoint"
         ) || fail "$scenario"
     done
+}
+
+# Checks an unresolved switch with real reset CLI dispatch, history and window arithmetic.
+# Arguments: none. Returns: 0 or exits 1. Output: isolated journal and boot decisions.
+function test_unavailable_window() {
+    setup
+    printf '1\n' >"$WORK/api-status"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    config_value MAX_RESETS 0
+    config_value SAFE_MODE_ON_ERROR false
+
+    export RESET_TEST_LOADER="$RAOM_HOME/../resets-monitor/test/source-runtime.sh"
+    cat >"$WORK/api" <<'FIXTURE'
+#!/bin/bash
+source "$RESET_TEST_LOADER" || exit 2
+fixture=${0%/*}
+LOG_DIR=$fixture/log LOCK_PATH=$fixture/reset-lock EXPECTED_UID=$EUID
+
+# Permits only this private fixture. Arguments: none. Returns: 0. Output: none.
+function require_root() { return 0; }
+# Loads the fixture time and boot. Arguments: none. Returns: 0 or 2. Output: OBS.
+function read_clock() {
+    read -r 'OBS[timestamp]' 'OBS[uptime]' 'OBS[boot_count]' <"$fixture/reset-sample" || return 2
+    OBS[boot_id]=$(<"$fixture/boot")
+    OBS[clock_valid]=1 OBS[clock_reason]=synchronized OBS[uncertainty]=1
+}
+# Supplies the controller identity or fails the destination read.
+# Arguments: none. Returns: 0 or 2. Output: OBS on success.
+function read_bmc() {
+    [ "$COMMAND" != record ] || [ ! -f "$fixture/capture-fail" ] || return 2
+    OBS[controller]=unit OBS[firmware]=1 OBS[power_cycles]=1 OBS[cause]=reset
+}
+# Keeps the supplied clock quality. Arguments: none. Returns: 0. Output: none.
+function finish_clock() { return 0; }
+main "$@"
+FIXTURE
+
+    printf '1900 100 100\n' >"$WORK/reset-sample"
+    expect_status 0 main switch normal >"$WORK/out" 2>"$WORK/error"
+    local before
+    local -a check=(check --max-resets 0 --window 900)
+    before=$(<"$WORK/log/resets-state.json")
+    expect_status 2 "$WORK/api" "${check[@]}" --switch-reboot "$before" unavailable 2>"$WORK/error"
+    next_boot 2
+    printf '2000 10 101\n' >"$WORK/reset-sample"
+    touch "$WORK/capture-fail"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=reset_evidence_unavailable "$WORK/out" || fail 'unknown switch classified before expiry'
+    expect_status 0 finish_boot verified
+    grep -qx after=unavailable "$RAOM_DECISION_DIR/decision" || fail 'missing endpoint replaced'
+    grep -Fxq "ack=$before" "$RAOM_DECISION_DIR/decision" || fail 'recovery acknowledgment advanced'
+    rm "$WORK/capture-fail"
+    expect_status 0 "$WORK/api" record 2>"$WORK/error"
+
+    expect_status 1 "$WORK/api" "${check[@]}" --after-observation "$before" 2>"$WORK/error"
+    expect_status 2 "$WORK/api" "${check[@]}" --after-observation "$before" --switch-reboot "$before" unavailable 2>"$WORK/error"
+    expect_status 2 "$WORK/api" "${check[@]}" --after-observation unavailable 2>"$WORK/error"
+    expect_status 2 "$WORK/api" "${check[@]}" --switch-reboot unavailable "$before" 2>"$WORK/error"
+    expect_status 2 "$WORK/api" "${check[@]}" --switch-reboot "$before" unknown 2>"$WORK/error"
+
+    printf '3490 1500 101\n' >"$WORK/reset-sample"
+    expect_status 0 "$WORK/api" "${check[@]}" --switch-reboot "$before" unavailable 2>"$WORK/error"
+    next_boot 3
+    printf '10.00 0.00\n' >"$WORK/uptime"
+    printf '3500 10 102\n' >"$WORK/reset-sample"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=threshold_exceeded "$WORK/out" || fail 'later short boot masked proven reset'
+    grep -qx mode=safe "$WORK/out" || fail 'proven reset did not select safe'
+    [ "$(sed -n 's/.*"boot_delta":\([0-9]*\),.*/\1/p' "$WORK/log/resets.jsonl")" = $'0\n1\n0\n1' ] || fail 'raw reset deltas changed'
 }
 
 # Checks unavailable safe-entry counters and unsafe or missing durable state.
@@ -698,7 +782,8 @@ function test_service_selection() {
 function main() {
     local test
     for test in test_config test_api_decisions test_wait test_boot_state test_command_and_publication_failure \
-        test_switch_guards test_recovery_boot test_request_failures test_destination_failures test_durable_storage test_interrupted_boot test_service_selection; do
+        test_switch_guards test_recovery_boot test_request_failures test_destination_failures test_unavailable_window \
+        test_durable_storage test_interrupted_boot test_service_selection; do
         ("$test") || return 1
         printf 'PASS %s\n' "$test"
     done
