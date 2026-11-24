@@ -72,6 +72,94 @@ NTP readiness deadline starts at decision entry, after bootstrap attempt.
 `NTP_SYNC_TIMEOUT_SECONDS` covers readiness wait, not complete boot duration.
 Linux `/proc/uptime` supplies monotonic time. Wall-clock changes cannot extend this wait.
 
+### 2.2.1 High-level algorithm
+
+This algorithm describes service startup and later service actions. Standalone `select` requires caller-managed bootstrap, as described in section 3.4.
+Nested labels identify steps within this algorithm.
+
+1. ENTER RAOM through SysV startup.
+   1. **1.1** ACQUIRE exclusive lock for selection and service changes.
+   2. **1.2** READ current kernel boot identity.
+   3. **1.3** ***if*** valid selection exists for this boot ***then***
+      1. **1.3.1** REUSE saved mode and MONIT profile.
+      2. **1.3.2** CONTINUE at step 6.
+   4. **1.4** ***else if*** selection is corrupt ***then***
+      1. **1.4.1** STOP startup with an error.
+
+2. PREPARE boot services.
+   1. **2.1** TRANSFER hardware timer feeding from full watchdog to `wd_keepalive`.
+   2. **2.2** ***if*** transfer cannot be verified ***then***
+      1. **2.2.1** STOP startup with an error.
+   3. **2.3** START native logging service.
+   4. **2.4** START native NTP service.
+   5. **2.5** RECORD bootstrap failures for mode selection.
+
+3. LOAD client policy from `/etc/default/scr-raom`.
+   1. **3.1** ***if*** complete policy is valid ***then***
+      1. **3.1.1** USE configured reset limit, reset window, NTP timeout, error policy, and profile paths.
+   2. **3.2** ***else***
+      1. **3.2.1** USE complete built-in defaults.
+      2. **3.2.2** SELECT safe mode with reason `configuration_invalid`.
+      3. **3.2.3** CONTINUE at step 5.
+
+4. DETERMINE operating mode.
+   1. **4.1** ***if*** bootstrap and monotonic clock are usable ***then***
+      1. **4.1.1** WAIT for NTP synchronization within `NTP_SYNC_TIMEOUT_SECONDS`.
+      2. **4.1.2** ***if*** synchronization succeeds ***then***
+         1. **4.1.2.1** CALL `scr-resets-monitor check` with `MAX_RESETS` and `RESET_WINDOW_SECONDS`, allowing 15 seconds.
+         2. **4.1.2.2** ***case*** returned result ***of***
+            1. **4.1.2.2.1** `0`: SELECT normal mode.
+            2. **4.1.2.2.2** `1`: SELECT safe mode because resets exceed configured limit.
+            3. **4.1.2.2.3** ***default***: RECORD reset evidence or command failure.
+      3. **4.1.3** ***else***
+         1. **4.1.3.1** RECORD NTP timeout or clock failure.
+   2. **4.2** ***else***
+      1. **4.2.1** RECORD bootstrap or clock failure.
+   3. **4.3** ***if*** an error prevents a threshold decision ***then***
+      1. **4.3.1** ***if*** `SAFE_MODE_ON_ERROR` is `true` ***then***
+         1. **4.3.1.1** SELECT safe mode.
+      2. **4.3.2** ***else***
+         1. **4.3.2.1** SELECT normal mode.
+
+5. COMMIT boot decision.
+   1. **5.1** SELECT profile associated with chosen mode.
+   2. **5.2** SAVE boot identity, mode, profile, and reason atomically.
+   3. **5.3** LOG `decision_ms`, measured from bootstrap entry through decision publication.
+
+6. START selected MONIT instance.
+   1. **6.1** VALIDATE native MONIT options, selected profile, and required storage.
+   2. **6.2** PUBLISH selected profile pointer.
+   3. **6.3** START MONIT with explicit selected configuration, unless matching instance already runs.
+   4. **6.4** VERIFY running process uses that configuration.
+   5. **6.5** DELEGATE service supervision to MONIT.
+
+7. PROCESS full watchdog activation when requested.
+   1. **7.1** ***if*** committed selection and running MONIT configuration match ***then***
+      1. **7.1.1** START native watchdog, unless it already runs.
+      2. **7.1.2** VERIFY watchdog runs.
+   2. **7.2** ***else***
+      1. **7.2.1** ATTEMPT verified hardware feeding through `wd_keepalive`.
+      2. **7.2.2** REJECT watchdog activation.
+   3. **7.3** ***if*** watchdog launch fails ***then***
+      1. **7.3.1** ATTEMPT verified transfer to `wd_keepalive`.
+      2. **7.3.2** REPORT startup failure.
+
+8. HANDLE subsequent service actions.
+   1. **8.1** REUSE committed mode throughout current boot.
+   2. **8.2** ***if*** MONIT stop or restart is requested ***then***
+      1. **8.2.1** VERIFY transfer to `wd_keepalive` before stopping MONIT.
+   3. **8.3** ***if*** restart is requested ***then***
+      1. **8.3.1** START MONIT with same selected profile.
+
+Implementation limits:
+
+1. `SAFE_MODE_ON_ERROR` controls decision errors. It does not guarantee a running safe environment.
+   Unusable state storage, failed publication, unverified feeder transfer, or invalid MONIT profile can stop startup instead.
+   Errors from reset-history storage reach RAOM through reset API and use configured error policy.
+2. Shipped safe profile supervises only `wd_keepalive`. This daemon feeds hardware timer but does not check MONIT health.
+   Full watchdog protection requires client profile to request watchdog activation and choose appropriate feeder.
+   RAOM applies same activation checks in safe and normal modes. See section 2.6.
+
 ## 2.3 Safe and normal mode selection
 
 NTP readiness requires local `ntpq -c 'rv 0'` output with both `leap_none,` and `sync_ntp,`.
