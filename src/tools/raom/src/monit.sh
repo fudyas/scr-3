@@ -268,6 +268,47 @@ function monit_absent() {
     [ "$status" -eq 3 ] || return 2
 }
 
+# Identifies transient MONIT commands so they do not count as service daemons.
+# Arguments: $1 - readable proc cmdline path. Returns: 0 client, 1 otherwise.
+# Output: none. Unknown arguments remain potential daemon evidence.
+function monit_client() {
+    local argument skip=true
+    while IFS= read -r -d '' argument; do
+        if [ "$skip" = true ]; then
+            skip=false
+            continue
+        fi
+        case "$argument" in
+        -c|-d|-g|-l|-p|-s) skip=true ;;
+        -t|-V|-h|-H|--id|--resetid) return 0 ;;
+        -*) ;;
+        start|stop|restart|monitor|unmonitor|reload|status|summary|report|quit|validate|procmatch) return 0 ;;
+        *) return 1 ;;
+        esac
+    done <"$1"
+    return 1
+}
+
+# Rejects other daemons using the MONIT executable, including another profile.
+# Arguments: $1 - verified selected PID. Returns: 0 unique, 2 ambiguous.
+# Output: diagnostics on stderr. Reads proc only; does not signal processes.
+function unique_monit() {
+    local selected=$1 process found=false
+    for process in "$RAOM_PROC_DIR"/[0-9]*; do
+        [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
+        if [ "${process##*/}" = "$selected" ]; then
+            found=true
+            continue
+        fi
+        # MONIT status and syntax commands can overlap startup. Only an
+        # identified transient command is safe to exclude from this check.
+        [ -r "$process/cmdline" ] && monit_client "$process/cmdline" && continue
+        raom_error monit_identity_unverified
+        return 2
+    done
+    [ "$found" = true ] || { raom_error monit_identity_unverified; return 2; }
+}
+
 # Proves the running instance uses the selected explicit control-file argument.
 # Arguments: none. Returns: 0 exact match, 2 missing/ambiguous/different evidence.
 # Output: mismatch diagnostic to stderr; no process or file changes.
@@ -291,6 +332,7 @@ function verify_running_profile() {
         previous=$argument
     done <"$RAOM_PROC_DIR/$NUMBER/cmdline"
     [[ "$count" -eq 1 && "$config" = "$CONFIG" ]] || { raom_error running_profile_mismatch; return 2; }
+    unique_monit "$NUMBER"
 }
 
 # Starts the selected instance through native start-stop-daemon and checks its PID.

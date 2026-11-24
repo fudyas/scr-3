@@ -75,6 +75,7 @@ function setup() {
     function require_root() { return 0; }
     mkdir "$WORK/native" "$WORK/state" "$WORK/log" "$WORK/health" "$WORK/proc"
     mkdir "$WORK/proc/4242"
+    ln -s "$WORK/monit" "$WORK/proc/4242/exe"
     printf 'valid\n' >"$WORK/safe"
     printf 'valid\n' >"$WORK/normal"
     cat >"$WORK/config" <<EOF
@@ -409,6 +410,38 @@ function test_operational_recovery() {
     grep -qx phase=idle "$RAOM_DECISION_DIR/decision" || fail 'operational retry retained request'
     grep -Eq '^(api |ntpq |watchdog start|ssd --start)' "$WORK/events" && fail 'retry repeated decision or launch'
     return 0
+}
+
+# Rejects duplicate profile daemons without rejecting transient MONIT clients.
+# Arguments: none. Returns: 0 or exits 1. Output: private state and feeder traces.
+function test_duplicate_monit() {
+    setup
+    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 main switch normal 2>"$WORK/error"
+    boot_again 2
+    printf '0\n' >"$WORK/api-status"
+    expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
+    cp "$RAOM_DECISION_DIR/decision" "$WORK/bound"
+    touch "$WORK/running"
+    printf '4242\n' >"$WORK/native/monit.pid"
+    printf '%s\0' "$WORK/monit" -c "$WORK/normal" >"$WORK/proc/4242/cmdline"
+    ln -s "$WORK/normal" "$WORK/run/monitrc"
+    mkdir "$WORK/proc/4243"
+    ln -s "$WORK/monit" "$WORK/proc/4243/exe"
+    printf '%s\0' "$WORK/monit" -c "$WORK/safe" >"$WORK/proc/4243/cmdline"
+
+    expect_status 2 main monit start 2>"$WORK/error"
+    expect_status 2 main watchdog start 2>"$WORK/error"
+    cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'duplicate daemon cleared safe latch'
+    [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'duplicate daemon armed watchdog'
+
+    # A service client is not another daemon. Option values are never commands.
+    printf '%s\0' "$WORK/monit" -c "$WORK/safe" status >"$WORK/proc/4243/cmdline"
+    expect_status 0 main monit start 2>"$WORK/error"
+    grep -qx latch=normal "$RAOM_DECISION_DIR/decision" || fail 'client prevented valid completion'
+    printf '%s\0' "$WORK/monit" -c status >"$WORK/proc/4243/cmdline"
+    expect_status 2 main watchdog start 2>"$WORK/error"
+    [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'option value hid daemon'
 }
 
 # Checks preselection feeding, stale PID refusal, and indeterminate feeder status.
@@ -855,7 +888,7 @@ function test_runlevels_and_sample() {
 function main() {
     local test
     for test in test_boot_and_actions test_launch_failures test_bootstrap_errors test_existing_wrong_profile \
-        test_keepalive_evidence test_operational_recovery test_feeder_guards test_switch_boot_policy test_watchdog_lifecycle test_concurrent_fallback \
+        test_keepalive_evidence test_operational_recovery test_duplicate_monit test_feeder_guards test_switch_boot_policy test_watchdog_lifecycle test_concurrent_fallback \
         test_compatibility test_scheduler_dispatch test_runlevels_and_sample test_native_monit_health; do
         ("$test") || return 1
         printf 'PASS %s\n' "$test"
