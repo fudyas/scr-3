@@ -157,6 +157,7 @@ ssd:--start)
     [ -f "$fixture/running" ] || printf 'launched\n' >>"$fixture/launches"
     printf '4242\n' >"$fixture/native/monit.pid"
     printf '%s\0' "$fixture/monit" "$@" >"$fixture/proc/4242/cmdline"
+    ln -sf "$fixture/monit" "$fixture/proc/4242/exe"
     touch "$fixture/running"
     ;;
 ssd:--status)
@@ -166,7 +167,7 @@ ssd:--status)
     elif [ "$2" = --exec ] && [ "$3" = "$fixture/watchdog-daemon" ]; then
         [ -f "$fixture/armed" ] || exit 3
     elif [ "$2" = --exec ] && [ "$3" = "$fixture/monit" ]; then
-        [ -f "$fixture/running" ] || exit 3
+        [ -f "$fixture/running" ] || [ -f "$fixture/client-only" ] || exit 3
     else
         [ -f "$fixture/running" ] && [ -f "$fixture/native/monit.pid" ] &&
             [ "$(<"$fixture/native/monit.pid")" = 4242 ] || exit 3
@@ -435,13 +436,33 @@ function test_duplicate_monit() {
     cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'duplicate daemon cleared safe latch'
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'duplicate daemon armed watchdog'
 
+    # A stale selected PID can name a live client instead of a service daemon.
+    rm "$WORK/proc/4243/exe"
+    printf '%s\0' "$WORK/monit" -c "$WORK/normal" status >"$WORK/proc/4242/cmdline"
+    expect_status 2 main monit start 2>"$WORK/error"
+    expect_status 2 main watchdog start 2>"$WORK/error"
+    cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'selected client cleared safe latch'
+    [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'selected client armed watchdog'
+
     # A service client is not another daemon. Option values are never commands.
+    printf '%s\0' "$WORK/monit" -c "$WORK/normal" >"$WORK/proc/4242/cmdline"
+    ln -s "$WORK/monit" "$WORK/proc/4243/exe"
     printf '%s\0' "$WORK/monit" -c "$WORK/safe" status >"$WORK/proc/4243/cmdline"
     expect_status 0 main monit start 2>"$WORK/error"
     grep -qx latch=normal "$RAOM_DECISION_DIR/decision" || fail 'client prevented valid completion'
     printf '%s\0' "$WORK/monit" -c status >"$WORK/proc/4243/cmdline"
     expect_status 2 main watchdog start 2>"$WORK/error"
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'option value hid daemon'
+
+    # With no daemon or PID file, a status client must allow a normal launch.
+    rm "$WORK/running" "$WORK/native/monit.pid" "$WORK/proc/4242/exe"
+    touch "$WORK/client-only"
+    printf '%s\0' "$WORK/monit" -c "$WORK/safe" status >"$WORK/proc/4243/cmdline"
+    local launches
+    launches=$(wc -l <"$WORK/launches")
+    expect_status 0 main monit start 2>"$WORK/error"
+    [ "$(wc -l <"$WORK/launches")" -eq "$((launches + 1))" ] || fail 'client prevented daemon launch'
+    [[ ! -e "$WORK/feeding" && -f "$WORK/armed" ]] || fail 'daemon launch left watchdog inactive'
 }
 
 # Checks preselection feeding, stale PID refusal, and indeterminate feeder status.

@@ -263,9 +263,17 @@ function monit_is_running() {
 # Checks the executable without relying on a potentially stale PID file.
 # Arguments: none. Returns: 0 absent, 2 running or unverified. Output: native diagnostics on stderr.
 function monit_absent() {
-    local status=0
+    local status=0 process
     timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_MONIT_BINARY" {RAOM_LOCK_FD}>&- >&2 || status=$?
-    [ "$status" -eq 3 ] || return 2
+    [ "$status" -ne 3 ] || return 0
+    [ "$status" -eq 0 ] || return 2
+
+    # A status client shares the executable but does not supervise services.
+    for process in "$RAOM_PROC_DIR"/[0-9]*; do
+        [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
+        [ -r "$process/cmdline" ] && monit_client "$process/cmdline" || return 2
+    done
+    return 0
 }
 
 # Identifies transient MONIT commands so they do not count as service daemons.
@@ -297,6 +305,10 @@ function unique_monit() {
     for process in "$RAOM_PROC_DIR"/[0-9]*; do
         [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
         if [ "${process##*/}" = "$selected" ]; then
+            if monit_client "$process/cmdline"; then
+                raom_error monit_identity_unverified
+                return 2
+            fi
             found=true
             continue
         fi
