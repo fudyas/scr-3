@@ -12,11 +12,16 @@ RECORD_KEYS=(schema sequence epoch timestamp clock_valid clock_reason uncertaint
 STRING_KEYS=' clock_reason boot_id controller firmware cause discontinuity '
 
 # Validates all CLI arguments before filesystem or device access.
-# Arguments: command and options. Returns: 0 or 2. Output: COMMAND/MAX_RESETS/WINDOW globals.
+# Arguments: command and options. Returns: 0 or 2. Sets command and evidence globals.
+# Output: none.
 function parse_args() {
     COMMAND=
     MAX_RESETS=
     WINDOW=
+    PRINT_OBSERVATION=0
+    AFTER_OBSERVATION=
+    SWITCH_BEFORE=
+    SWITCH_AFTER=
     [ "$#" -gt 0 ] || return 2
     COMMAND=$1
     shift
@@ -25,7 +30,12 @@ function parse_args() {
         [ "$#" -eq 0 ] || return 2
         COMMAND=help
         ;;
-    record) [ "$#" -eq 0 ] || return 2 ;;
+    record)
+        if [ "$#" -gt 0 ]; then
+            [ "$#" -eq 1 ] && [ "$1" = --print-observation ] || return 2
+            PRINT_OBSERVATION=1
+        fi
+        ;;
     status) [ "$#" -eq 1 ] && [ "$1" = --json ] || return 2 ;;
     check)
         while [ "$#" -gt 0 ]; do
@@ -42,6 +52,17 @@ function parse_args() {
                 [ "$NUMBER" -gt 0 ] || return 2
                 WINDOW=$NUMBER
                 ;;
+            --after-observation)
+                [ -z "$AFTER_OBSERVATION" ] && parse_record "$2" || return 2
+                AFTER_OBSERVATION=$2
+                ;;
+            --switch-reboot)
+                [ -z "$SWITCH_BEFORE" ] && [ "$#" -ge 3 ] || return 2
+                parse_record "$2" && parse_record "$3" || return 2
+                SWITCH_BEFORE=$2
+                SWITCH_AFTER=$3
+                shift
+                ;;
             *) return 2 ;;
             esac
             shift 2
@@ -56,9 +77,10 @@ function parse_args() {
 # Prints the complete command contract without touching runtime state.
 # Arguments: none. Returns: printf status. Output: usage to stdout.
 function show_usage() {
-    printf '%s\n' 'Usage: scr-resets-monitor record' \
+    printf '%s\n' 'Usage: scr-resets-monitor record [--print-observation]' \
         '       scr-resets-monitor status --json' \
-        '       scr-resets-monitor check --max-resets N --window SECONDS' \
+        '       scr-resets-monitor check --max-resets N --window SECONDS [--after-observation ACK] [--switch-reboot BEFORE AFTER]' \
+        'Pass each observation as one argument containing its committed JSON record.' \
         'N: 0..2147483647; SECONDS: 1..2147483647. Both arguments required.' \
         'check exits: 0 not exceeded, 1 exceeded, 2 unavailable.'
 }
@@ -106,7 +128,13 @@ function main() {
     }
 
     case "$COMMAND" in
-    record) record_observation ;;
+    record)
+        record_observation || return 2
+        if [ "$PRINT_OBSERVATION" -eq 1 ]; then
+            # An identical fresh read reuses the last committed sequence.
+            printf '%s\n' "${HISTORY[${#HISTORY[@]} - 1]}" || return 2
+        fi
+        ;;
     status) show_status ;;
     check) check_window ;;
     esac
