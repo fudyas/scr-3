@@ -19,6 +19,7 @@ function scr_usage() {
         '       scr-raom status | profile | -h | --help | help' \
         '       scr-raom monit start|stop|restart|force-reload|reload|syntax' \
         '       scr-raom watchdog start|stop|restart|force-reload' \
+        '       scr-raom keepalive start|stop|restart|force-reload' \
         'select: call after bounded native NTP bootstrap; flag reports bootstrap failure.' \
         'switch: request orderly reboot into the opposite mode. Exit 0 after submission, 2 on failure.' \
         'status/profile: read existing selection for this boot; never reevaluate.' \
@@ -50,7 +51,7 @@ function parse_args() {
         *) return 2 ;;
         esac
         ;;
-    watchdog:2)
+    watchdog:2 | keepalive:2)
         case "$2" in
         start | stop | restart | force-reload) RAOM_ACTION=$2 ;;
         *) return 2 ;;
@@ -89,6 +90,10 @@ function main() {
             ;;
         esac
         prepare_state || { raom_error storage_unavailable; exit 2; }
+        if [ "$RAOM_COMMAND" = keepalive ]; then
+            keepalive_action "$RAOM_ACTION"
+            exit $?
+        fi
         # A signal during native handoff can arrive between the two feeders.
         # Recover under the parent lock before leaving a mutable service action.
         case "$RAOM_ACTION" in

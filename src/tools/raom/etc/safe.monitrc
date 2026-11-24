@@ -5,5 +5,5 @@ set statefile /var/lib/monit/state
 set idfile /var/lib/monit/id
 set logfile /var/log/monit.log
 
-check process wd_keepalive with pidfile /var/run/wd_keepalive.pid
-    start program = "/etc/init.d/wd_keepalive start" with timeout 10 seconds
+check process watchdog with pidfile /var/run/watchdog.pid
+    start program = "/etc/init.d/watchdog start" with timeout 30 seconds
