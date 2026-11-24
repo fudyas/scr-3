@@ -15,6 +15,12 @@
       "host": "8fd23203e4ed",
       "event": "minted",
       "detail": "BACKLOG"
+    },
+    {
+      "at": "2026-11-24T08:28:16.112Z",
+      "host": "8fd23203e4ed",
+      "event": "hardware",
+      "detail": "{\"required\":true,\"result\":null,\"package_path\":null,\"promotion_commit\":null,\"package_sha256\":null,\"image_identity\":null,\"notes\":null,\"confirmed_at\":null}"
     }
   ],
   "created_at": "2026-11-24T08:27:38.451Z",
@@ -32,5 +38,15 @@
     "approved_revision": null,
     "approved_at": null
   },
-  "tasks": {}
+  "tasks": {},
+  "hardware": {
+    "required": true,
+    "result": null,
+    "package_path": null,
+    "promotion_commit": null,
+    "package_sha256": null,
+    "image_identity": null,
+    "notes": null,
+    "confirmed_at": null
+  }
 }
