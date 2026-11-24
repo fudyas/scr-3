@@ -2,7 +2,7 @@
   "prefix": "CHN",
   "number": 2,
   "desc": "RAOM-TASKS-IMPLEMENTATION",
-  "description": "Implement RAOM tasks in sequence. Item 1 delivers RAOM reset observation and decision API through the Bash reset monitor.",
+  "description": "Deliver RAOM reset history and threshold API, protected SysV boot selection, and explicit scr-raom switch <mode> transitions with recovery acknowledgment and full watchdog protection of MONIT in both modes. MONIT supervises client-defined services. Deliver reversible Debian packages with item-specific hardware acceptance.",
   "tags": [
     "raom",
     "reset-monitor"
@@ -25,10 +25,19 @@
       "host": "8fd23203e4ed",
       "event": "items",
       "detail": "ITM-0001, ITM-0007, ITM-0008"
+    },
+    {
+      "at": "2026-11-24T09:08:06.792Z",
+      "host": "8fd23203e4ed",
+      "event": "amended",
+      "detail": "description",
+      "previous": {
+        "description": "Implement RAOM tasks in sequence. Item 1 delivers RAOM reset observation and decision API through the Bash reset monitor."
+      }
     }
   ],
   "created_at": "2026-11-18T17:38:34.141Z",
-  "updated_at": "2026-11-24T09:07:36.946Z",
+  "updated_at": "2026-11-24T09:08:06.792Z",
   "items": [
     "ITM-0001",
     "ITM-0007",
