@@ -19,13 +19,20 @@
       "host": "8fd23203e4ed",
       "event": "items",
       "detail": "ITM-0001, ITM-0007"
+    },
+    {
+      "at": "2026-11-24T09:07:36.946Z",
+      "host": "8fd23203e4ed",
+      "event": "items",
+      "detail": "ITM-0001, ITM-0007, ITM-0008"
     }
   ],
   "created_at": "2026-11-18T17:38:34.141Z",
-  "updated_at": "2026-11-21T05:51:14.397Z",
+  "updated_at": "2026-11-24T09:07:36.946Z",
   "items": [
     "ITM-0001",
-    "ITM-0007"
+    "ITM-0007",
+    "ITM-0008"
   ],
   "host": "ec1503b3a74d"
 }
