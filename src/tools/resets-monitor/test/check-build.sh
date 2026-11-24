@@ -7,7 +7,7 @@ function abort() { printf 'FAIL build: %s\n' "$*" >&2; exit 1; }
 # Builds the real package and checks dpkg-owned paths and conffiles.
 # Arguments: none. Returns: 0 or aborts. Output: build and assertions; retains scratch.
 function main() {
-    local scratch file differences archive=src/pkg/scr-raom_1.1.0_all.deb
+    local scratch file differences archive=src/pkg/scr-raom_1.1.1_all.deb
     ./bin/lets deb build etc/deb/raom/deb.conf || abort 'Debian build'
     scratch=$(mktemp -d "$PWD/build/deb-inventory.XXXXXXXX") || abort 'scratch'
     dpkg-deb --raw-extract "$archive" "$scratch" || abort 'extract archive'
@@ -18,6 +18,8 @@ function main() {
     cmp src/tools/raom/etc/default-policy.conf "$scratch/etc/default/scr-raom" || abort 'client policy mapping'
     cmp src/tools/raom/etc/compat/watchdog.init "$scratch/etc/init.d/watchdog" || abort 'watchdog adapter mapping'
     [ -x "$scratch/etc/init.d/watchdog" ] || abort 'watchdog adapter mode'
+    [ -x "$scratch/usr/local/scr/tools/raom/etc/compat/wd_keepalive.init" ] || abort 'keepalive alternative mode'
+    [ ! -e "$scratch/etc/init.d/wd_keepalive" ] || abort 'downgrade would unlink restored keepalive'
     cmp src/tools/raom/etc/raom.conf "$scratch/usr/local/scr/tools/raom/etc/raom.conf" || abort 'trusted runtime configuration'
     [ ! -e "$scratch/usr/lib/scr-resets-monitor/payload" ] || abort 'private payload retained'
     [ ! -e "$scratch/etc/default/monit" ] || abort 'native defaults replaced'
@@ -37,6 +39,7 @@ function main() {
     done
     [ "$(dpkg-deb -f "$archive" Architecture)" = all ] || abort 'architecture'
     [ "$(dpkg-deb -f "$archive" Package)" = scr-raom ] || abort 'identity'
+    [ "$(dpkg-deb -f "$archive" Version)" = 1.1.1 ] || abort 'version'
     printf 'PASS direct Debian inventory, full source, links, conffiles, callback syntax/modes\n'
 }
 

@@ -1,5 +1,5 @@
 Package: scr-raom
-Version: 1.1.0
+Version: 1.1.1
 Section: admin
 Priority: optional
 Architecture: all
@@ -10,5 +10,6 @@ Replaces: scr-resets-monitor (= 1.1.0)
 Description: Reset history API and configurable SysV MONIT boot gate
  Records existing SEMA observations through Bash and preserves reset history.
  Selects a per-boot safe or normal MONIT profile through the existing reset API.
+ Switch-reboot attribution uses utmpdump from util-linux and SysV wtmp records.
  Coordinates native watchdog and keepalive during MONIT startup and planned stops.
  Uses Debian diversions and conffiles; never starts services during installation.
