@@ -582,14 +582,8 @@ function check_reset_window() {
     fi
     [ -z "$ack" ] || evidence+=(--after-observation "$ack")
     [ -z "$before" ] || evidence+=(--switch-reboot "$before" "$after")
-    local result=0
-    bounded_command 15 "$RAOM_RESETS_MONITOR" check --max-resets "$MAX_RESETS" --window "$RESET_WINDOW_SECONDS" "${evidence[@]}" || result=$?
-    if [ "$after" = unavailable ] && [ "$result" -eq 0 ] && [ "$1" = false ]; then
-        # Remember proven expiry across later short boots. Retain the acknowledgment.
-        DECISION[before]='' DECISION[after]=''
-        save_decision || return 2
-    fi
-    return "$result"
+    # Retain fixed evidence: a later configuration can widen the evaluated window.
+    bounded_command 15 "$RAOM_RESETS_MONITOR" check --max-resets "$MAX_RESETS" --window "$RESET_WINDOW_SECONDS" "${evidence[@]}"
 }
 
 # Completes only this boot's normal recovery after the caller verifies both services.

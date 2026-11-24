@@ -670,15 +670,28 @@ FIXTURE
     expect_status 2 "$WORK/api" "${check[@]}" --switch-reboot unavailable "$before" 2>"$WORK/error"
     expect_status 2 "$WORK/api" "${check[@]}" --switch-reboot "$before" unknown 2>"$WORK/error"
 
-    printf '3490 1500 101\n' >"$WORK/reset-sample"
-    expect_status 0 "$WORK/api" "${check[@]}" --switch-reboot "$before" unavailable 2>"$WORK/error"
     next_boot 3
     printf '10.00 0.00\n' >"$WORK/uptime"
-    printf '3500 10 102\n' >"$WORK/reset-sample"
+    printf '3490 10 101\n' >"$WORK/reset-sample"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=below_threshold "$WORK/out" || fail 'trusted later window remained unavailable'
+    grep -qx after=unavailable "$RAOM_DECISION_DIR/decision" || fail 'short window erased unresolved evidence'
+
+    # A wider configured window can include the same unresolved switch again.
+    config_value RESET_WINDOW_SECONDS 1800
+    next_boot 4
+    printf '3500 10 101\n' >"$WORK/reset-sample"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=reset_evidence_unavailable "$WORK/out" || fail 'wider window charged uncertain switch'
+    grep -qx mode=normal "$WORK/out" || fail 'unchanged counter caused false safe entry'
+
+    config_value RESET_WINDOW_SECONDS 900
+    next_boot 5
+    printf '3510 10 102\n' >"$WORK/reset-sample"
     expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
     grep -qx reason=threshold_exceeded "$WORK/out" || fail 'later short boot masked proven reset'
     grep -qx mode=safe "$WORK/out" || fail 'proven reset did not select safe'
-    [ "$(sed -n 's/.*"boot_delta":\([0-9]*\),.*/\1/p' "$WORK/log/resets.jsonl")" = $'0\n1\n0\n1' ] || fail 'raw reset deltas changed'
+    [ "$(sed -n 's/.*"boot_delta":\([0-9]*\),.*/\1/p' "$WORK/log/resets.jsonl")" = $'0\n1\n0\n0\n1' ] || fail 'raw reset deltas changed'
 }
 
 # Checks unavailable safe-entry counters and unsafe or missing durable state.
