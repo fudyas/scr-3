@@ -122,8 +122,7 @@ function selected_profile() {
         result=$?
         [ "$result" -ne 3 ] || return 2
         [ "$result" -eq 0 ] || bootstrap_failed=true
-        select_mode "$bootstrap_failed" || return 2
-        publish_selection || { raom_error publication_failed; return 2; }
+        initialize_selection "$bootstrap_failed" || return 2
 
         # End timing at publication. Cache hits, logging and MONIT launch are
         # outside this interval. The boot can proceed if telemetry is unavailable.

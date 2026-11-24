@@ -51,7 +51,7 @@ function test_early_arguments() {
     expect_status 2 main >"$WORK/out" 2>"$WORK/err"
     [[ ! -s "$WORK/out" && -s "$WORK/err" ]] || fail 'missing-argument streams'
     for option in 'select bad' 'select --ntp-start-failed extra' 'status extra' \
-        'profile extra' 'monit' 'watchdog reload' 'watchdog start extra' 'monit start extra' '--help extra'; do
+        'switch' 'switch reboot' 'switch safe extra' 'switch normal extra' 'profile extra' 'monit' 'watchdog reload' 'watchdog start extra' 'monit start extra' '--help extra'; do
         local -a arguments=()
         read -r -a arguments <<<"$option"
         expect_status 2 main "${arguments[@]}" >"$WORK/out" 2>"$WORK/err"
@@ -67,9 +67,10 @@ function test_trusted_paths() {
     setup
     # Source the command layer with poisoned ambient variables; do not call main.
     expect_status 0 env RAOM_POLICY_FILE=/wrong RAOM_STATE_DIR=/wrong RAOM_RESETS_MONITOR=/wrong \
-        RAOM_MONIT_BINARY=/wrong RAOM_STATE_UID=999 RAOM_DEFAULT_SAFE_PROFILE=/wrong \
+        RAOM_REBOOT=/wrong RAOM_DECISION_DIR=/wrong RAOM_WTMP=/wrong RAOM_MONIT_BINARY=/wrong RAOM_STATE_UID=999 RAOM_DEFAULT_SAFE_PROFILE=/wrong \
         bash -c '
             source "$1" || exit 2
+            [ "$RAOM_REBOOT:$RAOM_DECISION_DIR:$RAOM_WTMP" = /sbin/shutdown:/var/lib/scr-raom:/var/log/wtmp ] || exit 2
             [ "$RAOM_POLICY_FILE:$RAOM_STATE_DIR:$RAOM_RESETS_MONITOR:$RAOM_MONIT_BINARY:$RAOM_STATE_UID:$RAOM_DEFAULT_SAFE_PROFILE" = \
                 /etc/default/scr-raom:/run/scr-raom:/usr/bin/scr-resets-monitor:/usr/bin/monit:0:/etc/monit/raom/safe.monitrc ]
         ' _ "$RAOM_HOME/tool.sh"
@@ -95,6 +96,11 @@ function test_shared_root() {
     ' _ "$SCR_ROOT/lib/run.sh" "$WORK/cleanup"
     [ "$(<"$WORK/cleanup")" = cleanup ] || fail 'shared helper removed EXIT trap'
     if [ "$EUID" -ne 0 ]; then
+        local target
+        for target in safe normal; do
+            expect_status 2 "$SCR_ROOT/bin/src-raom" switch "$target" >"$WORK/out" 2>"$WORK/err"
+            grep -q 'error privileges_required' "$WORK/err" || fail 'switch privilege check'
+        done
         expect_status 2 "$SCR_ROOT/bin/src-raom" status >"$WORK/out" 2>"$WORK/err"
         [ ! -s "$WORK/out" ] || fail 'privilege error polluted data stream'
         grep -q 'error privileges_required' "$WORK/err" || fail 'shared named error missing'

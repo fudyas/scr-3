@@ -39,13 +39,17 @@ function setup() {
     source "$RAOM_HOME/src/decision.sh" || fail 'decision module'
     source "$RAOM_HOME/tool.sh" || fail 'command module'
     WORK=$(mktemp -d) || fail 'scratch directory'
-    trap 'chmod -R u+rwX "$WORK"; rm -rf -- "$WORK"' EXIT
+    trap 'if [ "$?" -ne 0 ] && [ -f "$WORK/error" ]; then cat "$WORK/error" >&2; fi; chmod -R u+rwX "$WORK"; rm -rf -- "$WORK"' EXIT
     export LC_ALL=C
     umask 077
 
     # Override only in this sourced test shell, never through production environment.
     RAOM_POLICY_FILE=$WORK/config RAOM_STATE_DIR=$WORK/run RAOM_BOOT_ID_FILE=$WORK/boot
     RAOM_UPTIME_FILE=$WORK/uptime RAOM_RESETS_MONITOR=$WORK/api RAOM_NTP_QUERY=$WORK/ntpq RAOM_STATE_UID=$EUID
+
+    RAOM_DECISION_DIR=$WORK/durable RAOM_REBOOT=$WORK/reboot RAOM_WTMP=$WORK/wtmp
+    : >"$RAOM_WTMP"
+    fresh_decision
 
     # Bypass privilege only after every path points into this private fixture.
     # Arguments: none. Returns: 0. Output: none.
@@ -64,17 +68,48 @@ function setup() {
 #!/bin/bash
 fixture=${0%/*}
 printf '%s\n' "$@" >>"$fixture/api-calls"
+printf '%s\n' "$1" >>"$fixture/events"
+if [ "$1" = record ]; then
+    [ "$#" -eq 2 ] && [ "$2" = --print-observation ] && [ ! -f "$fixture/capture-fail" ] || exit 2
+    cat "$fixture/observation" || exit 2
+    exit 0
+fi
+if [ -f "$fixture/require-evidence" ]; then
+    [ "$#" -eq 10 ] && [ "$6" = --after-observation ] && [ "$7" = "$(<"$fixture/ack")" ] &&
+        [ "$8" = --switch-reboot ] && [ "$9" = "$7" ] && [ "${10}" = "$(<"$fixture/end")" ] || exit 2
+fi
 exit "$(<"$fixture/api-status")"
 FIXTURE
     cat >"$WORK/ntpq" <<'FIXTURE'
 #!/bin/bash
 fixture=${0%/*}
+printf 'ntpq\n' >>"$fixture/events"
 printf '%s\n' "$@" >>"$fixture/ntp-calls"
 [ ! -f "$fixture/probe-clock" ] || cp "$fixture/probe-clock" "$fixture/uptime"
 [ "$(<"$fixture/ntp-status")" = ready ] || exit 1
 printf 'status=0615 leap_none, sync_ntp, 1 event, clock_sync,\n'
 FIXTURE
-    chmod 0700 "$WORK/api" "$WORK/ntpq" || fail 'fixture executables'
+    cat >"$WORK/reboot" <<'FIXTURE'
+#!/bin/bash
+fixture=${0%/*}
+[ "$#" -eq 2 ] && [ "$1" = -r ] && [ "$2" = now ] || exit 99
+for fd in /proc/self/fd/*; do
+    [ "$(readlink "$fd")" != "$fixture/run/lock" ] || exit 98
+done
+grep -qx phase=prepared "$fixture/durable/decision" || exit 97
+printf 'shutdown -r now\n' >>"$fixture/reboots"
+[ ! -f "$fixture/interrupt" ] || kill -TERM "$PPID"
+[ ! -f "$fixture/reject" ]
+FIXTURE
+    chmod 0700 "$WORK/reboot" "$WORK/api" "$WORK/ntpq" || fail 'fixture executables'
+}
+
+# Creates an independent installation for policy cases that exercise different boots.
+# Arguments: none. Returns: 0 or exits 1. Output: private fresh decision.
+function fresh_decision() {
+    [ -d "$RAOM_DECISION_DIR" ] || mkdir -m 0700 -- "$RAOM_DECISION_DIR" || fail 'durable directory'
+    rm -f -- "$RAOM_DECISION_DIR/decision"
+    initialize_decision normal || fail 'initialize decision'
 }
 
 # Replaces one configuration value without evaluating configuration as code.
@@ -165,6 +200,7 @@ function test_api_decisions() {
     local policy status expected reason
     for policy in true false; do
         for status in 0 1 2 7 124 137; do
+            fresh_decision
             rm -rf "$WORK/run"
             rm -f "$WORK/api-calls"
             config_value SAFE_MODE_ON_ERROR "$policy"
@@ -186,10 +222,12 @@ function test_api_decisions() {
             [ "$reason" = below_threshold ] || [ -s "$WORK/error" ] || fail 'error/threshold reason hidden'
         done
     done
+    fresh_decision
     rm -rf "$WORK/run"
     rm "$WORK/api"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
     grep -qx reason=reset_api_failed "$WORK/result" || fail 'missing API hidden'
+    fresh_decision
     rm -rf "$WORK/run"
     rm "$WORK/config"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
@@ -207,6 +245,7 @@ function test_wait() {
     function date() { fail 'selector consulted wall clock'; }
     local policy expected
     for policy in true false; do
+        fresh_decision
         rm -rf "$WORK/run"
         config_value NTP_SYNC_TIMEOUT_SECONDS 2
         config_value SAFE_MODE_ON_ERROR "$policy"
@@ -219,6 +258,7 @@ function test_wait() {
         grep -qx reason=ntp_timeout "$WORK/result" || fail 'timeout reason'
         [ "$(<"$WORK/uptime")" = '102.25 0.00' ] || fail 'deadline drift'
         [ ! -e "$WORK/api-calls" ] || fail 'API before NTP ready'
+        fresh_decision
         rm -rf "$WORK/run"
         expect_status 0 main select --ntp-start-failed >"$WORK/result" 2>"$WORK/error"
         grep -qx "mode=$expected" "$WORK/result" || fail 'bootstrap policy'
@@ -229,26 +269,31 @@ function test_wait() {
     printf 'ready\n' >"$WORK/ntp-status"
     printf '100.25 0.00\n' >"$WORK/uptime"
     printf '102.25 0.00\n' >"$WORK/probe-clock"
+    fresh_decision
     rm -rf "$WORK/run"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
     grep -qx reason=ntp_timeout "$WORK/result" || fail 'deadline boundary accepted'
     printf '100.25 0.00\n' >"$WORK/uptime"
     printf '102.24 0.00\n' >"$WORK/probe-clock"
+    fresh_decision
     rm -rf "$WORK/run"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
     grep -qx reason=below_threshold "$WORK/result" || fail 'early readiness rejected'
     printf '100.25 0.00\n' >"$WORK/uptime"
     printf '99.00 0.00\n' >"$WORK/probe-clock"
+    fresh_decision
     rm -rf "$WORK/run"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
     grep -qx reason=clock_unavailable "$WORK/result" || fail 'backward monotonic accepted'
     rm "$WORK/probe-clock"
     printf 'unready\n' >"$WORK/ntp-status"
     touch "$WORK/frozen"
+    fresh_decision
     rm -rf "$WORK/run"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
     grep -qx reason=clock_unavailable "$WORK/result" || fail 'frozen clock extended wait'
     printf 'invalid\n' >"$WORK/uptime"
+    fresh_decision
     rm -rf "$WORK/run"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
     grep -qx reason=clock_unavailable "$WORK/result" || fail 'invalid clock accepted'
@@ -277,7 +322,8 @@ function test_boot_state() {
     [ ! -s "$WORK/result" ] || fail 'previous boot profile exposed'
     printf 'ready\n' >"$WORK/ntp-status"
     expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
-    grep -qx mode=normal "$WORK/result" || fail 'new boot not reevaluated'
+    grep -qx reason=persistent_safe "$WORK/result" || fail 'threshold latch lost at reboot'
+    [ "$(wc -l <"$WORK/api-calls")" -eq 5 ] || fail 'persisted safe repeated check'
     grep -qx boot_id=22222222-2222-2222-2222-222222222222 "$WORK/result" || fail 'new boot not recorded'
     printf 'mode=normal\n' >"$WORK/run/selection"
     expect_status 2 main select >"$WORK/result" 2>"$WORK/error"
@@ -326,11 +372,333 @@ function test_command_and_publication_failure() {
     [ -z "$(find "$WORK/run" -name '.command.*' -o -name '.selection.*')" ] || fail 'invocation scratch leaked'
 }
 
-# Runs scoped V1-V3 checks; every device, daemon, API, and clock input is isolated.
+# Supplies one canonical observation for the current fixture boot.
+# Arguments: $1 - sequence; $2 - counter. Returns: printf status. Output: fixture API response.
+function sample() {
+    printf '{"schema":1,"sequence":%d,"epoch":1,"timestamp":1,"clock_valid":0,"clock_reason":"unsynchronized","uncertainty":0,"boot_id":"%s","uptime":1,"controller":"unit","firmware":"1","boot_count":%d,"power_cycles":1,"boot_delta":0,"power_delta":0,"cause":"reset","discontinuity":""}\n' \
+        "$1" "$(<"$WORK/boot")" "$2" >"$WORK/observation"
+}
+
+# Appends native-format shutdown/boot records and recreates volatile boot state.
+# Arguments: $1 - single-digit boot number. Returns: 0 or exits 1. Output: fixture files.
+function next_boot() {
+    printf '%s\n' '[1] [00000] [~~  ] [shutdown] [~           ] [                ] [0.0.0.0        ] [2026-01-01T00:00:01,000000+00:00]' \
+        '[2] [00000] [~~  ] [reboot  ] [~           ] [                ] [0.0.0.0        ] [2026-01-01T00:00:02,000000+00:00]' |
+        utmpdump -r >>"$RAOM_WTMP" 2>/dev/null || fail 'SysV boot accounting fixture'
+    printf '00000000-0000-0000-0000-%012d\n' "$1" >"$WORK/boot"
+    rm -rf -- "$WORK/run"
+}
+
+# Calls the service completion hook with an explicit simulated readiness result.
+# Arguments: $1 - readiness result. Returns: callback status. Output: fixture state.
+function finish_boot() (
+    prepare_state || return 2
+    complete_recovery "$1"
+)
+
+# Starts one safe boot and submits a recovery with an unsynchronized observation.
+# Arguments: none. Returns: 0 or exits 1. Output: fixture state and request evidence.
+function request_recovery() {
+    printf '1\n' >"$WORK/api-status"
+    expect_status 0 main select >"$WORK/selection" 2>"$WORK/error"
+    sample 10 100
+    cp "$WORK/observation" "$WORK/ack"
+    printf 'unready\n' >"$WORK/ntp-status"
+    : >"$WORK/events"
+    expect_status 0 main switch normal >"$WORK/out" 2>"$WORK/error"
+    [ "$(<"$WORK/events")" = record ] || fail 'switch waited for NTP or checked threshold'
+    expect_status 0 main status >"$WORK/out" 2>"$WORK/error"
+    cmp -s "$WORK/out" "$WORK/selection" || fail 'pending request changed running status'
+    expect_status 0 main profile >"$WORK/out" 2>"$WORK/error"
+    [ "$(<"$WORK/out")" = "$RAOM_DEFAULT_SAFE_PROFILE" ] || fail 'reported pending profile'
+    [ "$(wc -l <"$WORK/reboots")" = 1 ] || fail 'reboot sink call count'
+}
+
+# Checks both target guards reject before counter, reboot and service actions.
+# Arguments: none. Returns: 0 or exits 1. Output: private captures.
+function test_switch_guards() {
+    setup
+    local target lock_fd
+    cp "$RAOM_DECISION_DIR/decision" "$WORK/prior"
+    for target in safe normal; do
+        expect_status 2 main switch "$target" >"$WORK/out" 2>"$WORK/error"
+        expect_status 2 main status >"$WORK/out" 2>"$WORK/error"
+        [ ! -e "$WORK/run" ] || fail 'guard created volatile state'
+    done
+    for target in normal safe; do
+        fresh_decision
+        rm -rf "$WORK/run"
+        if [ "$target" = safe ]; then printf '1\n' >"$WORK/api-status"; fi
+        expect_status 0 main select >"$WORK/selection" 2>"$WORK/error"
+        cp "$RAOM_DECISION_DIR/decision" "$WORK/prior"
+        rm -f "$WORK/api-calls"
+        expect_status 2 main switch "$target" >"$WORK/out" 2>"$WORK/error"
+        exec {lock_fd}>>"$WORK/run/lock"
+        flock "$lock_fd" || fail 'fixture lock'
+        expect_status 2 main switch safe >"$WORK/out" 2>"$WORK/error"
+        expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+        exec {lock_fd}>&-
+        printf '00000000-0000-0000-0000-000000000002\n' >"$WORK/boot"
+        expect_status 2 main switch safe >"$WORK/out" 2>"$WORK/error"
+        expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+        printf 'mode=normal\n' >"$WORK/run/selection"
+        expect_status 2 main switch safe >"$WORK/out" 2>"$WORK/error"
+        expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+        cmp -s "$RAOM_DECISION_DIR/decision" "$WORK/prior" || fail 'guard changed durable state'
+        [[ ! -e "$WORK/api-calls" && ! -e "$WORK/reboots" ]] || fail 'guard touched counter or reboot'
+        printf '%s\n' 11111111-1111-1111-1111-111111111111 >"$WORK/boot"
+    done
+}
+
+# Checks both request directions, safe persistence and the exact recovery API arguments.
+# Arguments: none. Returns: 0 or exits 1. Output: simulated boots and readiness.
+function test_recovery_boot() {
+    setup
+    request_recovery
+    expect_status 0 main switch normal >"$WORK/out" 2>"$WORK/error"
+    [[ "$(wc -l <"$WORK/reboots")" = 1 && "$(<"$WORK/events")" = record ]] || fail 'submitted retry repeated work'
+    next_boot 2
+    sample 11 101
+    cp "$WORK/observation" "$WORK/end"
+    touch "$WORK/require-evidence"
+    printf '0\n' >"$WORK/api-status"
+    printf 'ready\n' >"$WORK/ntp-status"
+    : >"$WORK/events"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx mode=normal "$WORK/out" || fail 'old episode triggered safe mode'
+    [ "$(<"$WORK/events")" = $'record\nntpq\ncheck' ] || fail 'capture did not precede NTP'
+    expect_status 2 finish_boot unverified
+    grep -qx latch=safe "$RAOM_DECISION_DIR/decision" || fail 'decision certified recovery'
+    expect_status 2 main switch safe >"$WORK/out" 2>"$WORK/error"
+    expect_status 0 finish_boot verified
+    grep -Fxq "ack=$(<"$WORK/ack")" "$RAOM_DECISION_DIR/decision" || fail 'lost recovery acknowledgment'
+
+    next_boot 3
+    : >"$WORK/events"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx mode=normal "$WORK/out" || fail 'ordinary boot lost classified interval'
+    [ "$(<"$WORK/events")" = $'ntpq\ncheck' ] || fail 'later boot rebound endpoint'
+    sample 12 103
+    expect_status 0 main switch safe >"$WORK/out" 2>"$WORK/error"
+    next_boot 4
+    sample 13 104
+    : >"$WORK/events"
+    expect_status 0 main select --ntp-start-failed >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=switch_safe "$WORK/out" || fail 'manual entry lost reason'
+    [ "$(<"$WORK/events")" = record ] || fail 'manual safe ran readiness or threshold'
+    grep -Fxq "after=$(<"$WORK/observation")" "$RAOM_DECISION_DIR/decision" || fail 'safe switch lost endpoint'
+    grep -Fxq "ack=$(<"$WORK/ack")" "$RAOM_DECISION_DIR/decision" || fail 'safe switch acknowledged resets'
+    next_boot 5
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=persistent_safe "$WORK/out" || fail 'manual safe latch lost'
+    [ "$(<"$WORK/events")" = record ] || fail 'persisted safe ran readiness or threshold'
+}
+
+# Checks failed capture, failed durable writes and rejected or interrupted submission.
+# Arguments: none. Returns: 0 or exits 1. Output: fixture records and reboot log.
+function test_request_failures() {
+    setup
+    printf '1\n' >"$WORK/api-status"
+    expect_status 0 main select >"$WORK/selection" 2>"$WORK/error"
+    cp "$RAOM_DECISION_DIR/decision" "$WORK/prior"
+    touch "$WORK/capture-fail"
+    expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+    rm "$WORK/capture-fail"
+    sample 10 100
+    local failure
+    for failure in short write file_sync dir_sync rename; do
+        (
+            # Fails the serializer before publication.
+            # Arguments: none. Returns: 2. Output: partial line on stdout.
+            if [ "$failure" = write ]; then
+                function decision_record() { printf 'schema='; return 2; }
+            fi
+            # Injects a file sync error, a directory sync error or a short file.
+            # Arguments: $1 - path. Returns: 0 or 2. Output: fixture file on short write.
+            function sync_path() {
+                case "$failure:$1" in
+                short:*/.decision.*) : >"$1" ;;
+                file_sync:*/.decision.* | dir_sync:"$RAOM_DECISION_DIR") return 2 ;;
+                esac
+                return 0
+            }
+            if [ "$failure" = rename ]; then
+                # Fails the atomic rename. Arguments: mv argv. Returns: 1. Output: none.
+                function mv() { return 1; }
+            fi
+            expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+        ) || fail "injection $failure"
+        cmp -s "$RAOM_DECISION_DIR/decision" "$WORK/prior" || fail "$failure changed latch"
+        [ ! -e "$WORK/reboots" ] || fail "$failure reached reboot sink"
+    done
+
+    printf 'watchdog\n' >"$WORK/feeder"
+    # Models an actual feeder handoff. Arguments: none. Returns: 0. Output: fixture feeder.
+    function handoff_to_keepalive() { printf 'keepalive\n' >"$WORK/feeder"; }
+    # Records any service call during request rejection.
+    # Arguments: seconds, init script, action. Returns: 2. Output: fixture service trace.
+    function native_init() { printf '%s\n' "$*" >>"$WORK/service-calls"; return 2; }
+    touch "$WORK/reject"
+    expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+    cmp -s "$RAOM_DECISION_DIR/decision" "$WORK/prior" || fail 'rejected request retained exemption'
+    cmp -s "$WORK/run/selection" "$WORK/selection" || fail 'rejected reboot changed live selection'
+    [[ "$(<"$WORK/feeder")" = watchdog && ! -e "$WORK/service-calls" ]] || fail 'rejected request changed feeder'
+    rm "$WORK/reject"
+    touch "$WORK/interrupt"
+    expect_status 2 main switch normal >"$WORK/out" 2>"$WORK/error"
+    grep -qx phase=prepared "$RAOM_DECISION_DIR/decision" || fail 'lost interrupted request'
+    cp "$WORK/observation" "$WORK/frozen-ack"
+    sample 20 110
+    rm "$WORK/interrupt"
+    : >"$WORK/events"
+    expect_status 0 main switch normal >"$WORK/out" 2>"$WORK/error"
+    [ ! -s "$WORK/events" ] || fail 'interrupted retry recaptured'
+    grep -Fxq "capture=$(<"$WORK/frozen-ack")" "$RAOM_DECISION_DIR/decision" || fail 'retry advanced boundary'
+}
+
+# Checks a missing endpoint, an unseen boot and an incomplete normal startup.
+# Arguments: none. Returns: 0 or exits 1. Output: fixture decisions and reset call trace.
+function test_destination_failures() {
+    local scenario
+    for scenario in missing skipped missing_accounting startup threshold timeout policy_false; do
+        (
+            setup
+            request_recovery
+            next_boot 2
+            [ "$scenario" != skipped ] || next_boot 3
+            sample 11 101
+            printf '0\n' >"$WORK/api-status"
+            printf 'ready\n' >"$WORK/ntp-status"
+            config_value NTP_SYNC_TIMEOUT_SECONDS 1
+            case "$scenario" in
+            missing | policy_false) touch "$WORK/capture-fail" ;;
+            missing_accounting) rm "$RAOM_WTMP" ;;
+            timeout) printf 'unready\n' >"$WORK/ntp-status" ;;
+            threshold) printf '1\n' >"$WORK/api-status" ;;
+            esac
+            [ "$scenario" != policy_false ] || config_value SAFE_MODE_ON_ERROR false
+            expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+            case "$scenario" in
+            missing | skipped | missing_accounting | policy_false) grep -qx reason=reset_evidence_unavailable "$WORK/out" || fail "$scenario evidence" ;;
+            startup) grep -qx reason=below_threshold "$WORK/out" || fail 'recovery boot evaluation' ;;
+            threshold) grep -qx reason=threshold_exceeded "$WORK/out" || fail 'new threshold hidden' ;;
+            timeout) grep -qx reason=ntp_timeout "$WORK/out" || fail 'recovery timeout hidden' ;;
+            esac
+            case "$scenario" in
+            startup | policy_false) grep -qx mode=normal "$WORK/out" || fail "$scenario expected normal decision" ;;
+            *) grep -qx mode=safe "$WORK/out" || fail "$scenario expected safe decision" ;;
+            esac
+            next_boot 4
+            : >"$WORK/events"
+            expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+            grep -qx reason=persistent_safe "$WORK/out" || fail "$scenario fallback lost"
+            [ ! -s "$WORK/events" ] || fail "$scenario rebound first endpoint"
+        ) || fail "$scenario"
+    done
+}
+
+# Checks unavailable safe-entry counters and unsafe or missing durable state.
+# Arguments: none. Returns: 0 or exits 1. Output: fixture records and captures.
+function test_durable_storage() {
+    setup
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    [ "$(stat -c '%u:%a:%h' "$RAOM_DECISION_DIR/decision")" = "$EUID:600:1" ] || fail 'durable file metadata'
+    cp "$RAOM_DECISION_DIR/decision" "$WORK/prior"
+    rm "$RAOM_DECISION_DIR/decision"
+    expect_status 2 main switch safe >"$WORK/out" 2>"$WORK/error"
+    next_boot 2
+    expect_status 2 main select >"$WORK/out" 2>"$WORK/error"
+    [ ! -e "$WORK/run/selection" ] || fail 'missing established state selected normal'
+    ln -s "$WORK/prior" "$RAOM_DECISION_DIR/decision"
+    expect_status 2 main select >"$WORK/out" 2>"$WORK/error"
+    rm "$RAOM_DECISION_DIR/decision"
+    ln "$WORK/prior" "$RAOM_DECISION_DIR/decision"
+    expect_status 2 main select >"$WORK/out" 2>"$WORK/error"
+    rm "$RAOM_DECISION_DIR/decision"
+    cp "$WORK/prior" "$RAOM_DECISION_DIR/decision"
+    chmod 0644 "$RAOM_DECISION_DIR/decision"
+    expect_status 2 main select >"$WORK/out" 2>"$WORK/error"
+    chmod 0600 "$RAOM_DECISION_DIR/decision"
+    chmod 0770 "$RAOM_DECISION_DIR"
+    expect_status 2 main select >"$WORK/out" 2>"$WORK/error"
+    chmod 0700 "$RAOM_DECISION_DIR"
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    touch "$WORK/capture-fail"
+    expect_status 0 main switch safe >"$WORK/out" 2>"$WORK/error"
+    grep -qx capture=unavailable "$RAOM_DECISION_DIR/decision" || fail 'missing safe-entry counter'
+    next_boot 3
+    expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+    grep -qx reason=switch_safe "$WORK/out" || fail 'unavailable counter blocked safe entry'
+}
+
+# Interrupts native submission and boots before the caller can confirm either target.
+# Arguments: none. Returns: 0 or exits 1. Output: fixture decisions and calls.
+function test_interrupted_boot() {
+    local target
+    for target in safe normal; do
+        (
+            setup
+            [ "$target" != normal ] || printf '1\n' >"$WORK/api-status"
+            expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+            sample 10 100
+            touch "$WORK/interrupt"
+            expect_status 2 main switch "$target" >"$WORK/out" 2>"$WORK/error"
+            grep -qx phase=prepared "$RAOM_DECISION_DIR/decision" || fail 'submission unexpectedly confirmed'
+            next_boot 2
+            : >"$WORK/events"
+            expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+            grep -qx mode=safe "$WORK/out" || fail "interrupted switch $target lost safe fallback"
+            grep -qx phase=idle "$RAOM_DECISION_DIR/decision" || fail 'ambiguous request replayed'
+            grep -qx ack= "$RAOM_DECISION_DIR/decision" || fail 'ambiguous submission acknowledged resets'
+            [ ! -s "$WORK/events" ] || fail 'ambiguous submission claimed a switch interval'
+            next_boot 3
+            expect_status 0 main select >"$WORK/out" 2>"$WORK/error"
+            grep -qx reason=persistent_safe "$WORK/out" || fail 'interrupted safe failed to persist'
+        ) || fail "$target interrupted boot"
+    done
+}
+
+# Checks the SysV initializer and its read-only path against a simulated readiness result.
+# Arguments: none. Returns: 0 or exits 1. Output: fixture decision and service trace.
+function test_service_selection() {
+    setup
+    request_recovery
+    next_boot 2
+    sample 11 101
+    printf '0\n' >"$WORK/api-status"
+    printf 'ready\n' >"$WORK/ntp-status"
+    source "$RAOM_HOME/src/monit.sh" || fail 'service module'
+    RAOM_LOGGER=/bin/true
+    # Records native prerequisite startup in the isolated fixture.
+    # Arguments: none. Returns: 0. Output: fixture trace.
+    function bootstrap_ntp() { printf 'bootstrap\n' >>"$WORK/events"; }
+    : >"$WORK/events"
+    prepare_state || fail 'fixture service lock'
+    read_boot_id || fail 'fixture boot ID'
+    expect_status 2 selected_profile false >"$WORK/out" 2>"$WORK/error"
+    [[ ! -s "$WORK/events" && ! -e "$WORK/run/selection" ]] || fail 'read-only selection caused startup'
+    expect_status 0 selected_profile true >"$WORK/out" 2>"$WORK/error"
+    [ "$CONFIG" = "$RAOM_DEFAULT_NORMAL_PROFILE" ] || fail 'SysV recovery profile'
+    [ "$(<"$WORK/events")" = $'bootstrap\nrecord\nntpq\ncheck' ] || fail 'SysV decision order'
+    expect_status 0 selected_profile true >"$WORK/out" 2>"$WORK/error"
+    grep -qx latch=safe "$RAOM_DECISION_DIR/decision" || fail 'SysV selection certified recovery'
+    (
+        # Rejects the durable completion rename. Arguments: mv argv. Returns: 1. Output: none.
+        function mv() { return 1; }
+        expect_status 2 complete_recovery verified >"$WORK/out" 2>"$WORK/error"
+    ) || fail 'failed completion save status'
+    grep -qx latch=safe "$RAOM_DECISION_DIR/decision" || fail 'failed completion cleared latch'
+    expect_status 0 complete_recovery verified
+    grep -qx latch=normal "$RAOM_DECISION_DIR/decision" || fail 'verified recovery failed'
+    exec {RAOM_LOCK_FD}>&-
+}
+
+# Runs scoped decision and switch checks; every device, daemon, API, and clock input is isolated.
 # Arguments: none. Returns: 0 or 1. Output: one PASS per group.
 function main() {
     local test
-    for test in test_config test_api_decisions test_wait test_boot_state test_command_and_publication_failure; do
+    for test in test_config test_api_decisions test_wait test_boot_state test_command_and_publication_failure \
+        test_switch_guards test_recovery_boot test_request_failures test_destination_failures test_durable_storage test_interrupted_boot test_service_selection; do
         ("$test") || return 1
         printf 'PASS %s\n' "$test"
     done
