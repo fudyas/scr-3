@@ -129,10 +129,16 @@
       "host": "8fd23203e4ed",
       "event": "task_status",
       "detail": "TSK-0004 -> IN PROGRESS"
+    },
+    {
+      "at": "2026-11-24T15:43:01.229Z",
+      "host": "8fd23203e4ed",
+      "event": "task_rework",
+      "detail": "TSK-0002 after validate: V5 failures at a3d4948: missing endpoint suppresses later proven resets across boots; duplicate shutdown records permit ambiguous switch exemption. See validation-runtime/a3d4948-validation.md."
     }
   ],
   "created_at": "2026-11-24T08:27:38.451Z",
-  "updated_at": "2026-11-24T15:33:03.044Z",
+  "updated_at": "2026-11-24T15:43:01.229Z",
   "kind": "improve",
   "idea": "Mint a new SDLC item that:\n- adds the explicit switch to normal mode, can only be launched in safe mode \n- fix the safe profile to watchdog monit and the safe mode services\n\nPrior user context:\nAnother issue: how do I switch back to normal mode and make sure RAOM does not go back to safe mode (since counters/time window didn't change too much)\n\nAdditional user requirement:\nThere should also be an option to switch from normal mode into safe mode\n\nAdditional user ruling:\nThere should be a single 'switch <mode>' command that switches (or rejects the switching) between the modes.\n\nSafe-mode persistence ruling:\n- The 'swithc safe' is invoked by the admin user and should not evaluate RAOM threshold. The system will enter and remain in safe mode until 'switch normal' is invoked.  \n- Clarification: ontky 'switch normal' takes out of the safe mode. Any system reboots occuring in safe mode return to safe mode\n- BOTTOM LINE:\n  - the threshold is checked on every boot BUT\n  - if the system reboots from the safe mode the threshold is ignored and it boots into safe mode until 'switch normal is executed\n  - else it checks if safe/normal mode needs to be entered\n\nReboot clarification:\n1. What \"reject recovery\" means ?\n2. Switching between modes means rebooting the system\n\nDocumentation requirement:\nI want you to update the RAOM readme with the final algorithm, the switching commands and the NTP caveat as part of item 8\n\nRecovery failure ruling:\nAsked: \"If counters cannot be read or saved, should it retain safe mode and refuse reboot?\"\nDeveloper: \"Yes, refuse reboot\"\n\nMode-switch reboot counting ruling:\nConfirm the reboot caused by mode switch IS NOT counted towards resets to check against the threshold UNLESS the counter of BMC resets incrmented by more than 1",
   "status": "IN PROGRESS",
