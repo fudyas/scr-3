@@ -1,0 +1,17 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          wd_keepalive
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# X-Start-Before:    $all
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Coordinate native keepalive with the full watchdog
+### END INIT INFO
+
+# Old MONIT profiles and early SysV starts use this same entry.
+case "$1" in
+    start|stop|restart|force-reload) exec /usr/bin/scr-raom keepalive "$1" ;;
+    status) exec /usr/share/scr-raom/diverted/etc/init.d/wd_keepalive "$@" ;;
+    *) printf 'Usage: %s {start|stop|status|restart|force-reload}\n' "$0" >&2; exit 2 ;;
+esac

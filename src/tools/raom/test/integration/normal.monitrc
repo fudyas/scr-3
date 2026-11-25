@@ -1,0 +1,11 @@
+set daemon 1
+set pidfile /run/monit.pid
+set statefile /var/lib/monit/state
+set idfile /var/lib/monit/id
+set logfile /var/log/monit.log
+set httpd unixsocket /run/fixture-monit.sock
+    allow fixture:fixture
+
+check process fixture-client with pidfile /run/fixture-client.pid
+    start program = "/sbin/start-stop-daemon --start --background --make-pidfile --pidfile /run/fixture-client.pid --exec /bin/sleep -- 3600"
+    if does not exist then restart

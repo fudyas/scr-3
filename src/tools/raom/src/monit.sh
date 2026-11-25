@@ -14,23 +14,74 @@ function native_init() {
 # Checks the actual daemon. Captured native init prints status but always exits 0.
 # Arguments: none. Returns: 0 running, 3 absent, other on error. Output: stderr on error.
 function watchdog_status() {
-    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_WATCHDOG_BINARY" >&2
+    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_WATCHDOG_BINARY" {RAOM_LOCK_FD}>&- >&2
+}
+
+# Checks native keepalive process identity. Arguments: none.
+# Returns: 0 running, 3 absent, other on error. Output: diagnostics on stderr.
+function keepalive_status() {
+    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_KEEPALIVE_BINARY" {RAOM_LOCK_FD}>&- >&2
+}
+
+# Proves absence before accepting full watchdog as sole feeder. Arguments: none.
+# Returns: 0 absent, 2 present or unknown. Output: native diagnostics on stderr.
+function keepalive_absent() {
+    local status=0
+    keepalive_status || status=$?
+    [ "$status" -eq 3 ] || return 2
 }
 
 # Checks current selection, published CLI pointer, process identity, and exact argv.
 # Arguments: none. Returns: 0 ready, nonzero otherwise. Output: diagnostics on stderr.
 function selected_monit_running() {
-    read_boot_id && selected_profile false &&
-        [ "$(readlink -- "$RAOM_STATE_DIR/monitrc")" = "$CONFIG" ] &&
+    read_boot_id && load_selection && CONFIG=$RAOM_PROFILE &&
+        selected_monit_pointer &&
         monit_is_running && verify_running_profile
 }
 
 # Confirms native feeding or requests one bounded start and verifies its outcome.
 # Arguments: none. Returns: 0 feeding, nonzero otherwise. Output: native diagnostics on stderr.
 function ensure_keepalive() {
-    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_KEEPALIVE_BINARY" >&2 && return 0
+    local status=0
+    keepalive_status || status=$?
+    [ "$status" -ne 0 ] || return 0
+    [ "$status" -eq 3 ] || { raom_error keepalive_status_unavailable; return 2; }
     native_init 10 "$RAOM_KEEPALIVE_INIT" start || note keepalive_start_failed >&2
-    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_KEEPALIVE_BINARY" >&2
+    keepalive_status
+}
+
+# Keeps an already active watchdog in charge under the service lock.
+# Arguments: none. Returns: 0 exclusive, 2 unverified. Output: native diagnostics on stderr.
+# Stops a competing keepalive only when both processes were observed.
+function guard_active_watchdog() {
+    local status=0
+    keepalive_status || status=$?
+    [ "$status" -ne 3 ] || return 0
+    [ "$status" -eq 0 ] || { raom_error keepalive_status_unavailable; return 2; }
+    if ! native_init 12 "$RAOM_KEEPALIVE_INIT" stop || ! keepalive_absent || ! watchdog_status; then
+        raom_error keepalive_stop_unverified
+        return 2
+    fi
+}
+
+# Handles early SysV and retained profile requests under the service lock.
+# Arguments: $1 - start, stop, restart or force-reload. Returns: 0 protected, 2 on failure.
+# Output: native diagnostics on stderr. Can start keepalive or stop a competing keepalive.
+function keepalive_action() {
+    local action=$1 status=0
+    watchdog_status || status=$?
+    case "$status" in
+    0) guard_active_watchdog ;;
+    3)
+        # A restart request asks for feeding. Restarting the sole feeder opens a gap.
+        if [ "$action" = stop ]; then
+            keepalive_absent || { raom_error keepalive_required; return 2; }
+        else
+            ensure_keepalive || { raom_error keepalive_unavailable; return 2; }
+        fi
+        ;;
+    *) raom_error watchdog_status_unavailable; return 2 ;;
+    esac
 }
 
 # Transfers feeding to native keepalive before selection or a planned MONIT PID gap.
@@ -43,6 +94,9 @@ function handoff_to_keepalive() {
     [ -x "$RAOM_KEEPALIVE_BINARY" ] || { raom_error keepalive_binary_unavailable; return 2; }
     watchdog_status || status=$?
     if [ "$status" -eq 0 ]; then
+        [ -x "$RAOM_KEEPALIVE_INIT" ] || { raom_error keepalive_init_unavailable; return 2; }
+        keepalive_status || status=$?
+        [[ "$status" = 0 || "$status" = 3 ]] || { raom_error keepalive_status_unavailable; return 2; }
         was_active=true
         native_init 12 "$RAOM_NATIVE_WATCHDOG_INIT" stop || stop_failed=true
         status=0
@@ -54,9 +108,12 @@ function handoff_to_keepalive() {
     if ! ensure_keepalive; then
         # Preserve the MONIT PID. Restore the previous feeder only if its checks
         # can safely resume against the exact running selection.
-        if [ "$was_active" = true ] && selected_monit_running; then
-            native_init 15 "$RAOM_NATIVE_WATCHDOG_INIT" start && watchdog_status ||
-                { raom_error watchdog_recovery_unverified; return 2; }
+        if [ "$was_active" = true ] && keepalive_absent && selected_monit_running; then
+            if ! native_init 15 "$RAOM_NATIVE_WATCHDOG_INIT" start || ! watchdog_status ||
+                ! keepalive_absent || ! selected_monit_running; then
+                raom_error watchdog_recovery_unverified
+                return 2
+            fi
             note watchdog_restored >&2
         fi
         raom_error keepalive_unavailable
@@ -71,27 +128,34 @@ function handoff_to_keepalive() {
 function watchdog_action() {
     local action="$1" status=0
     if ! selected_monit_running; then
-        handoff_to_keepalive || return 2
         raom_error watchdog_monit_unready
+        handoff_to_keepalive
         return 2
     fi
-
     watchdog_status || status=$?
     case "$status" in
     0)
-        [ "$action" != start ] || return 0
+        if [ "$action" = start ]; then
+            guard_active_watchdog || return 2
+            selected_monit_running && return 0
+            raom_error watchdog_monit_unready
+            handoff_to_keepalive
+            return 2
+        fi
         handoff_to_keepalive || return 2
         ;;
     3) ;;
     *) raom_error watchdog_status_unavailable; return 2 ;;
     esac
 
-    # Native start stops keepalive first and can mask a failed watchdog launch.
-    if native_init 15 "$RAOM_NATIVE_WATCHDOG_INIT" start && watchdog_status; then
+    # Handoff may take time. Verify MONIT both before arming and after native start.
+    if selected_monit_running && native_init 15 "$RAOM_NATIVE_WATCHDOG_INIT" start &&
+        watchdog_status && keepalive_absent && selected_monit_running; then
         return 0
     fi
-    handoff_to_keepalive || return 2
     raom_error watchdog_start_failed
+    handoff_to_keepalive
+    return 2
 }
 
 # Bootstraps logging and NTP after confirmed native keepalive handoff.
@@ -122,8 +186,7 @@ function selected_profile() {
         result=$?
         [ "$result" -ne 3 ] || return 2
         [ "$result" -eq 0 ] || bootstrap_failed=true
-        select_mode "$bootstrap_failed" || return 2
-        publish_selection || { raom_error publication_failed; return 2; }
+        initialize_selection "$bootstrap_failed" || return 2
 
         # End timing at publication. Cache hits, logging and MONIT launch are
         # outside this interval. The boot can proceed if telemetry is unavailable.
@@ -162,7 +225,15 @@ function validate_selected_monit() {
     [[ -x "$RAOM_MONIT_BINARY" && -x "$RAOM_START_STOP_DAEMON" ]] || { raom_error monit_binary_unavailable; return 2; }
     [[ -f "$CONFIG" && -r "$CONFIG" ]] || { raom_error selected_profile_unavailable; return 2; }
     monit_storage || { raom_error monit_storage_unavailable; return 2; }
-    timeout -k 1 10 "$RAOM_MONIT_BINARY" -t -c "$CONFIG" >&2 || { raom_error selected_profile_invalid; return 2; }
+    timeout -k 1 10 "$RAOM_MONIT_BINARY" -t -c "$CONFIG" {RAOM_LOCK_FD}>&- >&2 || { raom_error selected_profile_invalid; return 2; }
+}
+
+# Checks ownership and exact target of the published CLI pointer.
+# Arguments: none. Returns: 0 selected, 2 unverified. Output: diagnostics on stderr.
+function selected_monit_pointer() {
+    local path="$RAOM_STATE_DIR/monitrc"
+    [ -L "$path" ] && [ "$(stat -c %u -- "$path")" = "$RAOM_STATE_UID" ] &&
+        [ "$(readlink -- "$path")" = "$CONFIG" ] || return 2
 }
 
 # Publishes the CLI pointer only after syntax validation, under the same lock.
@@ -171,12 +242,8 @@ function publish_monit_profile() {
     local path="$RAOM_STATE_DIR/monitrc"
 
     if [ -e "$path" ] || [ -L "$path" ]; then
-        [ -L "$path" ] || return 2
-        # RAOM_STATE_UID comes from trusted etc/raom.conf.
-        # shellcheck disable=SC2153
-        [ "$(stat -c %u -- "$path")" = "$RAOM_STATE_UID" ] || return 2
-        [ "$(readlink -- "$path")" = "$CONFIG" ] || return 2
-        return 0
+        selected_monit_pointer
+        return $?
     fi
 
     # Publish one validated pointer atomically; never replace an unrelated file.
@@ -190,7 +257,76 @@ function publish_monit_profile() {
 # Checks native process identity without starting or signalling a process.
 # Arguments: none. Returns: native/timeout status. Output: none.
 function monit_is_running() {
-    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --pidfile "$RAOM_MONIT_PID_FILE" --exec "$RAOM_MONIT_BINARY" >/dev/null 2>&1
+    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --pidfile "$RAOM_MONIT_PID_FILE" --exec "$RAOM_MONIT_BINARY" {RAOM_LOCK_FD}>&- >/dev/null 2>&1
+}
+
+# Checks the executable without relying on a potentially stale PID file.
+# Arguments: none. Returns: 0 absent, 2 running or unverified. Output: native diagnostics on stderr.
+function monit_absent() {
+    local status=0 process
+    timeout -k 1 2 "$RAOM_START_STOP_DAEMON" --status --exec "$RAOM_MONIT_BINARY" {RAOM_LOCK_FD}>&- >&2 || status=$?
+    [ "$status" -ne 3 ] || return 0
+    [ "$status" -eq 0 ] || return 2
+
+    # A status client shares the executable but does not supervise services.
+    for process in "$RAOM_PROC_DIR"/[0-9]*; do
+        [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
+        [ -r "$process/cmdline" ] && monit_client "$process/cmdline" || return 2
+    done
+    return 0
+}
+
+# Identifies transient MONIT commands so they do not count as service daemons.
+# Arguments: $1 - readable proc cmdline path. Returns: 0 client, 1 otherwise.
+# Output: none. Unknown arguments remain potential daemon evidence.
+function monit_client() {
+    local argument skip=true
+    while IFS= read -r -d '' argument; do
+        if [ "$skip" = true ]; then
+            skip=false
+            continue
+        fi
+        case "$argument" in
+        -c|-d|-g|-l|-p|-s) skip=true ;;
+        -t|-V|-h|-H|--id|--resetid) return 0 ;;
+        -*) ;;
+        start|stop|restart|monitor|unmonitor|reload|status|summary|report|quit|validate|procmatch) return 0 ;;
+        *) return 1 ;;
+        esac
+    done <"$1"
+    return 1
+}
+
+# Rejects persistent extra daemons while allowing MONIT's child to finish exec.
+# Arguments: $1 - verified selected PID. Returns: 0 unique, 2 ambiguous.
+# Output: diagnostics on stderr. Reads proc with up to twenty 0.1-second waits.
+# Does not signal processes or exempt an extra daemon from the final check.
+function unique_monit() {
+    local selected=$1 process found extra attempt
+    for ((attempt = 0; attempt < 20; attempt++)); do
+        found=false extra=false
+        for process in "$RAOM_PROC_DIR"/[0-9]*; do
+            [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
+            if [ "${process##*/}" = "$selected" ]; then
+                if monit_client "$process/cmdline"; then
+                    raom_error monit_identity_unverified
+                    return 2
+                fi
+                found=true
+                continue
+            fi
+            [ -r "$process/cmdline" ] && monit_client "$process/cmdline" && continue
+            extra=true
+        done
+        [ "$found" = true ] || break
+        [ "$extra" = true ] || return 0
+
+        # A service-start child briefly shares MONIT's executable and argv.
+        # Retry the evidence; never arm while that ambiguity remains.
+        sleep 0.1 || break
+    done
+    raom_error monit_identity_unverified
+    return 2
 }
 
 # Proves the running instance uses the selected explicit control-file argument.
@@ -216,6 +352,7 @@ function verify_running_profile() {
         previous=$argument
     done <"$RAOM_PROC_DIR/$NUMBER/cmdline"
     [[ "$count" -eq 1 && "$config" = "$CONFIG" ]] || { raom_error running_profile_mismatch; return 2; }
+    unique_monit "$NUMBER"
 }
 
 # Starts the selected instance through native start-stop-daemon and checks its PID.
@@ -228,6 +365,9 @@ function start_selected_monit() {
         verify_running_profile
         return $?
     fi
+
+    # A missing or stale PID file must not allow a second instance of the binary.
+    monit_absent || { raom_error monit_identity_unverified; return 2; }
 
     # MONIT outlives start-stop-daemon. Close its copy of the invocation lock.
     timeout -k 1 10 "$RAOM_START_STOP_DAEMON" --start --quiet --oknodo --pidfile "$RAOM_MONIT_PID_FILE" \
@@ -248,7 +388,8 @@ function start_selected_monit() {
 # Side effects: native TERM/KILL schedule on matching MONIT executable and PID.
 function stop_monit() {
     timeout -k 1 12 "$RAOM_START_STOP_DAEMON" --retry TERM/5/KILL/5 --oknodo --stop --quiet \
-        --pidfile "$RAOM_MONIT_PID_FILE" --exec "$RAOM_MONIT_BINARY" >&2 || { raom_error monit_stop_failed; return 2; }
+        --pidfile "$RAOM_MONIT_PID_FILE" --exec "$RAOM_MONIT_BINARY" {RAOM_LOCK_FD}>&- >&2 || { raom_error monit_stop_failed; return 2; }
+    monit_absent || { raom_error monit_stop_unverified; return 2; }
 }
 
 # Applies native start/restart/reload semantics to the immutable selected profile.
@@ -263,12 +404,13 @@ function monit_action() {
 
     # A prior decision can predate service startup. Protect a missing or
     # different daemon before any launch attempt, including failed validation.
-    if [ "$action" = start ]; then
-        if monit_is_running; then
-            verify_running_profile || { handoff_to_keepalive; return 2; }
-        else
+    if [ "$initialize" = true ]; then
+        if ! selected_monit_running || ! watchdog_status; then
             handoff_to_keepalive || return 2
         fi
+    fi
+    if [ "$action" = start ] && monit_is_running; then
+        verify_running_profile || return 2
     fi
 
     # Preserve native defaults, but never allow options to override profile/PID identity.
@@ -292,11 +434,17 @@ function monit_action() {
     publish_monit_profile || { raom_error profile_publication_failed; return 2; }
 
     case "$action" in
-    start) start_selected_monit ;;
-    restart | force-reload)
-        handoff_to_keepalive || return 2
-        stop_monit || return 2
-        start_selected_monit
+    start | restart | force-reload)
+        if [ "$action" != start ]; then
+            handoff_to_keepalive || return 2
+            stop_monit || return 2
+        fi
+        if ! start_selected_monit; then
+            handoff_to_keepalive
+            return 2
+        fi
+        watchdog_action start || return 2
+        complete_recovery verified || { raom_error recovery_completion_failed; return 2; }
         ;;
     reload)
         if [ "$RAOM_MODE" = normal ]; then
@@ -304,7 +452,7 @@ function monit_action() {
                 "$RAOM_HEALTH_DIR/cm_health.txt" "$RAOM_HEALTH_DIR/pm_health.txt" || return 2
         fi
         timeout -k 1 10 "$RAOM_START_STOP_DAEMON" --stop --signal HUP --quiet --oknodo \
-            --pidfile "$RAOM_MONIT_PID_FILE" --exec "$RAOM_MONIT_BINARY" -- -c "$CONFIG" >&2 || { raom_error monit_reload_failed; return 2; }
+            --pidfile "$RAOM_MONIT_PID_FILE" --exec "$RAOM_MONIT_BINARY" -- -c "$CONFIG" {RAOM_LOCK_FD}>&- >&2 || { raom_error monit_reload_failed; return 2; }
         ;;
     syntax) return 0 ;;
     *) return 2 ;;

@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Supplies synchronized NTP evidence to selector and actual reset CLI.
+# Supplies controlled NTP readiness to selector and actual reset CLI.
 # Arguments: $1 - -c; $2 - rv 0. Returns: 0, or 2 for unsupported arguments.
 # Output: controlled ntpq data on stdout; records invocation in fixture data.
 function main() {
     [ "$#" -eq 2 ] && [ "$1" = -c ] && [ "$2" = 'rv 0' ] || return 2
     printf 'ntpq -c rv 0\n' >>/run/scr-raom-integration/calls
+    [ ! -f /run/scr-raom-integration/unsynchronized ] || { printf "leap_alarm, sync_unspec,\n"; return 0; }
     printf '%s\n' 'associd=0 status=0615 leap_none, sync_ntp, clock_sync,' \
         'rootdelay=1.0, rootdisp=1.0, offset=0.0, tc=8,' \
         'reftime=eea0044a.00000000, clock=eea0044b.00000000'

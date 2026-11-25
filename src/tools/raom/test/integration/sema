@@ -5,11 +5,22 @@
 # Output: captured-format BMC fields on stdout; records invocation in fixture data.
 function main() {
     [ "$#" -eq 2 ] && [ "$1" = cap ] && [ "$2" = all ] || return 2
-    printf 'sema cap all\n' >>/run/scr-raom-integration/calls
-    [ ! -e /run/scr-raom-integration/sema-failed ] || return 2
-    local count
-    read -r count </run/scr-raom-integration/boot-count || return 2
-    printf 'Board version: integration fixture\nSerial number: fixture-controller\nFirmware: fixture-1\nPower cycles: 1\nBoot count: %s\nRestart event: fixture\n' "$count"
+    local trace=/run/scr-raom-integration count controller=fixture-controller fault
+    printf 'sema cap all\n' >>"$trace/calls" || return 2
+    [ ! -e "$trace/sema-failed" ] || return 2
+    # Consume one fault per attempt. The next check can read a fresh counter.
+    for fault in "$trace"/sema-fault-{1,2}; do
+        if [ -f "$fault" ]; then
+            rm -- "$fault" || return 2
+            printf 'failed %s\n' "${fault##*/}" >>"$trace/calls"
+            return 2
+        fi
+    done
+    if [ -f "$trace/controller" ]; then
+        read -r controller <"$trace/controller" || return 2
+    fi
+    read -r count <"$trace/boot-count" || return 2
+    printf 'Board version: integration fixture\nSerial number: %s\nFirmware: fixture-1\nPower cycles: 1\nBoot count: %s\nRestart event: fixture\n' "$controller" "$count"
 }
 
 main "$@"

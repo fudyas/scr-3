@@ -1,32 +1,46 @@
 # SCR developer guidance
 
 Reset API source: `src/tools/resets-monitor/`. RAOM boot selector source: `src/tools/raom/`.
-Package `scr-raom` 1.1.0 delivers both through dpkg-owned `/usr/local/scr/` paths.
+Package `scr-raom` 1.1.1 delivers both through dpkg-owned `/usr/local/scr/` paths.
 [Canonical SDLC contract](SDLC-DEVELOPER-GUIDE.md) owns ceremonies, task validation, final QA, exact-pair SHOW, promotion, and hardware gates.
 Current Codex skills use `$sdlc-new`, `$sdlc-plan`, `$sdlc-run`, `$sdlc-review`, and chain/follow-up counterparts.
 All workflow commands use `./bin/lets sdlc`.
 
 ## RAOM delivery and focused verification
 
-[RAOM operator guide](../src/tools/raom/README.md) defines complete defaults, data-only configuration, monotonic NTP deadline, fixed boot selection, and launch errors.
-[Reset API guide](../src/tools/resets-monitor/README.md) defines unchanged `record`, `status --json`, and `check --max-resets N --window M` interfaces.
-RAOM delegates threshold calculation to actual reset CLI. Client owns production profiles. Keepalive-only safe sample supplies no remote-service guarantee.
+RAOM owns the current-boot selection, persistent safe latch, and one pending switch in private storage.
+Root commands `scr-raom switch safe` and `scr-raom switch normal` submit an orderly reboot after saving the request.
+Switch capture and persistent safe selection skip the NTP readiness wait. Ordinary evaluation waits up to 60 seconds by default after bounded bootstrap.
+See the [RAOM operator guide](../src/tools/raom/README.md).
 
-Build both commands with `./bin/lets deb build etc/deb/raom/deb.conf`. Package definitions live in `etc/deb/raom/`.
-LETS stages files under `build/scr-raom/` and writes the finished archive under `src/pkg/`. Git ignores both generated directories.
-The source payload excludes `src/pkg/`, so repeat builds do not include previous archives.
-Delivery uses standard dpkg ownership, conffiles, and diversions. Package verification exercises real Debian archive installation and lifecycle operations.
-Trusted `src/tools/raom/etc/raom.conf` centralizes runtime paths and fallback profile paths. Client policy comes from data-only `/etc/default/scr-raom`.
-RAOM serializes native watchdog requests and MONIT lifecycle actions under one lock. Native MONIT status remains available during handoff.
-`src/tools/raom/test/check-boot.sh` exercises planned PID gaps, failed handoff, concurrent activation, and captured runlevel ordering with harmless service substitutes.
-Shared `src/lib/run.sh` supplies root checks. Shared `src/lib/log.sh` supplies diagnostics; RAOM routes them to stderr.
-`etc/compat/` supplies installed startup adapters described in [MONIT integration](MONIT.md).
+The reset monitor owns counter arithmetic and conservative time bounds.
+`record --print-observation` returns committed JSON. Plain `record`, `status --json`, and the required threshold/window arguments keep their interfaces.
+`check` accepts optional `--after-observation ACK` and `--switch-reboot BEFORE AFTER`.
+Only an identified +1 switch interval receives an exemption. A larger delta counts in full. A missing endpoint grants no exemption.
+Literal `unavailable` is valid only for AFTER. Keep this marker across checks because the configured window can widen. See the [reset API guide](../src/tools/resets-monitor/README.md).
 
-`src/tools/raom/test/check-integration.sh` exercises actual installed selector/reset CLI with package-installed SEMA/NTP fixtures in assigned disposable Bullseye root.
-Real target MONIT 5.22 syntax checks consume installed safe-profile bytes. Private mount/PID namespace supplies `/proc`. No host daemon or hardware action occurs.
-Focused checks cover consumed interfaces only. Dependency internals, client service qualification, locked image acceptance, final QA, SHOW, and hardware confirmation retain assigned stages.
+Build both commands with `./bin/lets deb build etc/deb/raom/deb.conf`.
+LETS stages files under `build/scr-raom/` and writes `src/pkg/scr-raom_1.1.1_all.deb`. The source payload excludes `src/pkg/`.
+A change to either packaged README changes the build input. Use the rebuilt archive and its own SHA-256 for installed verification.
 
-Package callbacks never start services or reboot. Debian conffiles preserve client configuration choices; reset history remains application data.
+Dpkg owns the adapters and preserves client conffiles. A diversion retains the original native keepalive init script.
+Debian alternatives selects the packaged provider for `/etc/init.d/wd_keepalive`. Downgrade releases this provider before restoring the native original.
+Callbacks keep services inactive. The client owns both production service inventories. See [MONIT integration](MONIT.md).
+
+Trusted `src/tools/raom/etc/raom.conf` defines internal paths and fallback profiles. Client policy comes from data-only `/etc/default/scr-raom`.
+Shared `src/lib/run.sh` supplies root checks. Shared `src/lib/log.sh` supplies diagnostics on stderr.
+RAOM serializes mode requests, MONIT lifecycle actions, and feeder changes under one lock. Native MONIT status stays lock-free.
+Recovery can clear safe only after the current normal decision matches the selected daemon and the full watchdog runs with keepalive absent.
+
+| # | Focused check | Evidence |
+| --- | --- | --- |
+| 1 | `src/tools/resets-monitor/test/check-runtime.sh` | Committed observations, raw switch deltas, counter epochs, uncertain time, and window boundaries. |
+| 2 | `src/tools/raom/test/check-cli.sh` and `check-decision.sh` | Argument and source-mode guards, durable requests, simulated reboots, persistent safe, and retries with fixed evidence. |
+| 3 | `src/tools/raom/test/check-boot.sh` | One selected daemon, feeder handoff, legacy keepalive requests, and failure during planned PID gaps. |
+| 4 | `src/tools/raom/test/check-integration.sh` | Installed selector and reset API in a disposable root with package-installed fixtures. Verify target MONIT syntax separately from supervision by a running MONIT. |
+
+Attribution requires `utmpdump` and native SysV records in `/var/log/wtmp` for one shutdown followed by one boot.
+Debian Jessie utility interface checks used fixtures. Target accounting and physical watchdog operation require separate exact-package hardware verification.
 
 ## Image authority and preservation
 

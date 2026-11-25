@@ -112,15 +112,102 @@ function finish_clock() {
 
 # Reset-window decision helpers.
 
+# Resolves acknowledgment and switch endpoints against the refreshed history.
+# Arguments: none. Sets ACK_COUNT, EXEMPT_COUNT, and UNAVAILABLE_THROUGH.
+# Returns: 0 on classification, 2 for corrupt history or a missing later boot. Output: none.
+function resolve_window_evidence() {
+    local before_sequence before_count before_boot after_sequence after_count index first_sequence line comparable=1
+    ACK_COUNT=
+    EXEMPT_COUNT=0
+    UNAVAILABLE_THROUGH=0
+    if [ -n "$AFTER_OBSERVATION" ]; then
+        if retained_observation "$AFTER_OBSERVATION"; then
+            ACK_COUNT=${RECORD[boot_count]}
+        else
+            UNAVAILABLE_THROUGH=${RECORD[sequence]}
+        fi
+    fi
+
+    [ -n "$SWITCH_BEFORE" ] || return 0
+    retained_observation "$SWITCH_BEFORE" || comparable=0
+    before_sequence=${RECORD[sequence]}
+    before_count=${RECORD[boot_count]}
+    before_boot=${RECORD[boot_id]}
+    if [ "$SWITCH_AFTER" = unavailable ]; then
+        # A later boot bounds the unknown interval but cannot identify its reset.
+        # Only trustworthy coverage from this point can restore timed evaluation.
+        for line in "${HISTORY[@]}"; do
+            parse_record "$line" || return 2
+            [ "${RECORD[sequence]}" -gt "$before_sequence" ] || continue
+            [ "${RECORD[boot_id]}" != "$before_boot" ] || continue
+            [ "$UNAVAILABLE_THROUGH" -ge "${RECORD[sequence]}" ] || UNAVAILABLE_THROUGH=${RECORD[sequence]}
+            return 0
+        done
+        return 2
+    fi
+
+    retained_observation "$SWITCH_AFTER" || comparable=0
+    after_sequence=${RECORD[sequence]}
+    after_count=${RECORD[boot_count]}
+    [ "$before_sequence" -lt "$after_sequence" ] && [ "$before_boot" != "${RECORD[boot_id]}" ] || comparable=0
+
+    if [ "$comparable" -eq 1 ]; then
+        # RAOM identifies the submitted reboot. Reject a skipped boot or a late
+        # destination sample. A +1 already observed on the source cannot qualify.
+        first_sequence=$((LAST[sequence] - ${#HISTORY[@]} + 1))
+        for ((index = before_sequence + 1 - first_sequence; index < after_sequence - first_sequence; index++)); do
+            parse_record "${HISTORY[index]}" || return 2
+            if [ "${RECORD[boot_id]}" != "$before_boot" ] ||
+                { [ "$after_count" -eq "$((before_count + 1))" ] && [ "${RECORD[boot_count]}" -ne "$before_count" ]; }; then
+                comparable=0
+                break
+            fi
+        done
+    fi
+
+    if [ "$comparable" -eq 0 ]; then
+        # Only a full trustworthy window beyond unresolved evidence can decide.
+        [ "$UNAVAILABLE_THROUGH" -ge "$before_sequence" ] || UNAVAILABLE_THROUGH=$before_sequence
+        [ "$UNAVAILABLE_THROUGH" -ge "$after_sequence" ] || UNAVAILABLE_THROUGH=$after_sequence
+    elif [ "$after_count" -eq "$((before_count + 1))" ]; then
+        EXEMPT_COUNT=$after_count
+    fi
+    return 0
+}
+
+# Maps a raw cumulative boot count onto the eligible counter for this decision.
+# Arguments: $1 - validated count in the current epoch. Sets NUMBER.
+# Returns: 0. Output: none. Raw records stay intact.
+function eligible_count() {
+    local raw=$1 acknowledged=${ACK_COUNT:-0}
+    NUMBER=$((raw - acknowledged))
+    [ "$NUMBER" -ge 0 ] || NUMBER=0
+    if [ "$EXEMPT_COUNT" -gt "$acknowledged" ] && [ "$raw" -ge "$EXEMPT_COUNT" ]; then
+        NUMBER=$((NUMBER - 1))
+    fi
+    return 0
+}
+
 # Computes conservative reset bounds from trustworthy observation intervals.
-# Arguments: none; consumes HISTORY, LAST, MAX_RESETS, WINDOW. Returns: 0/1/2.
+# Arguments: none. Uses refreshed history, threshold, window and optional evidence.
+# Returns: 0 below or at threshold, 1 for proven excess, 2 for unavailable.
 # Output: WINDOW_LOWER/WINDOW_UPPER; no stdout or persistence changes.
 function decide_window() {
     local line epoch now earliest latest previous_time= previous_uncertainty=0 previous_count=0
     local previous_boot= previous_uptime=0 lower_start upper_end delta difference coverage=0
     WINDOW_LOWER=0
     WINDOW_UPPER=0
-    [ -n "${LAST[sequence]:-}" ] && [ "${LAST[clock_valid]}" -eq 1 ] || return 2
+    [ -n "${LAST[sequence]:-}" ] || return 2
+    resolve_window_evidence || return 2
+    if [ -n "$ACK_COUNT" ] && [ "$UNAVAILABLE_THROUGH" -eq 0 ]; then
+        # No time assumption: even the entire post-acknowledgment count fits.
+        eligible_count "${LAST[boot_count]}"
+        if [ "$NUMBER" -le "$MAX_RESETS" ]; then
+            WINDOW_UPPER=$NUMBER
+            return 0
+        fi
+    fi
+    [ "${LAST[clock_valid]}" -eq 1 ] || return 2
     epoch=${LAST[epoch]}
     now=${LAST[timestamp]}
     earliest=$((now - LAST[uncertainty] - WINDOW))
@@ -128,7 +215,9 @@ function decide_window() {
     for line in "${HISTORY[@]}"; do
         parse_record "$line" || return 2
         [ "${RECORD[epoch]}" -eq "$epoch" ] || continue
+        [ "${RECORD[sequence]}" -ge "$UNAVAILABLE_THROUGH" ] || continue
         [ "${RECORD[clock_valid]}" -eq 1 ] || continue
+        eligible_count "${RECORD[boot_count]}"
         upper_end=$((RECORD[timestamp] + RECORD[uncertainty]))
         [ "$upper_end" -gt "$earliest" ] || coverage=1
         if [ -n "$previous_time" ]; then
@@ -139,7 +228,7 @@ function decide_window() {
                 [ "$difference" -ge 0 ] || difference=$((-difference))
                 [ "$difference" -le "$((RECORD[uncertainty] + previous_uncertainty + 2))" ] || return 2
             fi
-            delta=$((RECORD[boot_count] - previous_count))
+            delta=$((NUMBER - previous_count))
             [ "$delta" -ge 0 ] || return 2
             lower_start=$((previous_time - previous_uncertainty))
             # Sequence order bounds the interval end by the current observation.
@@ -154,12 +243,14 @@ function decide_window() {
         fi
         previous_time=${RECORD[timestamp]}
         previous_uncertainty=${RECORD[uncertainty]}
-        previous_count=${RECORD[boot_count]}
+        previous_count=$NUMBER
         previous_boot=${RECORD[boot_id]}
         previous_uptime=${RECORD[uptime]}
     done
-    # Without coverage in the current epoch, a discontinuity can cross the window.
-    [ "$epoch" -eq 1 ] || [ "$coverage" -eq 1 ] || return 2
+    if [ "$coverage" -eq 0 ]; then
+        [ "$UNAVAILABLE_THROUGH" -eq 0 ] || return 2
+        [ "$epoch" -eq 1 ] || [ -n "$ACK_COUNT" ] || return 2
+    fi
     [ "$WINDOW_LOWER" -le "$MAX_RESETS" ] || return 1
     [ "$coverage" -eq 1 ] && [ "$WINDOW_UPPER" -le "$MAX_RESETS" ] || return 2
     return 0
