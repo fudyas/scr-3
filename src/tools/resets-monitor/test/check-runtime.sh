@@ -247,13 +247,23 @@ function test_concurrency() {
 # Arguments: none. Returns: 0 or exits 1. Output: assertions only.
 function test_clock_and_json() {
     setup
-    local fixture value
+    local fixture peers value alarm uncertainty
     fixture=$(< "$SCRIPT_DIR/fixtures/ntpq-rv.txt")
-    expect_status 0 parse_clock_health "$fixture"
+    peers=$(< "$SCRIPT_DIR/fixtures/ntpq-peers.txt")
+    expect_status 0 time_parse_health "$fixture" "$peers"
     [ "${OBS[clock_valid]}" -eq 1 ] && [ "${OBS[uncertainty]}" -ge 1 ] || fail 'NTP health'
-    expect_status 2 parse_clock_health "${fixture/sync_ntp/sync_unspec}"
-    expect_status 2 parse_clock_health "${fixture/tc=8/tc=7}"
-    expect_status 2 parse_clock_health "${fixture/rootdisp=77.083/rootdisp=nan}"
+    uncertainty=${OBS[uncertainty]}
+    # Peer selection and response age remain useful while system flags/reference lag.
+    alarm=${fixture/leap_none/leap_alarm}
+    alarm=${alarm/clock_sync/no_sys_peer}
+    expect_status 0 time_parse_health "${alarm/tc=8/tc=6}" "$peers"
+    expect_status 2 time_parse_health "$fixture" "${peers/\*/+}"
+    expect_status 2 time_parse_health "$fixture" "${peers/    4 /  257 }"
+    expect_status 0 time_parse_health "$fixture" "${peers/    4 /  256 }"
+    expect_status 2 time_parse_health "${fixture/rootdisp=77.083/rootdisp=nan}" "$peers"
+    expect_status 2 time_parse_health "$fixture, rootdisp=1" "$peers"
+    expect_status 0 time_parse_health "$fixture" "${peers/0.520/5000.520}"
+    [ "${OBS[uncertainty]}" -gt "$uncertainty" ] || fail 'peer offset omitted from uncertainty'
     observation 146
     OBS[cause]=$'quoted "reason" \\ tab\tline\n'
     expect_status 0 build_record
@@ -265,11 +275,71 @@ function test_clock_and_json() {
     expect_status 2 parse_record "${value/Watchdog/$'bad\ttext'}"$'\t'
 }
 
+# Rejects stale, missing, malformed or ambiguous selected peers.
+# Arguments: none. Returns: 0 or exits 1. Output: assertion diagnostics only.
+function check_runtime_test_peers() {
+    setup
+    local peer='*64.176.167.142 194.27.222.5 2 u 4 64 377 3.708 0.520 0.986' value
+    expect_status 0 ntp_validate_peer "$peer"
+    expect_status 0 ntp_validate_peer "${peer/ u 4 / u 4m }"
+    for value in '-' 5m 1h 1d 257 999999999999999999999; do
+        expect_status 2 ntp_validate_peer "${peer/ u 4 / u $value }"
+    done
+    for value in 0 000 400 888; do
+        expect_status 2 ntp_validate_peer "${peer/ 377 / $value }"
+    done
+    expect_status 2 ntp_validate_peer "${peer/ 64 / 0 }"
+    expect_status 2 ntp_validate_peer "${peer/ 2 u / 16 u }"
+    expect_status 2 ntp_validate_peer "${peer/0.520/nan}"
+    expect_status 2 ntp_validate_peer "${peer/0.986/-0.986}"
+    expect_status 2 ntp_validate_peer "$peer extra"
+    expect_status 2 ntp_validate_peer "$peer"$'\n'"$peer"
+    expect_status 2 ntp_validate_peer 'leap_none, sync_ntp,'
+    expect_status 2 ntp_validate_peer ''
+}
+
+# Exercises both bounded queries without contacting NTP or hardware.
+# Arguments: none. Returns: 0 or exits 1. Output: assertion diagnostics only.
+function check_runtime_test_capture() {
+    setup
+    local query_failure= peer_fixture health_fixture
+    peer_fixture=$(<"$SCRIPT_DIR/fixtures/ntpq-peers.txt")
+    health_fixture=$(<"$SCRIPT_DIR/fixtures/ntpq-rv.txt")
+
+    # Supply captured command output and assert the production command budget.
+    # Arguments: duration, capture flag, file, command and query arguments.
+    # Returns: 0 on capture, 1 for injected failure. Output: private capture file.
+    function run_execute_command() {
+        [ "$1:$2:$4" = '2:--capture:/usr/bin/ntpq' ] || fail 'NTP query bounds'
+        [ "$query_failure" != "$5" ] || return 1
+        case "$5" in
+        -pn) printf '%s\n' "$peer_fixture" >"$3" ;;
+        -c)
+            [ "$6" = 'rv 0' ] || fail 'system query arguments'
+            printf '%s\n' "$health_fixture" >"$3"
+            ;;
+        *) fail 'unexpected NTP query' ;;
+        esac
+    }
+
+    expect_status 0 read_clock
+    [ "${OBS[clock_valid]}" -eq 1 ] || fail 'selected peer capture'
+    for query_failure in -pn -c; do
+        expect_status 0 read_clock
+        [ "${OBS[clock_valid]}:${OBS[clock_reason]}" = 0:unsynchronized ] || fail 'failed query trusted'
+    done
+    query_failure=
+    peer_fixture=${peer_fixture/\*/+}
+    expect_status 0 read_clock
+    [ "${OBS[clock_valid]}" -eq 0 ] || fail 'missing peer capture trusted'
+}
+
 # Verifies required CLI arguments and rejection before device access.
 # Arguments: none. Returns: 0 or exits 1. Output: assertions only.
 function test_arguments() {
     setup
     expect_status 0 parse_args record
+    expect_status 0 parse_args record --print-observation
     expect_status 0 parse_args status --json
     expect_status 0 parse_args check --max-resets 0 --window 1
     [ "$MAX_RESETS:$WINDOW" = 0:1 ] || fail 'zero threshold or minimum window'
@@ -278,6 +348,7 @@ function test_arguments() {
     expect_status 0 parse_args check --window 2147483647 --max-resets 2147483647
     expect_status 2 parse_args
     expect_status 2 parse_args record extra
+    expect_status 2 parse_args record --print-observation extra
     expect_status 2 parse_args status
     expect_status 2 parse_args status --json extra
     expect_status 2 parse_args check
@@ -290,6 +361,14 @@ function test_arguments() {
     expect_status 2 parse_args check --max-resets -1 --window 60
     expect_status 2 parse_args check --max-resets 1 --window '$(false)'
     expect_status 2 parse_args check --max-resets 1 --window 60 --other value
+    local -a check=(check --max-resets 0 --window 900)
+    observation 100
+    build_record || fail 'argument fixture'
+    expect_status 2 parse_args "${check[@]}" --after-observation ''
+    expect_status 2 parse_args "${check[@]}" --after-observation "$RECORD_LINE" --after-observation "$RECORD_LINE"
+    expect_status 2 parse_args "${check[@]}" --switch-reboot "$RECORD_LINE"
+    expect_status 2 parse_args "${check[@]}" --switch-reboot "$RECORD_LINE" '{}'
+    expect_status 2 parse_args "${check[@]}" --switch-reboot "$RECORD_LINE" "$RECORD_LINE" --switch-reboot "$RECORD_LINE" "$RECORD_LINE"
     expect_status 2 "$RUNTIME" check --window 60
 }
 
@@ -412,6 +491,216 @@ function test_failed_refresh() {
     grep -q 'BMC observation unavailable' "$WORK/stderr" || fail 'failed refresh diagnostic'
 }
 
+# Sets up isolated CLI paths and replaces device and clock reads with OBS.
+# Arguments: none. Returns: 0 or exits 1. Output: scratch paths, fixture readers.
+function setup_evidence_cli() {
+    setup
+    exec {LOCK_FD}>&-
+    # Permits the test UID to use its private log and lock.
+    # Arguments: none. Returns: 0. Output: none.
+    function require_root() { return 0; }
+    # Uses the time fields supplied by observation.
+    # Arguments: none. Returns: 0. Output: none.
+    function read_clock() { return 0; }
+    # Uses the counter fields supplied by observation.
+    # Arguments: none. Returns: 0 for a fixture read, 2 for injected failure. Output: none.
+    function read_bmc() { [ -z "${READ_FAIL:-}" ] || return 2; }
+    # Keeps the fixture's final time and clock quality.
+    # Arguments: none. Returns: 0. Output: none.
+    function finish_clock() { return 0; }
+}
+
+# Runs one CLI invocation with its own history lock and cleanup trap.
+# Arguments: command argv. Returns: command status. Output: command stdout, diagnostics to fixture log.
+function fixture_cli() {
+    (main "$@") 2>> "$WORK/diagnostics"
+}
+
+# Checks unsynchronized capture, identical samples, quiet record and failure output.
+# Arguments: none. Returns: 0 or exits 1. Output: scratch journal, cache and CLI output.
+function test_capture() {
+    setup_evidence_cli
+    local ack identical
+    observation 90
+    expect_status 0 fixture_cli record > "$WORK/out"
+    [ ! -s "$WORK/out" ] || fail 'bare record printed data'
+    observation 100 3
+    OBS[clock_valid]=0
+    OBS[clock_reason]=unsynchronized
+    ack=$(fixture_cli record --print-observation) || fail 'unsynchronized capture'
+    parse_record "$ack" || fail 'capture returned invalid JSON'
+    [ "${RECORD[timestamp]}:${RECORD[clock_valid]}:${RECORD[boot_count]}" = 3:0:100 ] || fail 'capture changed clock or counter'
+    identical=$(fixture_cli record --print-observation) || fail 'repeat capture'
+    [ "$ack" = "$identical" ] && [ "$ack" = "$(< "$LOG_DIR/resets-state.json")" ] || fail 'capture returned uncommitted sequence'
+    expect_status 0 fixture_cli check --max-resets 0 --window 900 --after-observation "$ack"
+
+    local READ_FAIL=yes
+    expect_status 2 fixture_cli record --print-observation > "$WORK/out"
+    [ ! -s "$WORK/out" ] || fail 'failed read printed stale observation'
+    expect_status 2 fixture_cli check --max-resets 0 --window 900 --after-observation "$ack"
+    READ_FAIL=
+    observation 101 1010
+    # Injects a failure after journal replacement and before cache confirmation.
+    # Arguments: $1 - record. Returns: 2. Output: none.
+    function write_state() { return 2; }
+    expect_status 2 fixture_cli record --print-observation > "$WORK/out"
+    [ ! -s "$WORK/out" ] || fail 'failed save printed usable acknowledgment'
+}
+
+# Checks zero, +1 and full +2 through the CLI, then checks an ordinary later boot.
+# Arguments: $1 - switch delta, 0..2. Returns: 0 or exits 1. Output: scratch history.
+function check_switch_count() {
+    setup_evidence_cli
+    local delta=$1 ack after expected=0
+    local destination=22222222-2222-2222-2222-222222222222
+    local -a evidence
+    observation 90 50
+    expect_status 0 fixture_cli record
+    observation 90 950
+    expect_status 0 fixture_cli record
+    observation 100 3
+    OBS[clock_valid]=0
+    OBS[clock_reason]=unsynchronized
+    ack=$(fixture_cli record --print-observation) || fail 'counter acknowledgment'
+    observation "$((100 + delta))" 1010
+    OBS[boot_id]=$destination
+    OBS[clock_valid]=0
+    OBS[clock_reason]=unsynchronized
+    after=$(fixture_cli record --print-observation) || fail 'destination observation'
+    parse_record "$after" || fail 'destination JSON'
+    [ "${RECORD[boot_delta]}" -eq "$delta" ] && [ "$(tail -n 1 "$LOG_DIR/resets.jsonl")" = "$after" ] || fail 'raw journal delta'
+    evidence=(--switch-reboot "$ack" "$after" --after-observation "$ack")
+
+    observation "$((100 + delta))" 1020
+    OBS[boot_id]=$destination
+    [ "$delta" -lt 2 ] || expected=1
+    expect_status "$expected" fixture_cli check --window 900 --max-resets 0 "${evidence[@]}"
+    expect_status "$expected" fixture_cli check --window 900 --max-resets 1 "${evidence[@]}"
+    expect_status 0 fixture_cli check --window 900 --max-resets 2 "${evidence[@]}"
+    # A safe-entry interval on its own cannot acknowledge the old 90 -> 100.
+    expect_status 1 fixture_cli check --window 900 --max-resets 0 --switch-reboot "$ack" "$after"
+    if [ "$delta" -eq 1 ]; then
+        expect_status 1 fixture_cli check --window 900 --max-resets 0 --after-observation "$ack"
+        # Read the same endpoints across journal rotation.
+        gzip -c "$LOG_DIR/resets.jsonl" > "$LOG_DIR/resets.jsonl.1.gz" || fail 'rotation fixture'
+        : > "$LOG_DIR/resets.jsonl"
+        observation 102 1030
+        OBS[boot_id]=33333333-3333-3333-3333-333333333333
+        expect_status 1 fixture_cli check --window 900 --max-resets 0 "${evidence[@]}"
+        expect_status 1 fixture_cli check --window 900 --max-resets 0 "${evidence[@]}"
+        expect_status 0 fixture_cli check --window 900 --max-resets 1 "${evidence[@]}"
+        # Endpoints aged out. A full later window restores ordinary evaluation.
+        rm -- "$LOG_DIR/resets.jsonl.1.gz" || fail 'expire rotated fixture'
+        expect_status 2 fixture_cli check --window 900 --max-resets 0 "${evidence[@]}"
+        observation 102 2000
+        OBS[boot_id]=33333333-3333-3333-3333-333333333333
+        expect_status 0 fixture_cli check --window 900 --max-resets 0 "${evidence[@]}"
+        observation 103 2010
+        OBS[boot_id]=33333333-3333-3333-3333-333333333333
+        expect_status 1 fixture_cli check --window 900 --max-resets 0 "${evidence[@]}"
+    fi
+}
+
+# Exercises each requested switch delta against independent fixture state.
+# Arguments: none. Returns: 0 or exits 1. Output: failed assertion on stderr.
+function test_switch_counts() {
+    local delta
+    for delta in 0 1 2; do
+        (check_switch_count "$delta") || fail "switch delta $delta"
+    done
+}
+
+# Checks a switch without recovery and a later reset outside its interval.
+# Arguments: none. Returns: 0 or exits 1. Output: scratch journal and decisions.
+function test_switch_without_ack() {
+    setup_evidence_cli
+    local before after
+    local -a check=(check --max-resets 0 --window 900)
+    observation 100 50
+    expect_status 0 fixture_cli record
+    observation 100 950
+    expect_status 0 fixture_cli record
+    observation 100 951
+    OBS[clock_valid]=0
+    OBS[clock_reason]=unsynchronized
+    before=$(fixture_cli record --print-observation) || fail 'safe switch source'
+    OBS[uptime]=952
+    expect_status 0 fixture_cli record
+    OBS[boot_id]=22222222-2222-2222-2222-222222222222
+    OBS[boot_count]=101
+    OBS[uptime]=1
+    after=$(fixture_cli record --print-observation) || fail 'safe switch destination'
+    observation 101 1050
+    OBS[boot_id]=22222222-2222-2222-2222-222222222222
+    expect_status 1 fixture_cli "${check[@]}"
+    expect_status 0 fixture_cli "${check[@]}" --switch-reboot "$before" "$after"
+    OBS[timestamp]=2000
+    OBS[uptime]=2000
+    expect_status 0 fixture_cli "${check[@]}" --switch-reboot "$before" "$after"
+    OBS[boot_id]=33333333-3333-3333-3333-333333333333
+    OBS[timestamp]=2010
+    OBS[uptime]=1
+    OBS[boot_count]=102
+    expect_status 1 fixture_cli "${check[@]}" --switch-reboot "$before" "$after"
+}
+
+# Rejects misplaced, missing and incomparable evidence until a later full window.
+# Arguments: none. Returns: 0 or exits 1. Output: scratch observations and decisions.
+function test_switch_evidence() {
+    setup_evidence_cli
+    local before middle after late mismatched
+    local -a check=(check --max-resets 0 --window 900)
+    observation 100 1000
+    before=$(fixture_cli record --print-observation) || fail 'source capture'
+    observation 100 1001
+    OBS[boot_id]=22222222-2222-2222-2222-222222222222
+    middle=$(fixture_cli record --print-observation) || fail 'intervening capture'
+    observation 101 1002
+    OBS[boot_id]=33333333-3333-3333-3333-333333333333
+    after=$(fixture_cli record --print-observation) || fail 'destination capture'
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$before" --switch-reboot "$before" "$after"
+    observation 101 1003
+    OBS[boot_id]=33333333-3333-3333-3333-333333333333
+    late=$(fixture_cli record --print-observation) || fail 'second destination capture'
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$middle" --switch-reboot "$middle" "$late"
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$after" --switch-reboot "$after" "$late"
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$middle" --switch-reboot "$after" "$middle"
+    mismatched=${after/test-firmware/other-firmware}
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$middle" --switch-reboot "$middle" "$mismatched"
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$mismatched"
+
+    # A valid transition across an unsynchronized span has no invented event time.
+    observation 103 1004
+    OBS[clock_valid]=0
+    OBS[clock_reason]=unsynchronized
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$middle" --switch-reboot "$middle" "$after"
+    observation 103 2000
+    expect_status 2 fixture_cli "${check[@]}" --after-observation "$middle" --switch-reboot "$middle" "$after"
+    observation 103 3000
+    expect_status 0 fixture_cli "${check[@]}" --after-observation "$middle" --switch-reboot "$middle" "$after"
+}
+
+# Checks real epoch transitions caused by a changed identity or lower counter.
+# Arguments: none. Returns: 0 or exits 1. Output: isolated journals for each epoch.
+function test_switch_epochs() {
+    local change before after
+    for change in controller firmware boot_count; do
+        (
+            setup_evidence_cli
+            observation 100 1000
+            before=$(fixture_cli record --print-observation) || fail 'epoch source'
+            observation 101 1010
+            OBS[boot_id]=22222222-2222-2222-2222-222222222222
+            OBS[$change]=99
+            after=$(fixture_cli record --print-observation) || fail 'epoch destination'
+            expect_status 2 fixture_cli check --max-resets 0 --window 900 --after-observation "$before" --switch-reboot "$before" "$after"
+            OBS[timestamp]=2010
+            OBS[uptime]=2010
+            expect_status 0 fixture_cli check --max-resets 0 --window 900 --after-observation "$before" --switch-reboot "$before" "$after"
+        ) || fail "changed $change"
+    done
+}
+
 # Verifies actual command dispatch emits JSON on storage, lock, and privilege errors.
 # Arguments: none. Returns: 0 or exits 1. Output: captured main stdout/stderr.
 function test_status_preflight() {
@@ -442,8 +731,9 @@ function main() {
         bash -n "$module" || return 1
     done
 
-    for test in test_parser test_acquisition test_history test_commit_failures test_storage_failures test_concurrency test_clock_and_json \
-        test_arguments test_window_decisions test_window_evidence test_status test_failed_refresh test_status_preflight; do
+    for test in test_parser test_acquisition test_history test_commit_failures test_storage_failures test_concurrency test_clock_and_json check_runtime_test_peers check_runtime_test_capture \
+        test_arguments test_window_decisions test_window_evidence test_status test_failed_refresh test_status_preflight \
+        test_capture test_switch_counts test_switch_without_ack test_switch_evidence test_switch_epochs; do
         ("$test") || return 1
         printf 'PASS %s\n' "$test"
     done

@@ -1,81 +1,117 @@
 #!/bin/bash
+# Chained requirements intentionally fail when any required command fails.
+# shellcheck disable=SC2015
 
 TEST_DIR=$(cd -- "${BASH_SOURCE[0]%/*}" && pwd -P) || exit 1
+FIXTURE=/opt/scr-raom-integration
 
-# Stops on a concrete prerequisite or installed-interface failure.
-# Arguments: $* - reason. Returns: never; exits 1. Output: stderr.
+# Stops on a prerequisite, assertion, or cleanup failure.
+# Arguments: $* - reason. Returns: never, exits 1. Output: diagnostic on stderr.
 function fail() { printf 'FAIL integration: %s\n' "$*" >&2; exit 1; }
 
-# Builds dependency fixtures as a real Debian archive, never as installed copies.
-# Arguments: none. Returns: 0 or exits 1. Output: fixture package and provenance.
+# Packages only consumed dependencies, captured native init files, and controlled test inputs.
+# Arguments: $1 - empty staging directory. Returns: 0 or exits 1. Output: fixtures.deb and hashes.
 function build_fixtures() {
-    local stage="$EVIDENCE/fixture-stage" fixture destination
-    mkdir -p "$stage/DEBIAN" "$stage/usr/bin" "$stage/etc/init.d" \
-        "$stage/usr/lib/scr-raom-integration" "$stage/opt/scr-raom-integration" || fail 'fixture staging'
-    printf 'Package: scr-raom-integration-fixtures\nVersion: 1\nArchitecture: amd64\nMaintainer: SCR <test@localhost>\nDescription: Isolated consumed-interface fixtures and captured target MONIT\n' >"$stage/DEBIAN/control"
-    for fixture in sema ntpq wd_keepalive run.sh; do
-        case "$fixture" in
-        sema|ntpq) destination="usr/bin/$fixture" ;;
-        wd_keepalive) destination=etc/init.d/wd_keepalive ;;
-        run.sh) destination=usr/lib/scr-raom-integration/run.sh ;;
-        esac
-        install -m 0755 "$TEST_DIR/integration/$fixture" "$stage/$destination" || fail 'fixture staging file'
-    done
-    # dpkg diverts this captured init. Decision-only calls inspect a harmless
-    # executable in the private PID namespace. No fixture opens /dev/watchdog.
-    install -m 0755 "$TEST_DIR/fixtures/watchdog.init" "$stage/etc/init.d/watchdog" || fail 'stage native watchdog init'
-    mkdir -p "$stage/usr/sbin" || fail 'fixture executable directory'
-    ln -s /bin/false "$stage/usr/sbin/watchdog" || fail 'fixture watchdog executable'
-    sha256sum "$TOOLING/monit-target" "$TOOLING/root/usr/bin/qemu-arm-static" >"$EVIDENCE/tooling.sha256"
-    [ "$(sha256sum "$TOOLING/monit-target" | cut -d ' ' -f 1)" = fab35bf7fa3d040b37d24ec99e515d6c13e1cd50c85987ae1531c2b98617341c ] || fail 'target MONIT hash'
-    install -m 0755 "$TOOLING/monit-target" "$stage/opt/scr-raom-integration/monit-target" || fail 'stage captured MONIT'
-    install -m 0755 "$TOOLING/startpar/startpar" "$stage/opt/scr-raom-integration/startpar" || fail 'stage scheduler'
-    install -m 0755 "$TOOLING/root/usr/bin/qemu-arm-static" "$stage/opt/scr-raom-integration/qemu-arm-static" || fail 'stage emulator'
-    cp -a "$TOOLING/target-root" "$stage/opt/scr-raom-integration/target-root" || fail 'stage captured ARM libraries'
+    local stage=$1 inputs="$TEST_DIR/integration" tool="$TOOLING/root/usr/bin/qemu-arm-static"
+    # The native owner name matters. Product preinst rejects foreign keepalive providers.
+    mkdir -p "$stage"/{DEBIAN,etc/default,etc/init.d,usr/bin,usr/sbin,sbin} "$stage$FIXTURE" || fail 'fixture staging'
+    printf 'Package: watchdog\nVersion: 0~scr-integration\nArchitecture: amd64\nMaintainer: SCR <test@localhost>\nDescription: Disposable RAOM integration dependencies and simulated feeders\n' >"$stage/DEBIAN/control"
+    install -m 0755 "$inputs"/{sema,ntpq} "$stage/usr/bin/" &&
+        install -m 0755 "$inputs"/{run.sh,account,wd_keepalive} "$stage$FIXTURE/" &&
+        install -m 0644 "$inputs/uncertainty.sh" "$stage$FIXTURE/" &&
+        install -m 0600 "$inputs/normal.monitrc" "$stage$FIXTURE/" &&
+        install -m 0755 "$inputs/shutdown" "$stage/sbin/shutdown" &&
+        install -m 0755 "$inputs/monit-status.capture" "$stage/sbin/monit-status.sh" || fail 'fixture payload'
+    printf '%s\n' '00000000-0000-0000-0000-000000000000' >"$stage$FIXTURE/boot-id"
+    install -m 0755 "$TEST_DIR/fixtures/watchdog.init" "$stage/etc/init.d/watchdog" &&
+        install -m 0755 "$TEST_DIR/fixtures/wd_keepalive.init" "$stage/etc/init.d/wd_keepalive" || fail 'stage captured native init'
+    # Each harmless feeder needs a separate executable inode for start-stop-daemon --exec.
+    install -m 0755 "$ROOT/bin/bash" "$stage/usr/sbin/watchdog" &&
+        install -m 0755 "$ROOT/bin/bash" "$stage/usr/sbin/wd_keepalive" || fail 'stage simulated feeder binaries'
+    printf 'run_watchdog=1\nwatchdog_module=none\nrun_wd_keepalive=1\nwatchdog_options=%s/wd_keepalive\n' "$FIXTURE" >"$stage/etc/default/watchdog"
+    ln -s /bin/true "$stage/etc/init.d/rsyslog" && ln -s /bin/true "$stage/etc/init.d/ntp" || fail 'stage bootstrap sinks'
+
+    [ "$(sha256sum "$TOOLING/monit-target" | cut -d ' ' -f 1)" = fab35bf7fa3d040b37d24ec99e515d6c13e1cd50c85987ae1531c2b98617341c ] || fail 'captured ARM MONIT hash'
+    [ "$(sha256sum "$inputs/monit-status.capture" | cut -d ' ' -f 1)" = 3e1a323b3119034ad1f9fe3be6ceae563bc02772a7d7afe034774a7d8538e333 ] || fail 'captured health script hash'
+    install -m 0755 "$tool" "$stage$FIXTURE/qemu-arm-static" &&
+        install -m 0755 "$TOOLING/monit-target" "$stage$FIXTURE/monit-target" &&
+        cp -a "$TOOLING/target-root" "$stage$FIXTURE/target-root" || fail 'captured target syntax tools'
     dpkg-deb -Zxz --root-owner-group --build "$stage" "$EVIDENCE/fixtures.deb" || fail 'fixture package build'
-    sha256sum "$DEB" "$EVIDENCE/fixtures.deb" >"$EVIDENCE/packages.sha256"
+    sha256sum "$DEB" "$EVIDENCE/fixtures.deb" "$ROOT/bin/bash" "$TOOLING/monit-target" "$tool" >"$EVIDENCE/inputs.sha256" || fail 'record archive and tool hashes'
 }
 
-# Unmounts only this namespace's private proc after chroot returns.
-# Arguments: none. Returns: 0, or exits 1 on cleanup failure. Output: stderr on error.
-# Side effects: unmounts private proc; never accesses source images or host proc data.
-function cleanup_namespace() {
-    umount "$ROOT/proc" || { printf 'FAIL integration: private proc cleanup; root unavailable for reuse\n' >&2; exit 1; }
+# Runs one simulated boot in fresh PID, mount, and network namespaces.
+# Arguments: $1 - writable scenario root; $2 - boot number; $3 - scenario name.
+# Returns: installed runner status. Output: native diagnostics and assertion evidence.
+function boot_main() {
+    local root=$1 boot=$2 scenario=$3
+    mount --make-rprivate / &&
+        mount -t proc -o ro,nosuid,nodev,noexec proc "$root/proc" &&
+        mount -t tmpfs -o nosuid,nodev tmpfs "$root/run" || fail 'private boot proc/run'
+    mkdir -p "$root/run"/{lock,sendsigs.omit.d,scr-raom-integration} &&
+        mount --bind "$root/var/log/scr-raom-integration" "$root/run/scr-raom-integration" &&
+        mount --bind "$root$FIXTURE/boot-id" "$root/proc/sys/kernel/random/boot_id" &&
+        mount -o remount,bind,ro "$root/proc/sys/kernel/random/boot_id" || fail 'bind simulated boot inputs'
+    # Kernel drops this namespace and its processes when its PID 1 exits.
+    setpriv --bounding-set=-sys_boot,-sys_admin,-mknod,-sys_rawio \
+        chroot "$root" /bin/bash "$FIXTURE/run.sh" "$boot" "$scenario"
 }
 
-# Runs installed tests with private mounts/PIDs, then copies only generated evidence.
-# Arguments: $1 - disposable root; $2 - evidence path. Returns: test/cleanup status.
-# Output: test transcript and generated evidence; no host daemon or device access.
-function namespace_main() {
-    ROOT=$1 EVIDENCE=$2
-    mount --make-rprivate / || fail 'private mount propagation'
-    mount -t proc proc "$ROOT/proc" || fail 'private proc mount'
-    trap cleanup_namespace EXIT
-    local status=0
-    chroot "$ROOT" /bin/bash /usr/lib/scr-raom-integration/run.sh || status=$?
-    cp -a "$ROOT/run/scr-raom-integration" "$EVIDENCE/observed" || fail 'retain generated evidence'
-    return "$status"
-}
-
-# Removes delivered packages through native dpkg, preserving failure evidence.
-# Arguments: none. Returns: 0 success, 1 cleanup failure. Output: dpkg diagnostics.
-function cleanup_packages() {
-    local status=0
-    if [ "$APP_INSTALLED" = true ]; then
-        chroot "$ROOT" dpkg --remove scr-raom || status=1
-        chroot "$ROOT" dpkg --purge scr-raom || status=1
+# Installs and purges both packages in one scenario overlay on the assigned base.
+# Arguments: $1 - assigned base; $2 - scratch; $3 - application archive; $4 - evidence; $5 - scenario name.
+# Returns: 0 or exits 1. Output: test results, rollback diagnostics, retained scenario evidence.
+function scenario_main() {
+    local base=$1 scratch=$2 deb=$3 evidence=$4 scenario=$5
+    local root="$scratch/root" boot last status=0 native=/usr/share/scr-raom/diverted/etc/init.d
+    case "$scenario" in
+    delta-1|delta-2) last=5 ;;
+    missing-normal) last=4 ;;
+    missing-safe|failed-start) last=3 ;;
+    *) fail "unknown scenario: $scenario" ;;
+    esac
+    mkdir -p "$root" "$scratch"/{upper,work} || fail 'overlay directories'
+    mount --make-rprivate / &&
+        mount -t overlay overlay -o "lowerdir=$base,upperdir=$scratch/upper,workdir=$scratch/work" "$root" || fail 'assigned root overlay'
+    mount -t proc -o ro,nosuid,nodev,noexec proc "$root/proc" &&
+        mount -t tmpfs -o nodev,nosuid tmpfs "$root/run" &&
+        mount -t tmpfs -o nodev,nosuid tmpfs "$root/var/log" || fail 'isolated package root'
+    mkdir -p "$root/run/lock" "$root/var/log/scr-raom-integration" || fail 'fixture data directories'
+    install -m 0664 /dev/null "$root/var/log/wtmp" || fail 'initial wtmp'
+    cp "$deb" "$root/tmp/application.deb" && cp "$evidence/fixtures.deb" "$root/tmp/fixtures.deb" || fail 'stage archives'
+    local -a inside=(chroot "$root")
+    "${inside[@]}" dpkg --install /tmp/fixtures.deb || fail 'fixture install'
+    if "${inside[@]}" dpkg --install /tmp/application.deb; then
+        "${inside[@]}" dpkg-query -W scr-raom watchdog monit util-linux dpkg || fail 'installed package versions'
+        "${inside[@]}" sha256sum /usr/bin/monit /sbin/start-stop-daemon /usr/bin/utmpdump \
+            "$native/watchdog" "$native/wd_keepalive" /sbin/monit-status.sh /sbin/shutdown || fail 'installed identities'
+        printf '\nSTART=yes\n' >>"$root/etc/default/monit" || fail 'enable fixture MONIT'
+        for ((boot=1; boot<=last; boot++)); do
+            printf '00000000-0000-0000-0000-%012d\n' "$boot" >"$root$FIXTURE/boot-id" || fail 'set boot identity'
+            # The child Bash expands the positional arguments after namespace creation.
+            # shellcheck disable=SC2016
+            unshare --mount --pid --net --fork --kill-child bash -c 'source "$1"; shift; boot_main "$@"' _ \
+                "$TEST_DIR/check-integration.sh" "$root" "$boot" "$scenario" || { status=1; break; }
+        done
+    else
+        status=1
     fi
-    if [ "$FIXTURES_INSTALLED" = true ]; then
-        chroot "$ROOT" dpkg --purge scr-raom-integration-fixtures || status=1
-    fi
-    [ "$status" -eq 0 ] || printf 'FAIL integration: package cleanup; retain root for recovery\n' >&2
-    return "$status"
+    # Preserve partial assertions before rollback. Fresh overlays isolate independent cases.
+    local result="$evidence/$scenario"
+    mkdir "$result" && cp -a "$root/var/log/." "$result/" || fail 'retain scenario evidence'
+    "${inside[@]}" dpkg --remove scr-raom && "${inside[@]}" dpkg --purge scr-raom || status=1
+    cmp -- "$TEST_DIR/fixtures/watchdog.init" "$root/etc/init.d/watchdog" &&
+        cmp -- "$TEST_DIR/fixtures/wd_keepalive.init" "$root/etc/init.d/wd_keepalive" &&
+        cmp -- "$base/etc/init.d/monit" "$root/etc/init.d/monit" || status=1
+    "${inside[@]}" dpkg --purge watchdog || status=1
+    [[ ! -e "$root/sbin/shutdown" && ! -e "$root/usr/bin/scr-raom" && ! -L "$root/etc/init.d/wd_keepalive" ]] || status=1
+    umount "$root"/{var/log,run,proc} && umount "$root" || fail 'unmount scenario root'
+    [ "$status" -eq 0 ] || fail "$scenario failed; see $result"
+    printf 'PASS %s native purge, restored init scripts, overlay unmounted\n' "$scenario"
 }
 
-# Installs exact archives and runs only approved consumed-interface assertions.
+# Runs installed integration in fresh disposable overlays. Retains exact input bytes.
 # Arguments: --root DIR --deb FILE --tooling DIR --evidence NEW_DIR.
-# Returns: 0 pass, 1 prerequisite/test/cleanup failure. Output: retained transcript.
-# Side effects: builds fixture .deb; dpkg installs/removes packages in disposable root.
+# Returns: 0 pass, 1 on failed prerequisite, scenario, or cleanup. Output: retained transcript.
 function main() {
     [ "$EUID" -eq 0 ] || exec sudo -n bash "$0" "$@"
     ROOT='' DEB='' TOOLING='' EVIDENCE=''
@@ -87,37 +123,32 @@ function main() {
         esac
         shift 2
     done
-    [[ "$ROOT" == /home/fudya/devel/scr/build/ITM-0007-bullseye-root ]] || fail 'requires assigned disposable Bullseye root'
-    [[ -d "$ROOT" && ! -L "$ROOT" ]] || fail 'unsafe disposable root'
-    grep -qx 'ID=debian' "$ROOT/etc/os-release" || fail 'unsupported disposable distribution'
+    local assigned=/home/fudya/devel/scr/build/ITM-0008-bullseye-root
+    [[ "$ROOT" = "$assigned" && "$(realpath -e -- "$ROOT")" = "$assigned" ]] || fail 'requires assigned disposable Bullseye root'
     grep -qx 'VERSION_ID="11"' "$ROOT/etc/os-release" || fail 'unsupported disposable version'
-    [[ -f "$DEB" && -d "$TOOLING/target-root" ]] || fail 'archive/tooling unavailable'
-    [[ -n "$EVIDENCE" && ! -e "$EVIDENCE" ]] || fail 'new explicit evidence path required'
-    [[ ! -e "$ROOT/usr/bin/scr-raom" && ! -e "$ROOT/usr/bin/sema" && ! -e "$ROOT/usr/bin/ntpq" ]] || fail 'root contains application/fixture commands'
+    local mounts
+    mounts=$(findmnt -rn -o TARGET) || fail 'cannot check active mounts'
+    if grep -qE "^$assigned(/|$)" <<<"$mounts"; then fail 'assigned root already mounted'; fi
+    [[ ! -e "$ROOT/sbin/shutdown" && ! -L "$ROOT/sbin/shutdown" && ! -e "$ROOT/usr/sbin/watchdog" &&
+       ! -e "$ROOT/usr/bin/scr-raom" && ! -e "$ROOT/dev/watchdog" && ! -e "$ROOT/dev/watchdog0" ]] || fail 'unexpected application, service, or device in assigned root'
+    [[ -f "$DEB" && -d "$TOOLING/target-root" && "$EVIDENCE" = /* && ! -e "$EVIDENCE" ]] || fail 'archive, tooling and new absolute evidence path required'
     mkdir -p "$EVIDENCE" || fail 'evidence directory'
-    EVIDENCE=$(realpath "$EVIDENCE")
     exec > >(tee "$EVIDENCE/transcript.log") 2>&1
-    build_fixtures
-    cp "$DEB" "$ROOT/tmp/scr-raom-application.deb" || fail 'stage application archive'
-    cp "$EVIDENCE/fixtures.deb" "$ROOT/tmp/scr-raom-fixtures.deb" || fail 'stage fixture archive'
-    local status=0
-    APP_INSTALLED=false FIXTURES_INSTALLED=true
-    chroot "$ROOT" dpkg --install /tmp/scr-raom-fixtures.deb || status=$?
-    if [ "$status" -eq 0 ]; then
-        APP_INSTALLED=true
-        chroot "$ROOT" dpkg --install /tmp/scr-raom-application.deb || status=$?
-    fi
-    if [ "$status" -eq 0 ]; then
-        unshare --mount --pid --fork --kill-child bash "$0" --namespace "$ROOT" "$EVIDENCE" || status=$?
-    fi
-    cleanup_packages || status=1
-    [ "$status" -eq 0 ] || fail "installed stage failed: status $status; retained evidence $EVIDENCE"
-    printf 'PASS installed V9; packages removed/purged; no source image/hardware/daemon actions\n'
+    local scenario status=0
+    SCRATCH=$(mktemp -d -- "${assigned%/*}/ITM-0008-installed.XXXXXXXX") || fail 'scratch directory'
+    trap 'rm -rf --one-file-system -- "$SCRATCH" || exit 1' EXIT
+    install -m 0644 "$DEB" "$EVIDENCE/scr-raom_1.1.1_all.deb" && cmp "$DEB" "$EVIDENCE/scr-raom_1.1.1_all.deb" || fail 'retain exact candidate'
+    DEB="$EVIDENCE/scr-raom_1.1.1_all.deb"
+    build_fixtures "$SCRATCH/stage"
+    for scenario in delta-1 delta-2 missing-safe missing-normal failed-start; do
+        printf '\nScenario %s\n' "$scenario"
+        # The child Bash expands the positional arguments after namespace creation.
+        # shellcheck disable=SC2016
+        unshare --mount --pid --net --fork --kill-child bash -c 'source "$1"; shift; scenario_main "$@"' _ \
+            "$TEST_DIR/check-integration.sh" "$ROOT" "$SCRATCH/$scenario" "$DEB" "$EVIDENCE" "$scenario" || status=1
+    done
+    [ "$status" -eq 0 ] || fail "installed scenario failed; see $EVIDENCE"
+    printf 'PASS V10 installed recovery. Simulated BMC, NTP, boot IDs, shutdown, wtmp and feeders.\n'
 }
 
-if [ "${1:-}" = --namespace ]; then
-    [ "$#" -eq 3 ] || fail 'namespace arguments'
-    namespace_main "$2" "$3"
-else
-    main "$@"
-fi
+[ "${BASH_SOURCE[0]}" != "$0" ] || main "$@"

@@ -1,24 +1,28 @@
 #!/bin/bash
 
-# Source and installed symlinks resolve to the same bin/ entry and SCR_HOME layout.
+# Resolve the executable so both source and installed symlinks use the same SCR_HOME.
 SCRIPT=$(readlink -f -- "${BASH_SOURCE[0]}") || exit 2
 export SCR_HOME
 SCR_HOME=$(cd -- "${SCRIPT%/*}/.." && pwd -P) || exit 2
 
-# Load trusted SCR configuration and shared libraries in either location.
 source "$SCR_HOME/etc/scr.conf" || exit 2
 [ ! -f "$SCR_HOME/etc/local.scr.conf" ] || source "$SCR_HOME/etc/local.scr.conf" || exit 2
 
 for library in "$SCR_LIB_DIR"/*.sh; do
     [ -f "$library" ] || continue
+    # shellcheck source=/dev/null
     source "$library" || exit 2
 done
 
-# Reuse the reset API's decimal validation, without loading its command layer.
+# Load the reset number parser and the modules used by both the CLI and SysV.
 source "$SCR_RESETS_MONITOR_SRC_DIR/runtime/values.sh" || exit 2
-source "$SRC_TOOLS_DIR/raom/src/decision.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/config.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/ntp.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/mode.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/watchdog.sh" || exit 2
+source "$SRC_TOOLS_DIR/raom/src/profile.sh" || exit 2
 source "$SRC_TOOLS_DIR/raom/src/monit.sh" || exit 2
 
-# Load the command layer and its trusted runtime configuration, then dispatch.
+# Tests and package checks can source this entry point without running a command.
 source "$SRC_TOOLS_DIR/raom/tool.sh" || exit 2
-[ "${BASH_SOURCE[0]}" != "$0" ] || main "$@"
+[ "${BASH_SOURCE[0]}" != "$0" ] || tool_execute_command "$@"

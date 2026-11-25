@@ -79,6 +79,17 @@ function sync_path() {
 
 # History parsing and persistence helpers.
 
+# Looks up a CLI observation in contiguous, validated journal history.
+# Arguments: $1 - canonical record validated by parse_args. Sets RECORD.
+# Returns: 0 for an exact match in the current epoch, 2 otherwise. Output: none.
+function retained_observation() {
+    local index
+    parse_record "$1" || return 2
+    index=$((RECORD[sequence] - LAST[sequence] + ${#HISTORY[@]} - 1))
+    [ "${RECORD[epoch]}" -eq "${LAST[epoch]}" ] && [ "$index" -ge 0 ] || return 2
+    [ "${HISTORY[index]:-}" = "$1" ] || return 2
+}
+
 # Loads retained history and verifies sequences and counter transitions.
 # Arguments: none. Returns: 0 or 2. Output: HISTORY array and LAST map.
 function load_history() {

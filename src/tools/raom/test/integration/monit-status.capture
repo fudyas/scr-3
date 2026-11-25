@@ -1,0 +1,9 @@
+#!/bin/bash
+status=`service monit status | grep 'is running'`
+if [[ -z $status ]] ; then
+    logger 'watchdog: monit is not running ;-\'
+    exit 1
+else
+    #logger "watchdog: monit is OK"
+    exit 0
+fi

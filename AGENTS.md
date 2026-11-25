@@ -34,8 +34,8 @@
 ## Remote target access
 
 1. USE repository SSH key `admin/hw_ed25519` for remote hardware access. Never print or copy private key contents into logs or artifacts.
-2. USE latest target IP supplied by developer. Current target: `192.168.68.52`.
-3. CONNECT from repository root with `ssh -i admin/hw_ed25519 -o IdentitiesOnly=yes root@192.168.68.52`.
+2. USE latest target IP supplied by developer. Current target: `192.168.68.56`.
+3. CONNECT from repository root with `ssh -i admin/hw_ed25519 -o IdentitiesOnly=yes root@192.168.68.56`.
 4. KEEP planning inspection read-only. SSH credentials do not authorize installation, service changes, watchdog changes, or reboot.
 
 ## Image and hardware safety

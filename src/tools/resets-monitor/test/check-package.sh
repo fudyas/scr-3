@@ -7,8 +7,8 @@ function abort() { printf 'FAIL package: %s\nEvidence: %s\n' "$*" "$EVIDENCE" >&
 # Runs real dpkg solely against this run's disposable database/root.
 # Arguments: dpkg arguments. Returns: dpkg status. Output: dpkg diagnostics.
 function package_dpkg() {
-    [[ "$TEST_ROOT" == "$EVIDENCE"/root-* ]] && [ -d "$TEST_ROOT" ] || abort 'unsafe fixture root'
-    BASH_ENV="$EVIDENCE/no-services.sh" dpkg --root="$TEST_ROOT" --force-script-chrootless --force-depends \
+    [[ "$TEST_ROOT" == "$EVIDENCE"/root-* && -d "$TEST_ROOT" ]] || abort 'unsafe fixture root'
+    SERVICE_ATTEMPTS="$EVIDENCE/service-attempts" BASH_ENV="$EVIDENCE/no-services.sh" dpkg --root="$TEST_ROOT" --force-script-chrootless --force-depends \
         --force-confold --log="$EVIDENCE/dpkg.log" "$@"
 }
 
@@ -17,8 +17,9 @@ function package_dpkg() {
 function build_platform() {
     local stage="$EVIDENCE/platform" pair path fixture level
     mkdir -p "$stage/DEBIAN" "$stage/etc/init.d" "$stage/etc/default" "$stage/etc/monit" "$stage/sbin"
-    printf 'Package: scr-test-platform\nVersion: 1\nArchitecture: all\nMaintainer: SCR <test@localhost>\nDescription: Captured native integration fixture\n' >"$stage/DEBIAN/control"
-    for pair in 'etc/init.d/monit:monit.init' 'etc/init.d/watchdog:watchdog.init' 'etc/default/monit:monit.defaults' 'etc/rc.local:rc.local' 'sbin/monitstate.sh:monitstate.sh'; do
+    mkdir -p "$stage/etc/alternatives" "$stage/var/lib/dpkg/alternatives" "$stage/var/log"
+    printf 'Package: watchdog\nVersion: 1\nArchitecture: all\nMaintainer: SCR <test@localhost>\nDescription: Captured native integration fixture\n' >"$stage/DEBIAN/control"
+    for pair in 'etc/init.d/monit:monit.init' 'etc/init.d/watchdog:watchdog.init' 'etc/init.d/wd_keepalive:wd_keepalive.init' 'etc/default/monit:monit.defaults' 'etc/rc.local:rc.local' 'sbin/monitstate.sh:monitstate.sh'; do
         path=${pair%:*} fixture=${pair#*:}
         cp "src/tools/raom/test/fixtures/$fixture" "$stage/$path" || abort 'stage native original'
         chmod 0755 "$stage/$path"
@@ -57,7 +58,7 @@ function check_installed() {
     for level in 2 3 4 5; do
         [ "$(readlink "$TEST_ROOT/etc/rc$level.d/S03monit")" = ../init.d/scr-raom ] || abort 'startup link'
     done
-    [ ! -L "$TEST_ROOT/etc/rcS.d/S17scr-resets-monitor" ] && [ ! -e "$TEST_ROOT/etc/rcS.d/S17scr-resets-monitor" ] || abort 'obsolete observation hook'
+    [[ ! -L "$TEST_ROOT/etc/rcS.d/S17scr-resets-monitor" && ! -e "$TEST_ROOT/etc/rcS.d/S17scr-resets-monitor" ]] || abort 'obsolete observation hook'
     [ ! -e "$TEST_ROOT/usr/lib/scr-resets-monitor/payload" ] || abort 'private copy payload retained'
     cmp "$EVIDENCE/platform/etc/default/monit" "$TEST_ROOT/etc/default/monit" || abort 'native defaults changed'
     cmp "$EVIDENCE/platform/etc/monit/monitrc" "$TEST_ROOT/etc/monit/monitrc" || abort 'normal profile changed'
@@ -65,21 +66,55 @@ function check_installed() {
     cmp src/tools/raom/etc/compat/watchdog.init "$TEST_ROOT/etc/init.d/watchdog" || abort 'watchdog adapter missing'
     [ -x "$TEST_ROOT/etc/init.d/watchdog" ] || abort 'watchdog wrapper mode'
     cmp "$EVIDENCE/platform/etc/init.d/watchdog" "$TEST_ROOT/usr/share/scr-raom/diverted/etc/init.d/watchdog" || abort 'diverted watchdog changed'
+    [ "$(readlink "$TEST_ROOT/etc/init.d/wd_keepalive")" = /etc/alternatives/scr-raom-wd-keepalive ] || abort 'keepalive alternatives link'
+    [ "$(readlink "$TEST_ROOT/etc/alternatives/scr-raom-wd-keepalive")" = /usr/local/scr/tools/raom/etc/compat/wd_keepalive.init ] || abort 'keepalive alternative provider'
+    cmp src/tools/raom/etc/compat/wd_keepalive.init "$TEST_ROOT/usr/local/scr/tools/raom/etc/compat/wd_keepalive.init" || abort 'keepalive adapter missing'
+    cmp "$EVIDENCE/platform/etc/init.d/wd_keepalive" "$TEST_ROOT/usr/share/scr-raom/diverted/etc/init.d/wd_keepalive" || abort 'diverted keepalive changed'
+    [ "$(dpkg-divert --root "$TEST_ROOT" --listpackage /etc/init.d/wd_keepalive)" = scr-raom ] || abort 'keepalive diversion owner'
 }
 
 # Checks Debian diversion restoration against the installed platform archive.
 # Arguments: none. Returns: 0 or aborts. Output: assertions only.
 function check_restored() {
     local path level
-    for path in etc/init.d/monit etc/init.d/watchdog etc/default/monit etc/rc.local sbin/monitstate.sh etc/monit/monitrc; do
+    for path in etc/init.d/monit etc/init.d/watchdog etc/init.d/wd_keepalive etc/default/monit etc/rc.local sbin/monitstate.sh etc/monit/monitrc; do
         cmp "$EVIDENCE/platform/$path" "$TEST_ROOT/$path" || abort "native original not restored: $path"
     done
     for level in 2 3 4 5; do
         [ "$(readlink "$TEST_ROOT/etc/rc$level.d/S03monit")" = ../init.d/monit ] || abort 'native startup not restored'
     done
     [ -z "$(dpkg-divert --root "$TEST_ROOT" --list)" ] || abort 'diversions retained'
-    [ ! -L "$TEST_ROOT/usr/bin/scr-raom" ] && [ ! -e "$TEST_ROOT/usr/bin/scr-raom" ] || abort 'RAOM command retained'
+    [[ ! -L "$TEST_ROOT/usr/bin/scr-raom" && ! -e "$TEST_ROOT/usr/bin/scr-raom" ]] || abort 'RAOM command retained'
+    [ ! -L "$TEST_ROOT/etc/alternatives/scr-raom-wd-keepalive" ] || abort 'keepalive alternative retained'
+    [ ! -e "$TEST_ROOT/var/lib/dpkg/alternatives/scr-raom-wd-keepalive" ] || abort 'keepalive group retained'
 }
+
+# Runs the installed decision command with isolated boot data and an idle watchdog.
+# Arguments: select arguments. Returns: CLI status. Output: committed boot selection.
+function fixture_select() (
+    # shellcheck disable=SC1091
+    source etc/deb/raom/package-common.sh || exit 1
+    source "$TEST_ROOT/usr/local/scr/bin/src-raom" || exit 1
+    ROOT=$TEST_ROOT
+    RAOM_STATE_DIR="$ROOT/run/scr-raom" RAOM_DECISION_DIR="$ROOT/var/lib/scr-raom"
+    RAOM_BOOT_ID_FILE="$ROOT/proc/sys/kernel/random/boot_id" RAOM_UPTIME_FILE="$ROOT/proc/uptime"
+    RAOM_POLICY_FILE="$ROOT/etc/default/scr-raom"
+    RAOM_RESETS_MONITOR=/bin/false RAOM_NTP_QUERY=/bin/false
+    # Arguments: $1 - directory. Returns: target ancestry status. Output: none.
+    function config_validate_ancestry() { target_ancestry "$1"; }
+    # Arguments: none. Returns: 3 (fixture watchdog absent). Output: none.
+    function watchdog_check_process() { return 3; }
+    if ! declare -F config_initialize_decision >/dev/null; then
+        # 1.1.0 validates host ancestry inline. Seed its private fixture directory
+        # and exercise its installed decision and publication functions directly.
+        umask 077
+        mkdir -p -- "$RAOM_STATE_DIR" && read_boot_id && select_mode true && publish_selection || exit 1
+        raom_cleanup
+        selection_record
+        exit $?
+    fi
+    tool_execute_command select "$@"
+)
 
 # Builds a versioned or failing derivative from the exact tested Debian archive.
 # Arguments: $1 - version; $2 - optional callback to fail. Returns: 0 or aborts.
@@ -102,10 +137,31 @@ function build_candidate() {
 # Verifies normal package transitions and client data preservation through dpkg.
 # Arguments: none. Returns: 0 or aborts. Output: lifecycle evidence.
 function check_lifecycle() {
-    local config history status diversions
-    prepare_root lifecycle
-    package_dpkg --install "$DEB" || abort 'install'
+    local config history status diversions legacy_diversions decision saved="$EVIDENCE/rollback-data"
+    local previous=/home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0007/implementation/package-layout/scr-raom_1.1.0_all.deb
+    printf '%s  %s\n' 216f0177e56c7212d833b457b364471f8d6556f9aed3e63850659ed0d2cd306b "$previous" | sha256sum -c - || abort 'rollback archive identity'
+    prepare_root fresh
+    package_dpkg --install "$DEB" || abort 'fresh install'
+    grep -qx latch=normal "$TEST_ROOT/var/lib/scr-raom/decision" || abort 'fresh decision'
     check_installed
+    mv "$TEST_ROOT/var/lib/scr-raom/decision" "$EVIDENCE/saved-fresh-decision" || abort 'simulate missing established decision'
+    if package_dpkg --install "$DEB"; then abort 'reinitialized missing established decision'; fi
+    [ ! -e "$TEST_ROOT/var/lib/scr-raom/decision" ] || abort 'missing decision replaced'
+    mv "$EVIDENCE/saved-fresh-decision" "$TEST_ROOT/var/lib/scr-raom/decision" || abort 'restore fixture decision'
+    package_dpkg --remove scr-raom || abort 'fresh removal'
+    package_dpkg --install "$DEB" || abort 'reinstall removed package'
+    package_dpkg --purge scr-raom || abort 'fresh purge'
+    check_restored
+    [ ! -e "$TEST_ROOT/var/lib/scr-raom" ] || abort 'fresh private state retained'
+
+    prepare_root lifecycle
+    package_dpkg --install "$previous" || abort 'install retained 1.1.0'
+    legacy_diversions=$(dpkg-divert --root "$TEST_ROOT" --list | sort)
+    mkdir -p "$TEST_ROOT/run" "$TEST_ROOT/proc/sys/kernel/random"
+    printf '%s\n' 11111111-1111-1111-1111-111111111111 >"$TEST_ROOT/proc/sys/kernel/random/boot_id"
+    printf '100.00 0.00\n' >"$TEST_ROOT/proc/uptime"
+    fixture_select --ntp-start-failed >"$EVIDENCE/selection-1.1.0" || abort '1.1.0 selection'
+    grep -qx mode=safe "$EVIDENCE/selection-1.1.0" || abort '1.1.0 safe mode'
     printf '\n# client choice\n' >>"$TEST_ROOT/etc/default/scr-raom"
     printf '\n# client safe services\n' >>"$TEST_ROOT/etc/monit/raom/safe.monitrc"
     # Test data only, not application installation; never accesses host history.
@@ -113,11 +169,20 @@ function check_lifecycle() {
     printf 'retained history fixture\n' >"$TEST_ROOT/var/log/scr/resets.jsonl"
     config=$(sha256sum "$TEST_ROOT/etc/default/scr-raom" "$TEST_ROOT/etc/monit/raom/safe.monitrc")
     history=$(sha256sum "$TEST_ROOT/var/log/scr/resets.jsonl")
-    package_dpkg --install "$DEB" || abort 'reconfigure via reinstall'
-    build_candidate 1.1.1
-    package_dpkg --install "$CANDIDATE" || abort 'upgrade'
-    diversions=$(dpkg-divert --root "$TEST_ROOT" --list | sort)
     build_candidate 1.1.2 preinst
+    if package_dpkg --install "$CANDIDATE"; then abort 'failing first upgrade accepted'; fi
+    [ "$legacy_diversions" = "$(dpkg-divert --root "$TEST_ROOT" --list | sort)" ] || abort 'aborted first upgrade changed diversions'
+    cmp "$EVIDENCE/platform/etc/init.d/wd_keepalive" "$TEST_ROOT/etc/init.d/wd_keepalive" || abort 'aborted first upgrade lost native keepalive'
+    package_dpkg --install "$DEB" || abort 'upgrade retained 1.1.0'
+    check_installed
+    grep -qx latch=safe "$TEST_ROOT/var/lib/scr-raom/decision" || abort 'upgrade lost running safe mode'
+    rm -- "$TEST_ROOT/run/scr-raom/selection" || abort 'clear volatile boot selection'
+    printf '%s\n' 22222222-2222-2222-2222-222222222222 >"$TEST_ROOT/proc/sys/kernel/random/boot_id"
+    fixture_select >"$EVIDENCE/selection-1.1.1" || abort 'select on simulated reboot'
+    grep -qx reason=persistent_safe "$EVIDENCE/selection-1.1.1" || abort 'safe latch lost across reboot'
+    decision=$(sha256sum "$TEST_ROOT/var/lib/scr-raom/decision")
+    package_dpkg --install "$DEB" || abort 'reconfigure via reinstall'
+    diversions=$(dpkg-divert --root "$TEST_ROOT" --list | sort)
     status=0; package_dpkg --install "$CANDIDATE" || status=$?
     [ "$status" -ne 0 ] || abort 'failing preinst accepted'
     [ "$diversions" = "$(dpkg-divert --root "$TEST_ROOT" --list | sort)" ] || abort 'aborted 1.1 upgrade changed existing diversions'
@@ -128,13 +193,32 @@ function check_lifecycle() {
     package_dpkg --install "$DEB" || abort 'rollback after failed configure'
     check_installed
     [ "$config" = "$(sha256sum "$TEST_ROOT/etc/default/scr-raom" "$TEST_ROOT/etc/monit/raom/safe.monitrc")" ] || abort 'client config/profile lost'
+    [ "$decision" = "$(sha256sum "$TEST_ROOT/var/lib/scr-raom/decision")" ] || abort 'reinstall or failed upgrade changed decision'
+    mkdir -m 0700 "$saved" || abort 'prepare offline rollback data'
+    cp -a -- "$TEST_ROOT/var/lib/scr-raom" "$TEST_ROOT/var/log/scr" "$TEST_ROOT/etc/monit/raom/safe.monitrc" "$saved/" || abort 'save rollback data'
+    cp -a -- "$TEST_ROOT/etc/default/scr-raom" "$saved/policy" || abort 'save rollback policy'
+    cp -a -- "$TEST_ROOT/etc/logrotate.d/scr-resets-monitor" "$saved/rotation" || abort 'save rotation policy'
+    package_dpkg --install "$previous" || abort 'downgrade to retained 1.1.0'
+    [ "$legacy_diversions" = "$(dpkg-divert --root "$TEST_ROOT" --list | sort)" ] || abort 'downgrade changed shared diversions'
+    cmp "$EVIDENCE/platform/etc/init.d/wd_keepalive" "$TEST_ROOT/etc/init.d/wd_keepalive" || abort 'downgrade lost native keepalive'
+    [ "$(dpkg-query --admindir="$TEST_ROOT/var/lib/dpkg" -S /etc/init.d/wd_keepalive)" = 'watchdog: /etc/init.d/wd_keepalive' ] || abort 'native keepalive owner lost'
+    [ ! -e "$TEST_ROOT/var/lib/scr-raom" ] || abort 'downgrade retained private state'
+    [ "$config" = "$(sha256sum "$TEST_ROOT/etc/default/scr-raom" "$TEST_ROOT/etc/monit/raom/safe.monitrc")" ] || abort 'downgrade changed client configuration'
+    # Model a valid safe selection from the running old release before upgrading again.
+    rm -- "$TEST_ROOT/run/scr-raom/selection" || abort 'clear fixture selection'
+    fixture_select --ntp-start-failed || abort 'select after downgrade'
+    package_dpkg --unpack "$DEB" || abort 'unpack after downgrade'
+    rm -- "$TEST_ROOT/run/scr-raom/selection" || abort 'simulate reboot before configure'
+    printf '%s\n' 33333333-3333-3333-3333-333333333333 >"$TEST_ROOT/proc/sys/kernel/random/boot_id"
+    package_dpkg --configure scr-raom || abort 'configure after simulated reboot'
+    cmp "$saved/scr-raom/decision" "$TEST_ROOT/var/lib/scr-raom/decision" || abort 'safe state differs after re-upgrade'
     package_dpkg --remove scr-raom || abort 'remove'
     check_restored
     [ -f "$TEST_ROOT/etc/default/scr-raom" ] || abort 'remove lost conffile'
     package_dpkg --purge scr-raom || abort 'purge'
     [ ! -e "$TEST_ROOT/etc/default/scr-raom" ] || abort 'purge retained conffile'
     [ "$history" = "$(sha256sum "$TEST_ROOT/var/log/scr/resets.jsonl")" ] || abort 'history lost'
-    printf 'PASS install/reinstall/upgrade/failed transitions/rollback/remove/purge/conffiles/history\n'
+    printf 'PASS fresh install, retained 1.1.0 safe upgrade, simulated boot, reinstall, abort, downgrade, remove, purge, conffiles/history\n'
 }
 
 # Checks the old Debian-native owner's removal before the new package claims paths.
@@ -226,7 +310,37 @@ function check_legacy() {
 # Verifies Debian ownership and diversion conflicts without invented owner claims.
 # Arguments: none. Returns: 0 or aborts. Output: conflict evidence.
 function check_conflicts() {
-    local status stage="$EVIDENCE/conflict-package"
+    local status stage="$EVIDENCE/conflict-package" provider digest diversions
+    local previous=/home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0007/implementation/package-layout/scr-raom_1.1.0_all.deb
+    prepare_root provider-conflict
+    package_dpkg --install "$previous" || abort 'install prior release for provider collision'
+    provider="$TEST_ROOT/usr/local/scr/tools/raom/etc/compat/wd_keepalive.init"
+    printf 'client-owned adapter data\n' >"$provider"
+    digest=$(sha256sum "$provider")
+    diversions=$(dpkg-divert --root "$TEST_ROOT" --list | sort)
+    if package_dpkg --install "$DEB"; then abort 'local keepalive provider overwritten'; fi
+    [ "$digest" = "$(sha256sum "$provider")" ] || abort 'rejected upgrade changed local provider'
+    [ "$diversions" = "$(dpkg-divert --root "$TEST_ROOT" --list | sort)" ] || abort 'provider rejection changed diversions'
+    # dpkg-query expands this field name, not the shell.
+    # shellcheck disable=SC2016
+    [ "$(dpkg-query --admindir="$TEST_ROOT/var/lib/dpkg" -W -f='${Version}' scr-raom)" = 1.1.0 ] || abort 'provider rejection changed installed version'
+
+    prepare_root group-conflict
+    update-alternatives --root "$TEST_ROOT" --install /etc/init.d/foreign scr-raom-wd-keepalive /etc/init.d/watchdog 10 || abort 'fixture foreign alternatives group'
+    if package_dpkg --install "$DEB"; then abort 'foreign keepalive group accepted'; fi
+    [ "$(update-alternatives --root "$TEST_ROOT" --list scr-raom-wd-keepalive)" = /etc/init.d/watchdog ] || abort 'foreign alternative lost'
+    cmp "$EVIDENCE/platform/etc/init.d/wd_keepalive" "$TEST_ROOT/etc/init.d/wd_keepalive" || abort 'foreign group rejection lost keepalive'
+    prepare_root private-conflict
+    mkdir -m 0700 "$TEST_ROOT/var/lib/client-state" || abort 'fixture client directory'
+    ln -s client-state "$TEST_ROOT/var/lib/scr-raom" || abort 'fixture private path collision'
+    if package_dpkg --install "$DEB"; then abort 'private state symlink accepted'; fi
+    [ "$(readlink "$TEST_ROOT/var/lib/scr-raom")" = client-state ] || abort 'client state link changed'
+    [ -z "$(dpkg-divert --root "$TEST_ROOT" --list)" ] || abort 'private path rejection changed diversions'
+    prepare_root keepalive-conflict
+    printf '\n# unsupported native change\n' >>"$TEST_ROOT/etc/init.d/wd_keepalive"
+    if package_dpkg --install "$DEB"; then abort 'unsupported keepalive accepted'; fi
+    grep -qx '# unsupported native change' "$TEST_ROOT/etc/init.d/wd_keepalive" || abort 'changed native keepalive lost'
+    [ -z "$(dpkg-divert --root "$TEST_ROOT" --list)" ] || abort 'keepalive rejection changed diversions'
     prepare_root watchdog-conflict
     printf '\n# unsupported native change\n' >>"$TEST_ROOT/etc/init.d/watchdog"
     if package_dpkg --install "$DEB"; then abort 'unsupported watchdog accepted'; fi
@@ -256,7 +370,7 @@ function check_conflicts() {
 # Output: package/test evidence. No host services or hardware; dependencies forced only in fixtures.
 function main() {
     [ "$EUID" -eq 0 ] || exec sudo -n bash "$0" "$@"
-    DEB="$PWD/src/pkg/scr-raom_1.1.0_all.deb"
+    DEB="$PWD/src/pkg/scr-raom_1.1.1_all.deb"
     EVIDENCE=
     while [ "$#" -gt 0 ]; do
         [ "$#" -ge 2 ] || abort 'missing argument'
@@ -268,16 +382,21 @@ function main() {
     mkdir -p "$EVIDENCE" || abort 'evidence directory'
     EVIDENCE=$(realpath "$EVIDENCE")
     exec > >(tee "$EVIDENCE/transcript.log") 2>&1
+    : >"$EVIDENCE/service-attempts" || abort 'callback guard log'
     cat >"$EVIDENCE/no-services.sh" <<'GUARD'
 set -T
-trap 'case "$BASH_COMMAND" in /etc/init.d/*|/sbin/reboot*|service\ *|invoke-rc.d\ *|systemctl\ *|reboot\ *) printf "forbidden service action: %s\n" "$BASH_COMMAND" >&2; exit 99 ;; esac' DEBUG
+trap 'case "$BASH_COMMAND" in /etc/init.d/*|/sbin/reboot*|/sbin/shutdown*|shutdown\ *|service\ *|invoke-rc.d\ *|systemctl\ *|reboot\ *|start-stop-daemon\ *|\"\$RAOM_REBOOT\"*) printf "forbidden service action: %s\n" "$BASH_COMMAND" >>"$SERVICE_ATTEMPTS"; exit 99 ;; esac' DEBUG
 GUARD
     sha256sum "$DEB" >"$EVIDENCE/package.sha256"
+    # dpkg-deb expands these field names.
+    # shellcheck disable=SC2016
+    [ "$(dpkg-deb -W --showformat='${Package} ${Version} ${Architecture}' "$DEB")" = 'scr-raom 1.1.1 all' ] || abort 'unexpected candidate identity'
     build_platform
     check_lifecycle
     check_previous_owner
     check_legacy
     check_conflicts
+    [ ! -s "$EVIDENCE/service-attempts" ] || abort 'maintainer callback attempted service action'
     printf 'PASS Debian-native package checks; fixture dependencies not runtime qualification\n'
 }
 

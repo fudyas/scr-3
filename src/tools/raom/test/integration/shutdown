@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Records one simulated orderly reboot submission inside the installed fixture.
+# Arguments: $1 - -r; $2 - now. Returns: 0 on success, 2 on error.
+# Output: appends the request to the trace and the shutdown record to fixture wtmp.
+function main() {
+    [ "$#" -eq 2 ] && [ "$1" = -r ] && [ "$2" = now ] || return 2
+    printf 'shutdown -r now %s\n' "$(< /proc/sys/kernel/random/boot_id)" >>/run/scr-raom-integration/calls || return 2
+    /opt/scr-raom-integration/account shutdown
+}
+
+main "$@"

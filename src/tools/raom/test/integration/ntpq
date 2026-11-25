@@ -1,14 +1,20 @@
 #!/bin/bash
 
-# Supplies synchronized NTP evidence to selector and actual reset CLI.
-# Arguments: $1 - -c; $2 - rv 0. Returns: 0, or 2 for unsupported arguments.
+# Supplies controlled NTP readiness to selector and actual reset CLI.
+# Arguments: -pn, or -c 'rv 0'. Returns: 0, or 2 for unsupported arguments.
 # Output: controlled ntpq data on stdout; records invocation in fixture data.
 function main() {
-    [ "$#" -eq 2 ] && [ "$1" = -c ] && [ "$2" = 'rv 0' ] || return 2
-    printf 'ntpq -c rv 0\n' >>/run/scr-raom-integration/calls
-    printf '%s\n' 'associd=0 status=0615 leap_none, sync_ntp, clock_sync,' \
+    case "$*" in '-pn' | '-c rv 0') ;; *) return 2 ;; esac
+    printf 'ntpq %s\n' "$*" >>/run/scr-raom-integration/calls
+    [ ! -f /run/scr-raom-integration/unsynchronized ] || { printf "leap_alarm, sync_unspec,\n"; return 0; }
+    if [ "$1" = -pn ]; then
+        printf '%s\n' '*64.176.167.142 194.27.222.5 2 u 4 64 377 3.708 0.520 0.986'
+        return 0
+    fi
+    # Reproduce fresh peer responses with lagging system flags and reference time.
+    printf '%s\n' 'associd=0 status=c615 leap_alarm, sync_ntp, no_sys_peer,' \
         'rootdelay=1.0, rootdisp=1.0, offset=0.0, tc=8,' \
-        'reftime=eea0044a.00000000, clock=eea0044b.00000000'
+        'reftime=eea0044a.00000000, clock=eea0144b.00000000'
 }
 
 main "$@"
