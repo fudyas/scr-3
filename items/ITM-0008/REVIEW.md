@@ -44,3 +44,14 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 4. **User wording:**
 
    > First adjust RAOM to accept NTP * records and retest. Next, if does not help we will get back to my idea. As for long power-offs - the easiest is to enter safe mode if the power off is too long (configurable)
+
+## D-05 — Accept selected-peer timing and retain the NTP caveat
+
+1. **Overrides:** No runtime behavior change. Confirms D-04 selected-peer design and defers RTC fallback and configurable long-power-off handling.
+2. **Decision:** Accept approximately23-second measured decisions with the README's existing bounded NTP wait, application-start delay and keepalive protection. Measurements are observations, not a guaranteed startup time. Keep configurable timeout and error policy.
+3. **Hardware confirmation:** Developer accepts the reported four-boot results for scr-raom1.1.1 SHA-256 `3beea460106a0ac4c29fec9dbf9f30a94b4d6b4a8b97fe6a8db4945cbe3d96b6` on SCR-7CCC91 at192.168.68.56, image8.26.0. Record hardware gate against this exact package; promotion remains a separate operation.
+4. **User wording:**
+
+   > 23sec seem acceptable to me with NTP caveat as in README today. Agree ?
+
+   > Right, align the code and docs on these and confirm item 8 tested on HW and can be promoted
