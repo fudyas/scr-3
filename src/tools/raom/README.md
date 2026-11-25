@@ -426,7 +426,7 @@ Exit `2` means unavailable operation or invalid arguments. These codes differ fr
 | # | Current mode | Root command | What the request saves |
 | --- | --- | --- | --- |
 | 1 | Normal | `scr-raom switch safe` | Safe target and fresh source observation when available. Missing counter evidence still permits safe entry. |
-| 2 | Safe | `scr-raom switch normal` | Normal target and a fresh BMC observation that acknowledges the previous resets. Capture or durable request-save failure keeps safe and refuses reboot. |
+| 2 | Safe | `scr-raom switch normal` | Normal target and a fresh BMC observation that acknowledges the previous resets. Initial capture or durable request-save failure keeps safe and submits no reboot. |
 
 1. READ `scr-raom status` for the current mode and `boot_id`.
 2. SUBMIT the opposite-mode command from the table when authorized to reboot the device.
@@ -436,7 +436,16 @@ Exit `2` means unavailable operation or invalid arguments. These codes differ fr
       1. **2.2.1** READ the diagnostic before retrying. An interrupted submission can already have reached native shutdown.
 3. COMPARE the new `scr-raom status` boot ID, mode, profile, and reason with the request.
 4. VERIFY successful MONIT startup for this boot. RAOM checks one daemon, its PID, binary, explicit `-c`, and profile link.
-5. VERIFY full watchdog active and `wd_keepalive` absent using the native status commands in section 3.3.
+5. VERIFY full watchdog active and `wd_keepalive` absent through executable-based process checks.
+
+   ```bash
+   start-stop-daemon --status --exec /usr/sbin/watchdog
+   echo "$?"  # Required result: 0.
+   start-stop-daemon --status --exec /usr/sbin/wd_keepalive
+   echo "$?"  # Required result: 3.
+   ```
+
+   Native init status can accept a stale PID for another executable. Its message alone cannot prove feeder state.
 6. ***if*** you requested normal mode ***then***
    1. **6.1** VERIFY the saved decision shows `latch=normal` and `phase=idle` after successful startup.
 
@@ -448,6 +457,8 @@ RAOM validates exact arguments, root access, the lock, and the current-boot sele
 Same-mode, missing, stale, or corrupt selections reject the request. Neither direction waits for NTP synchronization.
 RAOM verifies and syncs the private request before calling `/sbin/shutdown -r now`.
 A definite reboot rejection restores the prior decision. A matching retry uses the original counter boundary. A conflicting pending request fails.
+On retry, an earlier request can still be active even if the retry returns `switch_save_failed`.
+Check the actual boot ID and the decision's `phase` before another retry. A failed retry does not cancel an accepted reboot.
 
 The destination uses its first observation and native boot accounting. Rotation, missing records, or an intervening boot can prevent attribution.
 An ambiguous submission cannot exempt a reset. If a normal request boots into safe, read the stored reason before requesting recovery again.
@@ -471,7 +482,7 @@ An ambiguous submission cannot exempt a reset. If a normal request boots into sa
 | 8 | `running_profile_mismatch` / `running_profile_unverified` | Existing MONIT does not prove selected profile identity. Inspect PID and command line. |
 | 9 | `keepalive_unavailable` / `watchdog_stop_unverified` | Feeder handoff failed. Hardware feeding needs verification through native process evidence. |
 | 10 | `switch_source_invalid` / `switch_pending` | Inspect current selection and pending request. Only a matching pending request permits a retry. |
-| 11 | `recovery_counter_unavailable` / `switch_save_failed` | Recovery could not capture the counter or persist the request. RAOM refuses reboot. |
+| 11 | `recovery_counter_unavailable` / `switch_save_failed` | Initial capture or request-save failure submits no reboot. After a retry failure, inspect boot ID and request phase. An earlier accepted reboot can still occur. |
 | 12 | `reboot_submission_failed` / `reboot_confirmation_save_failed` | Check actual boot and request state before retry. Submission can be uncertain. |
 | 13 | `decision_storage_unavailable` / `safe_latch_save_failed` | Private decision storage blocked the request or selection. |
 | 14 | `watchdog_start_failed` / `recovery_completion_failed` | Startup or completion failed. Inspect both feeders and the current selection. |

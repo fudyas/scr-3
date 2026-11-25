@@ -37,7 +37,8 @@ A timeout records a decision error. Persistent safe mode skips this readiness wa
 
 Mode and selected profile path remain fixed during current boot. Repeated starts and restarts reuse selection. Root can request the opposite mode through `scr-raom switch safe` or `scr-raom switch normal`. Exit 0 confirms reboot submission.
 MONIT validates selected profile before launch. Failed safe-profile startup never selects normal profile as fallback.
-Normal recovery requires a fresh, durable pre-reboot BMC acknowledgment. RAOM refuses reboot if capture or request storage fails.
+Normal recovery requires a fresh, durable pre-reboot BMC acknowledgment. Initial capture or request-save failure submits no reboot.
+A failed retry does not cancel an earlier accepted request. Inspect the actual boot ID and private request phase before retrying.
 Either identified switch exempts exactly +1. A larger increase counts in full. Ordinary reboots retain their resets.
 Incomplete reboot evidence gives no exemption. When timing cannot decide the window, the configured error policy applies.
 
@@ -85,6 +86,7 @@ These root commands read selection and process state.
 
 `/usr/bin/scr-raom --help` shows supported arguments without root or service access.
 `/etc/init.d/monit syntax` validates existing selected profile without starting daemon.
+Native feeder status can accept stale PID files. Recovery verification requires executable-based checks from the [operator guide](../src/tools/raom/README.md#341-switch-modes-by-reboot).
 
 The safe sample contains no normal-profile includes or reboot recovery handlers. Client must supply required production safe services and their MONIT definitions.
 RAOM clears safe after it verifies the current normal decision, the exact MONIT daemon, the full watchdog as sole feeder, and the completion save.
