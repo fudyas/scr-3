@@ -21,11 +21,12 @@ function expect() {
 }
 
 # Sets ordinary client policy inside the overlay.
-# Arguments: $1 - maximum eligible resets; $2 - window seconds. Returns: write status.
+# Arguments: $1 - maximum eligible resets; $2 - window seconds; $3 - safe on error (default true).
+# Returns: status of configuration write.
 # Output: six policy fields in the installed client configuration file.
 function configure() {
-    printf 'MAX_RESETS=%s\nRESET_WINDOW_SECONDS=%s\nNTP_SYNC_TIMEOUT_SECONDS=3\nSAFE_MODE_ON_ERROR=true\nSAFE_PROFILE=/etc/monit/raom/safe.monitrc\nNORMAL_PROFILE=%s/normal.monitrc\n' \
-        "$1" "$2" "$FIXTURE" >/etc/default/scr-raom
+    printf 'MAX_RESETS=%s\nRESET_WINDOW_SECONDS=%s\nNTP_SYNC_TIMEOUT_SECONDS=3\nSAFE_MODE_ON_ERROR=%s\nSAFE_PROFILE=/etc/monit/raom/safe.monitrc\nNORMAL_PROFILE=%s/normal.monitrc\n' \
+        "$1" "$2" "${3:-true}" "$FIXTURE" >/etc/default/scr-raom
 }
 
 # Checks the same PID file and executable that native init uses.
@@ -154,23 +155,11 @@ function recovery() {
     done
 }
 
-# Exercises one kernel-isolated boot of the disposable, dpkg-installed scenario.
-# Arguments: $1 - boot number 1..5; $2 - recovery delta 1 or 2. Returns: 0 or exits 1.
-# Output: expected/observed evidence and simulated shutdown accounting for ordinary reboots.
-function main() {
-    local boot=${1:-} delta=${2:-}
-    [[ "$boot" =~ ^[1-5]$ && "$delta" =~ ^[12]$ ]] || fail 'requires isolated boot runner'
-    export LC_ALL=C PATH=/usr/sbin:/usr/bin:/sbin:/bin
-    umask 077
-    FIXTURE=/opt/scr-raom-integration TRACE=/run/scr-raom-integration DECISION=/var/lib/scr-raom/decision
-    DATA="$TRACE/boot-$boot"
-    printf -v BOOT_ID '00000000-0000-0000-0000-%012d' "$boot"
-    [[ "$(dpkg-query -W -f='${Version}' watchdog)" = '0~scr-integration' &&
-       "$(dpkg-query -S /sbin/shutdown)" = 'watchdog: /sbin/shutdown' &&
-       "$(< /proc/sys/kernel/random/boot_id)" = "$BOOT_ID" && ! -e /dev/watchdog &&
-       ! -e /run/scr-raom && ! -e /run/monit.pid ]] || fail 'private fixture boot prerequisites'
-    mkdir "$DATA" && mkdir -p /var/lib/monit || fail 'boot evidence directory'
-    "$FIXTURE/account" reboot || fail 'simulated boot wtmp'
+# Exercises one boot with known switch endpoints.
+# Arguments: $1 - boot number; $2 - recovery delta 1 or 2. Returns: 0 or exits 1.
+# Output: installed command results and raw switch evidence.
+function delta_boot() {
+    local boot=$1 delta=$2
     local threshold=$((delta - 1))
     case "$boot" in
     1)
@@ -191,17 +180,49 @@ function main() {
         rm "$TRACE/unsynchronized" || fail 'restore synchronized NTP' ;;
     4) recovery "$delta" ;;
     5)
+        if [ "$delta" = 2 ]; then
+            persistent_safe
+            return
+        fi
         printf '102\n' >"$TRACE/boot-count"
         select_mode_check safe threshold_exceeded
         grep -F "\"boot_id\":\"$BOOT_ID\"" /var/log/scr/resets.jsonl | grep -Fq '"boot_delta":1,' || fail 'ordinary +1 missing from history'
         [ "$(grep -c '^shutdown -r now ' "$TRACE/calls")" = 2 ] || fail 'ordinary reboot credited to switch' ;;
+    esac
+}
+
+# Exercises one kernel-isolated boot of the disposable, dpkg-installed scenario.
+# Arguments: $1 - boot number 1..5; $2 - scenario name. Returns: 0 or exits 1.
+# Output: expected/observed evidence and simulated shutdown accounting for ordinary reboots.
+function main() {
+    local boot=${1:-} scenario=${2:-}
+    [[ "$boot" =~ ^[1-5]$ ]] || fail 'requires isolated boot runner'
+    export LC_ALL=C PATH=/usr/sbin:/usr/bin:/sbin:/bin
+    umask 077
+    FIXTURE=/opt/scr-raom-integration TRACE=/run/scr-raom-integration DECISION=/var/lib/scr-raom/decision
+    DATA="$TRACE/boot-$boot"
+    printf -v BOOT_ID '00000000-0000-0000-0000-%012d' "$boot"
+    [[ "$(dpkg-query -W -f='${Version}' watchdog)" = '0~scr-integration' &&
+       "$(dpkg-query -S /sbin/shutdown)" = 'watchdog: /sbin/shutdown' &&
+       "$(< /proc/sys/kernel/random/boot_id)" = "$BOOT_ID" && ! -e /dev/watchdog &&
+       ! -e /run/scr-raom && ! -e /run/monit.pid ]] || fail 'private fixture boot prerequisites'
+    mkdir "$DATA" && mkdir -p /var/lib/monit || fail 'boot evidence directory'
+    "$FIXTURE/account" reboot || fail 'simulated boot wtmp'
+    # shellcheck source=/dev/null
+    source "$FIXTURE/uncertainty.sh" || fail 'load endpoint scenarios'
+    case "$scenario" in
+    delta-[12]) delta_boot "$boot" "${scenario#delta-}" ;;
+    missing-safe|missing-normal|failed-start) uncertainty_boot "$boot" "$scenario" ;;
+    *) fail "unknown scenario: $scenario" ;;
     esac
 
     expect stop 0 /etc/init.d/scr-raom stop
     expect gap-keepalive 0 start-stop-daemon --status --exec /usr/sbin/wd_keepalive
     expect gap-watchdog-absent 3 start-stop-daemon --status --exec /usr/sbin/watchdog
     expect health-after-stop 1 /sbin/monit-status.sh
-    case "$boot" in 2|4) "$FIXTURE/account" shutdown || fail 'ordinary shutdown wtmp' ;; esac
+    if ! grep -Fxq "shutdown -r now $BOOT_ID" "$TRACE/calls"; then
+        "$FIXTURE/account" shutdown || fail 'ordinary shutdown wtmp'
+    fi
     utmpdump /var/log/wtmp >"$DATA/wtmp.txt" || fail 'retain accounting'
 }
 

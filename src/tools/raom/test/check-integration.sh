@@ -18,6 +18,7 @@ function build_fixtures() {
     printf 'Package: watchdog\nVersion: 0~scr-integration\nArchitecture: amd64\nMaintainer: SCR <test@localhost>\nDescription: Disposable RAOM integration dependencies and simulated feeders\n' >"$stage/DEBIAN/control"
     install -m 0755 "$inputs"/{sema,ntpq} "$stage/usr/bin/" &&
         install -m 0755 "$inputs"/{run.sh,account,wd_keepalive} "$stage$FIXTURE/" &&
+        install -m 0644 "$inputs/uncertainty.sh" "$stage$FIXTURE/" &&
         install -m 0600 "$inputs/normal.monitrc" "$stage$FIXTURE/" &&
         install -m 0755 "$inputs/shutdown" "$stage/sbin/shutdown" &&
         install -m 0755 "$inputs/monit-status.capture" "$stage/sbin/monit-status.sh" || fail 'fixture payload'
@@ -40,10 +41,10 @@ function build_fixtures() {
 }
 
 # Runs one simulated boot in fresh PID, mount, and network namespaces.
-# Arguments: $1 - writable scenario root; $2 - boot number; $3 - recovery delta.
+# Arguments: $1 - writable scenario root; $2 - boot number; $3 - scenario name.
 # Returns: installed runner status. Output: native diagnostics and assertion evidence.
 function boot_main() {
-    local root=$1 boot=$2 delta=$3
+    local root=$1 boot=$2 scenario=$3
     mount --make-rprivate / &&
         mount -t proc -o ro,nosuid,nodev,noexec proc "$root/proc" &&
         mount -t tmpfs -o nosuid,nodev tmpfs "$root/run" || fail 'private boot proc/run'
@@ -53,16 +54,21 @@ function boot_main() {
         mount -o remount,bind,ro "$root/proc/sys/kernel/random/boot_id" || fail 'bind simulated boot inputs'
     # Kernel drops this namespace and its processes when its PID 1 exits.
     setpriv --bounding-set=-sys_boot,-sys_admin,-mknod,-sys_rawio \
-        chroot "$root" /bin/bash "$FIXTURE/run.sh" "$boot" "$delta"
+        chroot "$root" /bin/bash "$FIXTURE/run.sh" "$boot" "$scenario"
 }
 
 # Installs and purges both packages in one scenario overlay on the assigned base.
-# Arguments: $1 - assigned base; $2 - scratch; $3 - application archive; $4 - evidence; $5 - recovery delta.
+# Arguments: $1 - assigned base; $2 - scratch; $3 - application archive; $4 - evidence; $5 - scenario name.
 # Returns: 0 or exits 1. Output: test results, rollback diagnostics, retained scenario evidence.
 function scenario_main() {
-    local base=$1 scratch=$2 deb=$3 evidence=$4 delta=$5
-    local root="$scratch/root" boot last=4 status=0 native=/usr/share/scr-raom/diverted/etc/init.d
-    [ "$delta" = 2 ] || last=5
+    local base=$1 scratch=$2 deb=$3 evidence=$4 scenario=$5
+    local root="$scratch/root" boot last status=0 native=/usr/share/scr-raom/diverted/etc/init.d
+    case "$scenario" in
+    delta-1|delta-2) last=5 ;;
+    missing-normal) last=4 ;;
+    missing-safe|failed-start) last=3 ;;
+    *) fail "unknown scenario: $scenario" ;;
+    esac
     mkdir -p "$root" "$scratch"/{upper,work} || fail 'overlay directories'
     mount --make-rprivate / &&
         mount -t overlay overlay -o "lowerdir=$base,upperdir=$scratch/upper,workdir=$scratch/work" "$root" || fail 'assigned root overlay'
@@ -84,13 +90,13 @@ function scenario_main() {
             # The child Bash expands the positional arguments after namespace creation.
             # shellcheck disable=SC2016
             unshare --mount --pid --net --fork --kill-child bash -c 'source "$1"; shift; boot_main "$@"' _ \
-                "$TEST_DIR/check-integration.sh" "$root" "$boot" "$delta" || { status=1; break; }
+                "$TEST_DIR/check-integration.sh" "$root" "$boot" "$scenario" || { status=1; break; }
         done
     else
         status=1
     fi
     # Preserve partial assertions before rollback. Fresh overlays isolate independent cases.
-    local result="$evidence/delta-$delta"
+    local result="$evidence/$scenario"
     mkdir "$result" && cp -a "$root/var/log/." "$result/" || fail 'retain scenario evidence'
     "${inside[@]}" dpkg --remove scr-raom && "${inside[@]}" dpkg --purge scr-raom || status=1
     cmp -- "$TEST_DIR/fixtures/watchdog.init" "$root/etc/init.d/watchdog" &&
@@ -99,11 +105,11 @@ function scenario_main() {
     "${inside[@]}" dpkg --purge watchdog || status=1
     [[ ! -e "$root/sbin/shutdown" && ! -e "$root/usr/bin/scr-raom" && ! -L "$root/etc/init.d/wd_keepalive" ]] || status=1
     umount "$root"/{var/log,run,proc} && umount "$root" || fail 'unmount scenario root'
-    [ "$status" -eq 0 ] || fail "delta $delta failed; see $result"
-    printf 'PASS delta %s native purge, restored init scripts, overlay unmounted\n' "$delta"
+    [ "$status" -eq 0 ] || fail "$scenario failed; see $result"
+    printf 'PASS %s native purge, restored init scripts, overlay unmounted\n' "$scenario"
 }
 
-# Runs installed integration in two disposable scenarios. Retains exact input bytes.
+# Runs installed integration in fresh disposable overlays. Retains exact input bytes.
 # Arguments: --root DIR --deb FILE --tooling DIR --evidence NEW_DIR.
 # Returns: 0 pass, 1 on failed prerequisite, scenario, or cleanup. Output: retained transcript.
 function main() {
@@ -128,17 +134,18 @@ function main() {
     [[ -f "$DEB" && -d "$TOOLING/target-root" && "$EVIDENCE" = /* && ! -e "$EVIDENCE" ]] || fail 'archive, tooling and new absolute evidence path required'
     mkdir -p "$EVIDENCE" || fail 'evidence directory'
     exec > >(tee "$EVIDENCE/transcript.log") 2>&1
-    local delta status=0
+    local scenario status=0
     SCRATCH=$(mktemp -d -- "${assigned%/*}/ITM-0008-installed.XXXXXXXX") || fail 'scratch directory'
     trap 'rm -rf --one-file-system -- "$SCRATCH" || exit 1' EXIT
     install -m 0644 "$DEB" "$EVIDENCE/scr-raom_1.1.1_all.deb" && cmp "$DEB" "$EVIDENCE/scr-raom_1.1.1_all.deb" || fail 'retain exact candidate'
     DEB="$EVIDENCE/scr-raom_1.1.1_all.deb"
     build_fixtures "$SCRATCH/stage"
-    for delta in 1 2; do
+    for scenario in delta-1 delta-2 missing-safe missing-normal failed-start; do
+        printf '\nScenario %s\n' "$scenario"
         # The child Bash expands the positional arguments after namespace creation.
         # shellcheck disable=SC2016
         unshare --mount --pid --net --fork --kill-child bash -c 'source "$1"; shift; scenario_main "$@"' _ \
-            "$TEST_DIR/check-integration.sh" "$ROOT" "$SCRATCH/$delta" "$DEB" "$EVIDENCE" "$delta" || status=1
+            "$TEST_DIR/check-integration.sh" "$ROOT" "$SCRATCH/$scenario" "$DEB" "$EVIDENCE" "$scenario" || status=1
     done
     [ "$status" -eq 0 ] || fail "installed scenario failed; see $EVIDENCE"
     printf 'PASS V10 installed recovery. Simulated BMC, NTP, boot IDs, shutdown, wtmp and feeders.\n'
