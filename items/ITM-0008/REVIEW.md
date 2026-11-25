@@ -27,3 +27,11 @@ This review holds the user's decisions on this item. Where a decision disagrees 
    > - RAOM safe/normal mode switching (mode.sh instead of decision.sh, merge in switch.sh)
    > - subcommands execution (time bounded, redirected, etc) - should go into the generic run.sh 
    > - monit profiles
+
+## D-03 — Function names identify domain, action and object
+
+1. **Overrides:** D-01/D-02 function names in RAOM runtime modules and the new shared execution helper. Update corresponding imports, callers, package callbacks, tests and documentation. Behavior remains unchanged.
+2. **Decision:** Name functions `<domain>_<verb>_<noun>`. The domain is the module filename, the verb states the action, and the noun identifies its object. Rename `valid_profile` in `config.sh` to `config_validate_path`. Record this convention in the Bash styling skill. Keep externally required framework entry-point names where renaming would break the framework interface.
+3. **User wording:**
+
+   > Now you need to improve the functions naming conventions and remember this as bash styling. The functions need to be named as <domain>_<verb>_<noun> where domain is the file name (e.g.: config), verb is what the functions does (e.g: validate) and noun describes the object the verb acts upon (e.g.: path) so config_validate_path now replaces valid_profile in config.sh
