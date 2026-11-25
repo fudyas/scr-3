@@ -337,7 +337,8 @@ function capture_observation() {
     local line
     IFS= read -r line <"$RAOM_OUTPUT" || return 2
     # Also rejects NULs, multiple lines, and incomplete writes.
-    cmp -s -- "$RAOM_OUTPUT" <(printf '%s\n' "$line") && valid_observation "$line" "$RAOM_BOOT" || return 2
+    printf '%s\n' "$line" | cmp -s -- "$RAOM_OUTPUT" - || return 2
+    valid_observation "$line" "$RAOM_BOOT" || return 2
     OBSERVATION=$line
 }
 
@@ -383,8 +384,10 @@ function save_decision() {
     [ ! -f "$path" ] || previous=$(<"$path") || return 2
     serialized=$(decision_record) || return 2
     RAOM_TEMP=$(mktemp "$RAOM_DECISION_DIR/.decision.XXXXXXXX") || return 2
-    printf '%s\n' "$serialized" >"$RAOM_TEMP" && state_file "$RAOM_TEMP" && sync_path "$RAOM_TEMP" &&
-        cmp -s -- "$RAOM_TEMP" <(printf '%s\n' "$serialized") || return 2
+    printf '%s\n' "$serialized" >"$RAOM_TEMP" && state_file "$RAOM_TEMP" && sync_path "$RAOM_TEMP" || return 2
+
+    # Offline dpkg roots can lack /dev/fd. Compare through stdin before publication.
+    printf '%s\n' "$serialized" | cmp -s -- "$RAOM_TEMP" - || return 2
     mv -fT -- "$RAOM_TEMP" "$path" || return 2
     RAOM_TEMP=
     sync_path "$RAOM_DECISION_DIR" && return 0
@@ -393,8 +396,9 @@ function save_decision() {
     # Restore the prior decision before releasing the service lock.
     if [ -n "$previous" ]; then
         RAOM_TEMP=$(mktemp "$RAOM_DECISION_DIR/.decision.XXXXXXXX") || return 2
-        printf '%s\n' "$previous" >"$RAOM_TEMP" && sync_path "$RAOM_TEMP" &&
-            cmp -s -- "$RAOM_TEMP" <(printf '%s\n' "$previous") && mv -fT -- "$RAOM_TEMP" "$path" || return 2
+        printf '%s\n' "$previous" >"$RAOM_TEMP" && sync_path "$RAOM_TEMP" || return 2
+        printf '%s\n' "$previous" | cmp -s -- "$RAOM_TEMP" - || return 2
+        mv -fT -- "$RAOM_TEMP" "$path" || return 2
         RAOM_TEMP=
     else
         rm -f -- "$path" || return 2
