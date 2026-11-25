@@ -22,6 +22,15 @@
 11. PRESERVE unrelated staged, unstaged, and untracked main edits. Never stash, force, reset hard, or copy those edits into item worktrees.
 12. KEEP retired REQ history and existing artifacts intact. Legacy round commands no longer operate active workflow. Do not convert or resume an old requirement silently.
 
+## Release notes
+
+1. MAINTAIN root `RELEASE-NOTES.md` with brief product-facing delivery summaries for every item, newest release first.
+2. ASSIGN one internal release per item: ITM-0007 is 3.0.1, ITM-0008 is 3.0.2, ITM-0009 is 3.0.3, and continue this mapping until developer changes it.
+3. OMIT SDLC item IDs, chain IDs, ceremony names, and other development-internal conventions from release-note entries.
+4. LABEL unfinished releases Planned. Mark Released only after item completion; describe actual delivered behavior and relevant limitations.
+5. INCLUDE release-note updates in each item's implementation and acceptance. Preserve prior release entries.
+6. KEEP internal release numbering separate from Debian package versions unless developer explicitly requests package-version changes.
+
 ## Remote target access
 
 1. USE repository SSH key `admin/hw_ed25519` for remote hardware access. Never print or copy private key contents into logs or artifacts.
