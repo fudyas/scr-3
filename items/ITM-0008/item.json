@@ -423,10 +423,16 @@
       "host": "8fd23203e4ed",
       "event": "hardware",
       "detail": "{\"required\":true,\"result\":\"pass\",\"package_path\":\"src/pkg/scr-raom_1.1.1_all.deb\",\"promotion_commit\":\"4783cb7b1de34a57f38530654479cbcd581ce5cb\",\"package_sha256\":\"3beea460106a0ac4c29fec9dbf9f30a94b4d6b4a8b97fe6a8db4945cbe3d96b6\",\"image_identity\":\"SCR-7CCC91 at 192.168.68.56; image 8.26.0; filesystem 8.3.1.199\",\"notes\":\"# Developer hardware confirmation — ITM-0008\\n\\n1. Recorded 2026-11-25. Developer accepted reported hardware results and existing NTP caveat.\\n2. Verbatim developer wording:\\n\\n   > 23sec seem acceptable to me with NTP caveat as in README today. Agree ?\\n\\n   > Right, align the code and docs on these and confirm item 8 tested on HW and can be promoted\\n\\n3. Device: SCR-7CCC91, tested at `192.168.68.56`. Image `8.26.0`, filesystem `8.3.1.199`.\\n4. Exact archive: `/home/fudya/devel/scr/.codex/sdlc/artifacts/items/ITM-0008/implementation/ntp-selected-peer/scr-raom_1.1.1_all.deb`.\\n5. Package: `scr-raom` version `1.1.1`. SHA-256: `3beea460106a0ac4c29fec9dbf9f30a94b4d6b4a8b97fe6a8db4945cbe3d96b6`.\\n6. Verified source tree: `ab5042c06a0319dcbf5f68cc6eee726d7cc1e2d1`. INPUT: `e941d5dc8b8bd7727f36a9536de4487f8ae7c6f5d1f63fe0c64f1803cb07839d`.\\n7. Independent QA RESULT: `d10d72007f18825cc2b441e596c14f289df6db06faafef577f67cff3246f0455`.\\n\\n## Procedure and observed results\\n\\n1. Retained procedure: [procedure.md](procedure.md). Full observations: [results.md](results.md). These historical reports remain unchanged.\\n2. Native dpkg installation passed. Policy used `MAX_RESETS=0`, `RESET_WINDOW_SECONDS=900`, `NTP_SYNC_TIMEOUT_SECONDS=60`, and `SAFE_MODE_ON_ERROR=true`.\\n3. Temporary safe profile supervised watchdog and SSH. Production inventory remains client-owned.\\n4. Expected threshold entry, normal recovery, identified switch-reboot exclusion, and subsequent ordinary-reset counting all passed on four actual boots.\\n5. Actual decisions: `21990`, `24170`, `24720`, and `21470` milliseconds. Average `23087.5` milliseconds, rounded `23088` milliseconds.\\n6. Fresh selected NTP peers supplied valid timestamp evidence. No error-policy bypass was used.\\n7. Both modes passed native MONIT health and exclusive full-watchdog checks. Competing keepalive was absent after startup.\\n8. Logs: `install.log`, `boot-1-observed-retry.log`, `boot-2-switch-normal.log`, `boot-2-observed-retry.log`, `boot-3-observed.log`, `boot-4-switch-normal.log`, and `boot-4-observed.log`.\\n9. Native dpkg rollback passed. Latest reset history and original client configuration survived. Legacy `scr-resets-monitor` version `1.0.6` is installed. RAOM is purged.\\n10. Rollback evidence: `rollback.log`, `rollback-boot-observed-retry.log`, and `final-state.tar.gz`. Final baseline boot: `24c65807-1840-4333-9281-defda3ff71f9`.\\n\\n## Code and documentation alignment\\n\\n1. RAOM `src/ntp.sh` and reset-monitor `src/runtime/time.sh` both call shared `ntp_validate_peer` in `src/lib/ntp.sh`.\\n2. README section 2.3 describes the implemented fresh selected `*` peer, stratum, reach, response-age, uncertainty, and clock-jump checks.\\n3. README section 2.2 and shipped defaults agree on the 60-second readiness budget after separately bounded bootstrap.\\n4. README states that MONIT-managed applications and full watchdog checks wait for selection. Keepalive feeds the hardware timer during this interval.\\n5. Persistent safe boots bypass readiness and threshold evaluation. Timeout and unavailable evidence retain configured error policy.\\n6. Code and README already match accepted design. No source or product-document changes required for this follow-up.\\n7. Observed 23-second average is accepted performance, not a startup guarantee. RTC fallback and configurable long-power-off handling remain deferred.\\n\\n## Acceptance limits\\n\\n1. This confirmation accepts reported results for exact package above. It does not claim developer personally executed every command.\\n2. An actual BMC increase greater than one was not induced. Installed fixtures cover the full larger-delta rule.\\n3. Forced watchdog resets and platform-wide application qualification remain outside scope. Earlier NTP failures and historical evidence remain preserved.\\n4. Hardware gate can pass from explicit developer acceptance. This record grants no additional device operations and does not approve or perform promotion.\\n5. Exact-revision SHOW approval and promotion bookkeeping remain coordinator-owned. Release `3.0.2` stays Planned until item completion.\\n\",\"confirmed_at\":\"2026-11-25T10:27:29.843Z\"}"
+    },
+    {
+      "at": "2026-11-25T10:27:46.511Z",
+      "host": "8fd23203e4ed",
+      "event": "task_status",
+      "detail": "TSK-0001, TSK-0002, TSK-0003, TSK-0004, TSK-0005, TSK-0006 -> DONE"
     }
   ],
   "created_at": "2026-11-24T08:27:38.451Z",
-  "updated_at": "2026-11-25T09:42:27.045Z",
+  "updated_at": "2026-11-25T10:27:46.511Z",
   "kind": "improve",
   "idea": "Mint a new SDLC item that:\n- adds the explicit switch to normal mode, can only be launched in safe mode \n- fix the safe profile to watchdog monit and the safe mode services\n\nPrior user context:\nAnother issue: how do I switch back to normal mode and make sure RAOM does not go back to safe mode (since counters/time window didn't change too much)\n\nAdditional user requirement:\nThere should also be an option to switch from normal mode into safe mode\n\nAdditional user ruling:\nThere should be a single 'switch <mode>' command that switches (or rejects the switching) between the modes.\n\nSafe-mode persistence ruling:\n- The 'swithc safe' is invoked by the admin user and should not evaluate RAOM threshold. The system will enter and remain in safe mode until 'switch normal' is invoked.  \n- Clarification: ontky 'switch normal' takes out of the safe mode. Any system reboots occuring in safe mode return to safe mode\n- BOTTOM LINE:\n  - the threshold is checked on every boot BUT\n  - if the system reboots from the safe mode the threshold is ignored and it boots into safe mode until 'switch normal is executed\n  - else it checks if safe/normal mode needs to be entered\n\nReboot clarification:\n1. What \"reject recovery\" means ?\n2. Switching between modes means rebooting the system\n\nDocumentation requirement:\nI want you to update the RAOM readme with the final algorithm, the switching commands and the NTP caveat as part of item 8\n\nRecovery failure ruling:\nAsked: \"If counters cannot be read or saved, should it retain safe mode and refuse reboot?\"\nDeveloper: \"Yes, refuse reboot\"\n\nMode-switch reboot counting ruling:\nConfirm the reboot caused by mode switch IS NOT counted towards resets to check against the threshold UNLESS the counter of BMC resets incrmented by more than 1",
   "status": "REVIEW",
@@ -446,7 +452,7 @@
       "title": "EXPOSE AND APPLY THE RESET ACKNOWLEDGMENT BOUNDARY",
       "depends_on": [],
       "model": "high",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0002": {
       "block": "BLK-0001",
@@ -455,7 +461,7 @@
         "TSK-0001"
       ],
       "model": "high",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0003": {
       "block": "BLK-0001",
@@ -464,7 +470,7 @@
         "TSK-0002"
       ],
       "model": "high",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0004": {
       "block": "BLK-0001",
@@ -473,7 +479,7 @@
         "TSK-0003"
       ],
       "model": "high",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0005": {
       "block": "BLK-0001",
@@ -482,7 +488,7 @@
         "TSK-0004"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "DONE"
     },
     "TSK-0006": {
       "block": "BLK-0001",
@@ -491,7 +497,7 @@
         "TSK-0005"
       ],
       "model": "default",
-      "status": "VALIDATED"
+      "status": "DONE"
     }
   },
   "hardware": {
