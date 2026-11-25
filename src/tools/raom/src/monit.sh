@@ -297,28 +297,36 @@ function monit_client() {
     return 1
 }
 
-# Rejects other daemons using the MONIT executable, including another profile.
+# Rejects persistent extra daemons while allowing MONIT's child to finish exec.
 # Arguments: $1 - verified selected PID. Returns: 0 unique, 2 ambiguous.
-# Output: diagnostics on stderr. Reads proc only; does not signal processes.
+# Output: diagnostics on stderr. Reads proc with up to twenty 0.1-second waits.
+# Does not signal processes or exempt an extra daemon from the final check.
 function unique_monit() {
-    local selected=$1 process found=false
-    for process in "$RAOM_PROC_DIR"/[0-9]*; do
-        [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
-        if [ "${process##*/}" = "$selected" ]; then
-            if monit_client "$process/cmdline"; then
-                raom_error monit_identity_unverified
-                return 2
+    local selected=$1 process found extra attempt
+    for ((attempt = 0; attempt < 20; attempt++)); do
+        found=false extra=false
+        for process in "$RAOM_PROC_DIR"/[0-9]*; do
+            [ "$process/exe" -ef "$RAOM_MONIT_BINARY" ] || continue
+            if [ "${process##*/}" = "$selected" ]; then
+                if monit_client "$process/cmdline"; then
+                    raom_error monit_identity_unverified
+                    return 2
+                fi
+                found=true
+                continue
             fi
-            found=true
-            continue
-        fi
-        # MONIT status and syntax commands can overlap startup. Only an
-        # identified transient command is safe to exclude from this check.
-        [ -r "$process/cmdline" ] && monit_client "$process/cmdline" && continue
-        raom_error monit_identity_unverified
-        return 2
+            [ -r "$process/cmdline" ] && monit_client "$process/cmdline" && continue
+            extra=true
+        done
+        [ "$found" = true ] || break
+        [ "$extra" = true ] || return 0
+
+        # A service-start child briefly shares MONIT's executable and argv.
+        # Retry the evidence; never arm while that ambiguity remains.
+        sleep 0.1 || break
     done
-    [ "$found" = true ] || { raom_error monit_identity_unverified; return 2; }
+    raom_error monit_identity_unverified
+    return 2
 }
 
 # Proves the running instance uses the selected explicit control-file argument.

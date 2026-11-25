@@ -465,6 +465,28 @@ function test_duplicate_monit() {
     [[ ! -e "$WORK/feeding" && -f "$WORK/armed" ]] || fail 'daemon launch left watchdog inactive'
 }
 
+# Allows a forked MONIT child to exec without treating it as a persistent daemon.
+# Arguments: none. Returns: 0 or exits 1. Output: private fixture traces.
+function test_transient_monit_child() {
+    setup
+    expect_status 0 main monit start 2>"$WORK/error"
+    mkdir "$WORK/proc/4243"
+    ln -s "$WORK/monit" "$WORK/proc/4243/exe"
+    cp "$WORK/proc/4242/cmdline" "$WORK/proc/4243/cmdline"
+
+    # Completes the simulated exec on the first bounded identity retry.
+    # Arguments: $1 - 0.1 seconds. Returns: 0 or exits 1. Output: fixture marker.
+    function sleep() {
+        [ "$1" = 0.1 ] || fail 'unexpected identity wait'
+        [ -f "$WORK/armed" ] || fail 'identity retry displaced existing feeder'
+        ln -sf /bin/sh "$WORK/proc/4243/exe"
+        touch "$WORK/child-exec"
+    }
+    expect_status 0 main monit start 2>"$WORK/error"
+    [ -e "$WORK/child-exec" ] || fail 'transient child was ignored without recheck'
+    [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'transient child broke watchdog readiness'
+}
+
 # Checks preselection feeding, stale PID refusal, and indeterminate feeder status.
 # Arguments: none. Returns: 0 or exits 1. Output: fixture state and diagnostics.
 function test_feeder_guards() {
@@ -909,7 +931,7 @@ function test_runlevels_and_sample() {
 function main() {
     local test
     for test in test_boot_and_actions test_launch_failures test_bootstrap_errors test_existing_wrong_profile \
-        test_keepalive_evidence test_operational_recovery test_duplicate_monit test_feeder_guards test_switch_boot_policy test_watchdog_lifecycle test_concurrent_fallback \
+        test_keepalive_evidence test_operational_recovery test_duplicate_monit test_transient_monit_child test_feeder_guards test_switch_boot_policy test_watchdog_lifecycle test_concurrent_fallback \
         test_compatibility test_scheduler_dispatch test_runlevels_and_sample test_native_monit_health; do
         ("$test") || return 1
         printf 'PASS %s\n' "$test"
