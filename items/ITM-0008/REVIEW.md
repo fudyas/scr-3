@@ -14,3 +14,16 @@ This review holds the user's decisions on this item. Where a decision disagrees 
    > - make comments sound more natural/human, less cryptic but still brief enough
    > - make sure src/tools/raom/README.md correctly reflects the design discussed in this session
    > - I still see src/tools/raom/tool.sh uses shebang - no need there and in all other scripts sourced via the entry point script
+
+## D-02 — Functional module boundaries
+
+1. **Overrides:** D-01 module layout for TSK-0002 and TSK-0003, and corresponding TSK-0004 package imports and TSK-0005 documentation. Behavior and acceptance criteria remain unchanged.
+2. **Decision:** Separate configuration I/O and NTP. Use `mode.sh` for RAOM safe/normal selection and switching, replacing `decision.sh` and merging `switch.sh`. Move generic bounded and redirected subcommand execution into shared `src/lib/run.sh`. Keep MONIT profile handling cohesive. Update loaders, package callbacks, tests and README to match.
+3. **User wording:**
+
+   > The code split is still not right, should be
+   > - configuration I/O 
+   > - ntp
+   > - RAOM safe/normal mode switching (mode.sh instead of decision.sh, merge in switch.sh)
+   > - subcommands execution (time bounded, redirected, etc) - should go into the generic run.sh 
+   > - monit profiles
