@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Appends one simulated SysV accounting event with native utmpdump.
+# Arguments: $1 - shutdown or reboot. Returns: 0 on write, 2 on error.
+# Output: updates fixture wtmp. Decoder diagnostics go to stderr.
+function main() {
+    local type
+    case "${1:-}" in shutdown) type=1 ;; reboot) type=2 ;; *) return 2 ;; esac
+    set -o pipefail
+    printf '[%s] [00000] [~~  ] [%-8s] [~           ] [                ] [0.0.0.0        ] [%s]\n' \
+        "$type" "$1" "$(date -u +%Y-%m-%dT%H:%M:%S,000000+00:00)" | utmpdump -r >>/var/log/wtmp
+}
+
+main "$@"

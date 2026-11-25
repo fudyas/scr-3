@@ -1,11 +1,20 @@
 #!/bin/bash
 
-# Rejects all service actions; this fixture exists for real syntax validation only.
-# Arguments: any. Returns: 99. Output: forbidden-action diagnostic on stderr.
-# Side effects: none; never starts a daemon or accesses watchdog devices.
+# Starts one harmless feeder process using the private copy of Bash invoked by native init.
+# Arguments: none. Returns: 0 after PID publication, 1 on fixture failure.
+# Output: no stdout. Records feeder identity and PID. Never opens a hardware device.
 function main() {
-    printf 'forbidden integration service action: wd_keepalive %s\n' "$*" >&2
-    return 99
+    local binary name fifo
+    binary=$(readlink "/proc/$$/exe") || return 1
+    case "$binary" in /usr/sbin/watchdog|/usr/sbin/wd_keepalive) ;; *) return 1 ;; esac
+    name=${binary##*/}
+    fifo=/run/$name.fifo
+    [ -p "$fifo" ] || mkfifo -m 0600 "$fifo" || return 1
+    # The shell blocks on its own FIFO. Its executable stays distinct for native PID checks.
+    ( exec 3<>"$fifo" && IFS= read -r _ <&3 ) </dev/null >/dev/null 2>&1 &
+    local pid=$!
+    printf '%s\n' "$pid" >"/run/$name.pid" &&
+        printf '%s pid=%s\n' "$name" "$pid" >>/run/scr-raom-integration/calls
 }
 
 main "$@"
