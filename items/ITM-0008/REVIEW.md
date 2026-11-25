@@ -35,3 +35,12 @@ This review holds the user's decisions on this item. Where a decision disagrees 
 3. **User wording:**
 
    > Now you need to improve the functions naming conventions and remember this as bash styling. The functions need to be named as <domain>_<verb>_<noun> where domain is the file name (e.g.: config), verb is what the functions does (e.g: validate) and noun describes the object the verb acts upon (e.g.: path) so config_validate_path now replaces valid_profile in config.sh
+
+## D-04 — Selected NTP peer readiness and hardware retest
+
+1. **Overrides:** Strict leap_none/sync_ntp-only readiness used by RAOM. Update affected reset-clock validation consistently where necessary for the requested selected-peer behavior. Preserve conservative reset-window arithmetic and independent malformed, stale and clock-jump protections.
+2. **Decision:** Accept a selected NTP peer marked `*`, matching the target's existing clock-sync script. Build the revised Debian package and retest on authorized target192.168.68.56 using admin/hw_ed25519. Do not copy operational runtime scripts manually.
+3. **Deferred direction:** If this does not resolve the boot bottleneck, return to RTC-backed decisions. That design must support configurable safe entry after excessive power-off duration. No RTC fallback or new duration policy is implemented by this readiness change.
+4. **User wording:**
+
+   > First adjust RAOM to accept NTP * records and retest. Next, if does not help we will get back to my idea. As for long power-offs - the easiest is to enter safe mode if the power off is too long (configurable)
