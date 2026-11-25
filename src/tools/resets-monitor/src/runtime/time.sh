@@ -14,13 +14,13 @@ function ceil_milliseconds() {
 }
 
 # Extracts the observed NTP health fields without evaluating their contents.
-# Arguments: $1 - ntpq output. Returns: 0 or 2. Output: OBS clock fields.
-function parse_clock_health() {
-    local text="$1" name pattern value delay dispersion offset tc reference clock age uncertainty
-    [[ "$text" =~ (^|[[:space:],])leap_none, ]] || return 2
-    [[ "$text" =~ (^|[[:space:],])sync_ntp, ]] || return 2
+# Arguments: $1 - ntpq rv output; $2 - ntpq -pn output. Returns: 0 or 2.
+# Output: none. Sets OBS clock fields only after selected-peer and uncertainty checks pass.
+function time_parse_health() {
+    local text="$1" name pattern value delay dispersion offset peer_delay peer_offset jitter uncertainty
+    ntp_validate_peer "$2" || return 2
     local -A values=()
-    for name in rootdelay rootdisp offset tc reftime clock; do
+    for name in rootdelay rootdisp offset; do
         pattern="(^|[[:space:],])$name=([^,[:space:]]+)"
         [[ "$text" =~ $pattern ]] || return 2
         value=${BASH_REMATCH[2]}
@@ -35,17 +35,15 @@ function parse_clock_health() {
     dispersion=$NUMBER
     ceil_milliseconds "${values[offset]}" || return 2
     offset=$NUMBER
-    parse_uint "${values[tc]}" 17 || return 2
-    tc=$NUMBER
-    [[ "${values[reftime]}" =~ ^[0-9a-fA-F]{8}\.[0-9a-fA-F]{8}$ ]] || return 2
-    [[ "${values[clock]}" =~ ^[0-9a-fA-F]{8}\.[0-9a-fA-F]{8}$ ]] || return 2
-    reference=${values[reftime]%%.*}
-    reference=$((16#$reference))
-    clock=${values[clock]%%.*}
-    clock=$((16#$clock))
-    age=$(((clock - reference + 4294967296) % 4294967296))
-    [[ "$reference" -ne 0 ]] && [[ "$age" -le "$((4 * (1 << tc)))" ]] || return 2
-    uncertainty=$(((dispersion + (delay + 1) / 2 + offset + 999) / 1000 + 1))
+    # System status can lag peer selection. Keep its uncertainty, but measure
+    # freshness from the selected peer and include that peer's current error.
+    ceil_milliseconds "$NTP_PEER_DELAY" || return 2
+    peer_delay=$NUMBER
+    ceil_milliseconds "$NTP_PEER_OFFSET" || return 2
+    peer_offset=$NUMBER
+    ceil_milliseconds "$NTP_PEER_JITTER" || return 2
+    jitter=$NUMBER
+    uncertainty=$(((dispersion + (delay + 1) / 2 + offset + (peer_delay + 1) / 2 + peer_offset + jitter + 999) / 1000 + 1))
     OBS[uncertainty]=$uncertainty
     OBS[clock_valid]=1
     OBS[clock_reason]=synchronized
@@ -54,7 +52,7 @@ function parse_clock_health() {
 # Captures wall/monotonic time and bounded local NTP health.
 # Arguments: none. Returns: 0 or 2. Output: OBS time fields and CLOCK_START.
 function read_clock() {
-    local uptime rest output
+    local uptime rest output peers
     OBS[timestamp]=$(date +%s) || return 2
     parse_uint "${OBS[timestamp]}" 4294967295 || return 2
     IFS=' ' read -r uptime rest </proc/uptime || return 2
@@ -69,11 +67,11 @@ function read_clock() {
     CLOCK_START=${OBS[timestamp]}
     make_temp || return 2
     output=$TEMP_FILE
-    if (
-        ulimit -f 64
-        LC_ALL=C timeout -k 1 2 /usr/bin/ntpq -c 'rv 0' >"$output" 2>/dev/null
-    ); then
-        parse_clock_health "$(<"$output")" || :
+    if LC_ALL=C run_execute_command 2 --capture "$output" /usr/bin/ntpq -pn 2>/dev/null; then
+        peers=$(<"$output")
+        if LC_ALL=C run_execute_command 2 --capture "$output" /usr/bin/ntpq -c 'rv 0' 2>/dev/null; then
+            time_parse_health "$(<"$output")" "$peers" || :
+        fi
     fi
     return 0
 }

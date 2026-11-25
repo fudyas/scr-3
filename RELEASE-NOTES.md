@@ -8,6 +8,8 @@
 
 ## 3.0.1 — Released
 
-1. Configurable reset thresholds, time windows, and error policy select the safe or normal MONIT profile at boot.
-2. One Debian package delivers the RAOM command and reset-history API. Client profiles define supervised services.
-3. RAOM coordinates native watchdog and keepalive handoffs. The supplied safe sample supervises keepalive only.
+1. Select safe or normal mode at startup using configurable reset thresholds, NTP readiness, and error policy.
+2. Start MONIT with the selected service profile. Coordinate watchdog activation and hardware timer feeding during startup and planned MONIT stops.
+3. Deliver RAOM and the reset-history utility in one Debian package, with configuration and operator documentation.
+
+The safe-profile sample in 3.0.1 supervises only `wd_keepalive`; full watchdog protection requires client configuration.

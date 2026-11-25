@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Project integration only. dpkg owns and installs all operational files.
 PKG=scr-raom
 KEEPALIVE=/etc/init.d/wd_keepalive
@@ -208,6 +209,7 @@ function target_ancestry() {
 function legacy_mode() (
     local tools_dir="$ROOT/usr/local/scr/tools/raom" result=0 lock_fd
     source "$tools_dir/etc/raom.conf" || abort 'cannot load previous RAOM configuration'
+    # Version 1.1.0 keeps its selection reader in decision.sh. Its files are still installed during preinst.
     source "$tools_dir/src/decision.sh" || abort 'cannot load previous selection reader'
     RAOM_STATE_DIR="${ROOT%/}$RAOM_STATE_DIR"
     RAOM_BOOT_ID_FILE="${ROOT%/}$RAOM_BOOT_ID_FILE"
@@ -235,33 +237,33 @@ function legacy_mode() (
 function configure_decision() (
     local mode=normal tools_dir="$ROOT/usr/local/scr/tools"
     umask 077
-    # Use only installed data and decision modules. Never dispatch a runtime command.
-    # shellcheck disable=SC1091
+    # Configure the unpacked state without loading the service or reboot commands.
     source "$tools_dir/resets-monitor/src/runtime/values.sh" || abort 'cannot load value parser'
-    source "$tools_dir/raom/src/decision.sh" || abort 'cannot load decision helpers'
-    source "$tools_dir/raom/tool.sh" || abort 'cannot load RAOM configuration'
+    source "$tools_dir/resets-monitor/src/runtime/history.sh" || abort 'cannot load sync helper'
+    source "$tools_dir/raom/etc/raom.conf" || abort 'cannot load RAOM configuration'
+    source "$tools_dir/raom/src/config.sh" || abort 'cannot load RAOM state helpers'
     if [ "$ROOT" != / ]; then
         # DPKG_ROOT is the trust boundary for an offline install. Runtime normally sees /.
         # Arguments: $1 - private directory. Returns: 0 trusted, 2 unsafe. Output: none.
-        function trusted_ancestry() { target_ancestry "$1"; }
+        function config_validate_ancestry() { target_ancestry "$1"; }
         RAOM_DECISION_DIR="$ROOT$RAOM_DECISION_DIR"
     fi
-    trusted_ancestry "$RAOM_DECISION_DIR" || abort 'unsafe decision directory'
+    config_validate_ancestry "$RAOM_DECISION_DIR" || abort 'unsafe decision directory'
     if [ -e "$RAOM_DECISION_DIR/decision" ] || [ -L "$RAOM_DECISION_DIR/decision" ]; then
-        load_decision || abort 'established decision unavailable'
+        config_load_decision || abort 'established decision unavailable'
         return 0
     fi
     [ -f "$ROOT$PENDING_INIT" ] || abort 'established decision unavailable'
-    state_file "$ROOT$PENDING_INIT" || abort 'unsafe pending initialization'
+    config_validate_file "$ROOT$PENDING_INIT" || abort 'unsafe pending initialization'
     mode=$(<"$ROOT$PENDING_INIT")
     [[ "$mode" = safe || "$mode" = normal ]] || abort 'invalid pending initialization'
     if [ -d "$RAOM_DECISION_DIR" ]; then
-        decision_storage || abort 'unsafe partial decision directory'
+        config_validate_storage || abort 'unsafe partial decision directory'
     else
         mkdir -m 0700 -- "$RAOM_DECISION_DIR" || abort 'cannot create decision directory'
     fi
-    if ! initialize_decision "$mode"; then
-        raom_cleanup
+    if ! config_initialize_decision "$mode"; then
+        config_remove_scratch
         rmdir -- "$RAOM_DECISION_DIR" 2>/dev/null || :
         abort 'cannot initialize decision'
     fi

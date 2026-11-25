@@ -44,7 +44,7 @@ function sleep() {
     local seconds=${1%%.*} fraction=${1#*.}
     fraction=${fraction}00
     fraction=${fraction:0:2}
-    read_monotonic || fail 'fixture clock'
+    ntp_read_clock || fail 'fixture clock'
     RAOM_NOW=$((RAOM_NOW + 10#$seconds * 100 + 10#$fraction))
     printf '%d.%02d 0.00\n' "$((RAOM_NOW / 100))" "$((RAOM_NOW % 100))" >"$WORK/uptime"
 }
@@ -52,13 +52,8 @@ function sleep() {
 # Loads production functions without dispatch and creates isolated executable fixtures.
 # Arguments: none. Returns: 0 or exits 1. Output: WORK and fixture files.
 function setup() {
-    source "$RAOM_HOME/../../lib/log.sh" || fail 'shared logger'
-    source "$RAOM_HOME/../../lib/run.sh" || fail 'shared root helper'
+    source "$RAOM_HOME/../../bin/src-raom" || fail 'RAOM entry point'
     log_colors ''
-    source "$RAOM_HOME/../resets-monitor/src/runtime/values.sh" || fail 'values'
-    source "$RAOM_HOME/src/decision.sh" || fail 'decision'
-    source "$RAOM_HOME/src/monit.sh" || fail 'MONIT adapter'
-    source "$RAOM_HOME/tool.sh" || fail 'command layer'
     WORK=$(mktemp -d) || fail 'scratch'
     trap 'if [ "$?" -ne 0 ] && [ -f "$WORK/error" ]; then cat "$WORK/error" >&2; fi; chmod -R u+rwX "$WORK"; rm -rf -- "$WORK"' EXIT
     export LC_ALL=C
@@ -67,7 +62,7 @@ function setup() {
     fixture_paths
     fixture_monit_paths
     mkdir -m 0700 "$RAOM_DECISION_DIR" || fail 'private decision directory'
-    initialize_decision normal || fail 'initial decision'
+    config_initialize_decision normal || fail 'initial decision'
     cp "$RAOM_DECISION_DIR/decision" "$WORK/fresh-decision" || fail 'fresh fixture baseline'
     : >"$RAOM_WTMP"
     # Allows private fixtures without real root authority.
@@ -140,7 +135,7 @@ ntp:start)
 ntpq:*)
     [ -f "$fixture/feeding" ] && [ ! -f "$fixture/running" ] || exit 2
     [ ! -f "$fixture/ntp-unready" ] || exit 1
-    printf 'status=0615 leap_none, sync_ntp, 1 event, clock_sync,\n'
+    printf '*64.176.167.142 194.27.222.5 2 u 4 64 377 3.708 0.520 0.986\n'
     ;;
 api:record)
     [ "$2" = --print-observation ] || exit 2
@@ -213,21 +208,21 @@ function boot_again() {
 # Arguments: none. Returns: 0 or exits 1. Output: assertions and captured diagnostics.
 function test_boot_and_actions() {
     setup
-    expect_status 0 main monit start >"$WORK/result" 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start >"$WORK/result" 2>"$WORK/error"
     [ ! -s "$WORK/result" ] || fail 'native action polluted stdout'
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/safe" ] || fail 'safe CLI pointer'
-    [ "$(sed -n '3,6p' "$WORK/events")" = $'rsyslog start\nntp start\nntpq -c rv 0\napi check --max-resets 5 --window 900' ] || fail 'bootstrap/decision order'
+    [ "$(sed -n '3,6p' "$WORK/events")" = $'rsyslog start\nntp start\nntpq -pn\napi check --max-resets 5 --window 900' ] || fail 'bootstrap/decision order'
     awk '/^ssd --start / { launch=NR } /^ssd --status --pidfile / && !armed { ready=NR }
          /^watchdog start$/ { armed=NR } END { exit !(launch && launch < ready && ready < armed) }' \
         "$WORK/events" || fail 'watchdog armed before MONIT process verification'
     printf '0\n' >"$WORK/api-status"
-    expect_status 0 main monit start 2>"$WORK/error"
-    expect_status 0 main watchdog start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog start 2>"$WORK/error"
     [ "$(grep -cx 'watchdog start' "$WORK/events")" -eq 1 ] || fail 'duplicate native watchdog start'
     [ "$(wc -l <"$WORK/launches")" -eq 1 ] || fail 'second daemon launched'
-    expect_status 0 main monit reload 2>"$WORK/error"
-    expect_status 0 main monit restart 2>"$WORK/error"
-    expect_status 0 main monit force-reload 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit reload 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit restart 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit force-reload 2>"$WORK/error"
     [ "$(grep -c '^api ' "$WORK/events")" -eq 1 ] || fail 'same boot API reevaluated'
     [ "$(grep -c '^ntp start' "$WORK/events")" -eq 1 ] || fail 'same boot NTP restarted'
     [ "$(grep -c '^logger ' "$WORK/events")" -eq 1 ] || fail 'cached service action emitted decision timing'
@@ -236,17 +231,17 @@ function test_boot_and_actions() {
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'safe watchdog handoff'
     grep '^ssd --start' "$WORK/events" | grep -v -- "-c $WORK/safe$" && fail 'safe launch bypassed profile'
     boot_again 2
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     grep -qx reason=persistent_safe "$WORK/run/selection" || fail 'threshold-safe boot did not persist'
     [ "$(grep -c '^api check' "$WORK/events")" -eq 1 ] || fail 'persistent safe rechecked threshold'
-    expect_status 0 main switch normal 2>"$WORK/error"
+    expect_status 0 tool_execute_command switch normal 2>"$WORK/error"
     boot_again 3
     printf '101\n' >"$WORK/counter"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/normal" ] || fail 'normal profile not retained'
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'normal watchdog handoff'
     grep -qx latch=normal "$RAOM_DECISION_DIR/decision" || fail 'operational recovery incomplete'
-    expect_status 0 main monit reload 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit reload 2>"$WORK/error"
     [ -f "$WORK/health/bserv_health.txt" ] || fail 'native normal reload health behavior lost'
 }
 
@@ -266,13 +261,13 @@ function test_launch_failures() {
             publication)
                 # Simulates interrupted pointer publication without changing decision writes.
                 # Arguments: none. Returns: 2. Output: none.
-                function publish_monit_profile() { return 2; }
+                function profile_publish_pointer() { return 2; }
                 ;;
             start) touch "$WORK/start-fail" ;;
             keepalive) rm "$WORK/feeding"; touch "$WORK/keepalive-fail" ;;
             options) printf 'START=yes\nMONIT_OPTS="-c /normal/bypass"\n' >"$WORK/defaults" ;;
             esac
-            expect_status 2 main monit start >"$WORK/result" 2>"$WORK/error"
+            expect_status 2 tool_execute_command monit start >"$WORK/result" 2>"$WORK/error"
             [ ! -s "$WORK/result" ] || fail "$failure returned success data"
             [ ! -f "$WORK/running" ] || fail "$failure launched a daemon"
             [ -s "$WORK/error" ] || fail "$failure lost diagnostic"
@@ -293,14 +288,14 @@ function test_launch_failures() {
 function test_bootstrap_errors() {
     setup
     touch "$WORK/ntp-fail"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     grep -qx reason=ntp_start_failed "$WORK/run/selection" || fail 'native bootstrap error hidden'
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/safe" ] || fail 'bootstrap true policy'
     rm -rf "$WORK/run"
     rm "$WORK/running"
     sed -i 's/SAFE_MODE_ON_ERROR=true/SAFE_MODE_ON_ERROR=false/' "$WORK/config"
     cp "$WORK/fresh-decision" "$RAOM_DECISION_DIR/decision" || fail 'independent error policy'
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/normal" ] || fail 'bootstrap false policy'
     rm -rf "$WORK/run"
     rm "$WORK/running" "$WORK/ntp-fail"
@@ -308,32 +303,32 @@ function test_bootstrap_errors() {
     printf '800.25 0.00\n' >"$WORK/bootstrap-clock"
     printf '100.25 0.00\n' >"$WORK/uptime"
     touch "$WORK/logger-fail"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ "$(<"$WORK/uptime")" = '801.25 0.00' ] || fail 'NTP_SYNC_TIMEOUT_SECONDS included native bootstrap duration'
     grep -qx reason=ntp_timeout "$WORK/run/selection" || fail 'NTP wait timeout hidden'
     grep -qx 'logger -t scr-raom -- boot_id=11111111-1111-1111-1111-111111111111 mode=normal reason=ntp_timeout decision_ms=701000' "$WORK/events" ||
         fail 'service timing omitted bootstrap or wait'
     grep -q decision_syslog_unavailable "$WORK/error" || fail 'missing syslog failure diagnostic'
     # The actual timeout wrapper remains bounded for an unresponsive harmless child.
-    prepare_state || fail 'bootstrap timeout lock'
-    expect_status 124 native_init 0.05 /bin/sleep 2
+    config_prepare_state || fail 'bootstrap timeout lock'
+    expect_status 124 watchdog_execute_init 0.05 /bin/sleep 2
 }
 
 # Checks an old normal daemon cannot masquerade as a new safe selection.
 # Arguments: none. Returns: 0 or exits 1. Output: captured fixture evidence.
 function test_existing_wrong_profile() {
     setup
-    expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
+    expect_status 0 tool_execute_command select >"$WORK/result" 2>"$WORK/error"
     touch "$WORK/running"
     printf '4242\n' >"$WORK/native/monit.pid"
     printf '%s\0' "$WORK/monit" -c "$WORK/normal" >"$WORK/proc/4242/cmdline"
-    expect_status 2 main monit start >"$WORK/result" 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start >"$WORK/result" 2>"$WORK/error"
     grep -q running_profile_mismatch "$WORK/error" || fail 'wrong-profile start accepted'
     [ ! -e "$WORK/run/monitrc" ] || fail 'failed start published CLI pointer'
-    expect_status 2 main monit reload >"$WORK/result" 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit reload >"$WORK/result" 2>"$WORK/error"
     grep -q running_profile_mismatch "$WORK/error" || fail 'wrong-profile reload accepted'
     [ ! -f "$WORK/launches" ] || fail 'wrong-profile start launched a second daemon'
-    expect_status 0 main monit restart 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit restart 2>"$WORK/error"
     [ "$(wc -l <"$WORK/launches")" -eq 1 ] || fail 'explicit restart failed to replace old instance'
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/safe" ] || fail 'restart did not select safe'
 }
@@ -342,14 +337,14 @@ function test_existing_wrong_profile() {
 # Arguments: none. Returns: 0 or exits 1. Output: private fixture traces.
 function test_keepalive_evidence() {
     setup
-    expect_status 0 main monit start 2>"$WORK/error"
-    expect_status 0 main watchdog start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog start 2>"$WORK/error"
     rm "$WORK/keepalive" "$WORK/keepalive-daemon"
     sed "s|/usr/sbin/wd_keepalive|$WORK/keepalive-daemon|g" \
         "$TEST_DIR/fixtures/wd_keepalive.init" >"$WORK/keepalive"
     chmod 0700 "$WORK/keepalive"
     expect_status 0 "$WORK/keepalive" status
-    expect_status 2 main monit restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit restart 2>"$WORK/error"
     grep -q keepalive_binary_unavailable "$WORK/error" || fail 'missing dependency accepted'
     [[ -f "$WORK/armed" && -s "$WORK/native/monit.pid" ]] || fail 'missing dependency stopped prior feeder'
     grep -q '^watchdog stop$' "$WORK/events" && fail 'watchdog stopped before dependency preflight'
@@ -359,7 +354,7 @@ function test_keepalive_evidence() {
     ln -s native-command "$WORK/keepalive-daemon"
     printf '#!/bin/sh\nexit 0\n' >"$WORK/keepalive"
     expect_status 0 "$WORK/keepalive" status
-    expect_status 2 main monit restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit restart 2>"$WORK/error"
     grep -q watchdog_restored "$WORK/error" || fail 'false healthy handoff failed to restore feeder'
     [[ -f "$WORK/armed" && -s "$WORK/native/monit.pid" && ! -e "$WORK/feeding" ]] ||
         fail 'false healthy status exposed MONIT gap'
@@ -371,12 +366,12 @@ function test_keepalive_evidence() {
 # Arguments: none. Returns: 0 or exits 1. Output: private records and native traces.
 function test_operational_recovery() {
     setup
-    expect_status 0 main monit start 2>"$WORK/error"
-    expect_status 0 main switch normal 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command switch normal 2>"$WORK/error"
     boot_again 2
     printf '101\n' >"$WORK/counter"
     printf '0\n' >"$WORK/api-status"
-    expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
+    expect_status 0 tool_execute_command select >"$WORK/result" 2>"$WORK/error"
     grep -qx mode=normal "$WORK/result" || fail 'recovery selection'
     cp "$RAOM_DECISION_DIR/decision" "$WORK/bound" || fail 'bound decision'
     grep -qx latch=safe "$WORK/bound" || fail 'early latch clearance'
@@ -385,7 +380,7 @@ function test_operational_recovery() {
     local fault
     for fault in start-fail watchdog-start-fail retain-keepalive lose-monit; do
         touch "$WORK/$fault"
-        expect_status 2 main monit start 2>"$WORK/error"
+        expect_status 2 tool_execute_command monit start 2>"$WORK/error"
         cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail "$fault completed recovery"
         [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail "$fault lost fallback feeder"
         rm "$WORK/$fault"
@@ -397,16 +392,16 @@ function test_operational_recovery() {
             [ "${!#}" != "$RAOM_DECISION_DIR/decision" ] || return 1
             command mv "$@"
         }
-        expect_status 2 main monit start 2>"$WORK/error"
+        expect_status 2 tool_execute_command monit start 2>"$WORK/error"
     ) || fail 'completion save status'
     grep -q recovery_completion_save_failed "$WORK/error" || fail 'completion save diagnostic'
     cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'failed save cleared latch'
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'failed save displaced watchdog'
-    expect_status 0 main status >"$WORK/result" 2>"$WORK/error"
-    expect_status 0 main watchdog start 2>"$WORK/error"
+    expect_status 0 tool_execute_command status >"$WORK/result" 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog start 2>"$WORK/error"
     cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'status or feeder callback certified recovery'
     : >"$WORK/events"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     grep -qx latch=normal "$RAOM_DECISION_DIR/decision" || fail 'operational retry failed'
     grep -qx phase=idle "$RAOM_DECISION_DIR/decision" || fail 'operational retry retained request'
     grep -Eq '^(api |ntpq |watchdog start|ssd --start)' "$WORK/events" && fail 'retry repeated decision or launch'
@@ -417,11 +412,11 @@ function test_operational_recovery() {
 # Arguments: none. Returns: 0 or exits 1. Output: private state and feeder traces.
 function test_duplicate_monit() {
     setup
-    expect_status 0 main monit start 2>"$WORK/error"
-    expect_status 0 main switch normal 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command switch normal 2>"$WORK/error"
     boot_again 2
     printf '0\n' >"$WORK/api-status"
-    expect_status 0 main select >"$WORK/result" 2>"$WORK/error"
+    expect_status 0 tool_execute_command select >"$WORK/result" 2>"$WORK/error"
     cp "$RAOM_DECISION_DIR/decision" "$WORK/bound"
     touch "$WORK/running"
     printf '4242\n' >"$WORK/native/monit.pid"
@@ -431,16 +426,16 @@ function test_duplicate_monit() {
     ln -s "$WORK/monit" "$WORK/proc/4243/exe"
     printf '%s\0' "$WORK/monit" -c "$WORK/safe" >"$WORK/proc/4243/cmdline"
 
-    expect_status 2 main monit start 2>"$WORK/error"
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'duplicate daemon cleared safe latch'
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'duplicate daemon armed watchdog'
 
     # A stale selected PID can name a live client instead of a service daemon.
     rm "$WORK/proc/4243/exe"
     printf '%s\0' "$WORK/monit" -c "$WORK/normal" status >"$WORK/proc/4242/cmdline"
-    expect_status 2 main monit start 2>"$WORK/error"
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     cmp -s "$WORK/bound" "$RAOM_DECISION_DIR/decision" || fail 'selected client cleared safe latch'
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'selected client armed watchdog'
 
@@ -448,10 +443,10 @@ function test_duplicate_monit() {
     printf '%s\0' "$WORK/monit" -c "$WORK/normal" >"$WORK/proc/4242/cmdline"
     ln -s "$WORK/monit" "$WORK/proc/4243/exe"
     printf '%s\0' "$WORK/monit" -c "$WORK/safe" status >"$WORK/proc/4243/cmdline"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     grep -qx latch=normal "$RAOM_DECISION_DIR/decision" || fail 'client prevented valid completion'
     printf '%s\0' "$WORK/monit" -c status >"$WORK/proc/4243/cmdline"
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'option value hid daemon'
 
     # With no daemon or PID file, a status client must allow a normal launch.
@@ -460,7 +455,7 @@ function test_duplicate_monit() {
     printf '%s\0' "$WORK/monit" -c "$WORK/safe" status >"$WORK/proc/4243/cmdline"
     local launches
     launches=$(wc -l <"$WORK/launches")
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ "$(wc -l <"$WORK/launches")" -eq "$((launches + 1))" ] || fail 'client prevented daemon launch'
     [[ ! -e "$WORK/feeding" && -f "$WORK/armed" ]] || fail 'daemon launch left watchdog inactive'
 }
@@ -469,7 +464,7 @@ function test_duplicate_monit() {
 # Arguments: none. Returns: 0 or exits 1. Output: private fixture traces.
 function test_transient_monit_child() {
     setup
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     mkdir "$WORK/proc/4243"
     ln -s "$WORK/monit" "$WORK/proc/4243/exe"
     cp "$WORK/proc/4242/cmdline" "$WORK/proc/4243/cmdline"
@@ -482,7 +477,7 @@ function test_transient_monit_child() {
         ln -sf /bin/sh "$WORK/proc/4243/exe"
         touch "$WORK/child-exec"
     }
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ -e "$WORK/child-exec" ] || fail 'transient child was ignored without recheck'
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'transient child broke watchdog readiness'
 }
@@ -492,24 +487,24 @@ function test_transient_monit_child() {
 function test_feeder_guards() {
     setup
     rm "$WORK/feeding"
-    expect_status 0 main keepalive start 2>"$WORK/error"
-    expect_status 0 main keepalive restart 2>"$WORK/error"
-    expect_status 2 main keepalive stop 2>"$WORK/error"
+    expect_status 0 tool_execute_command keepalive start 2>"$WORK/error"
+    expect_status 0 tool_execute_command keepalive restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command keepalive stop 2>"$WORK/error"
     grep -qx 'scr-raom error keepalive_required' "$WORK/error" || fail 'sole feeder stop diagnostic'
     [[ -f "$WORK/feeding" && ! -e "$WORK/run/selection" ]] || fail 'early feeding changed selection'
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     touch "$WORK/unknown-keepalive"
-    expect_status 2 main keepalive restart 2>"$WORK/error"
-    expect_status 2 main monit start 2>"$WORK/error"
-    expect_status 2 main monit stop 2>"$WORK/error"
+    expect_status 2 tool_execute_command keepalive restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit stop 2>"$WORK/error"
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'unknown status displaced full watchdog'
     rm "$WORK/unknown-keepalive"
     printf '4243\n' >"$WORK/native/monit.pid"
-    expect_status 2 main monit start 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start 2>"$WORK/error"
     grep -q monit_identity_unverified "$WORK/error" || fail 'stale PID accepted'
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'stale PID armed'
     [ "$(wc -l <"$WORK/launches")" -eq 1 ] || fail 'stale PID duplicated daemon'
-    expect_status 2 main monit stop 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit stop 2>"$WORK/error"
     grep -q monit_stop_unverified "$WORK/error" || fail 'stale PID reported stopped daemon'
     [ -e "$WORK/running" ] || fail 'stale PID signalled unowned process'
 }
@@ -519,11 +514,11 @@ function test_feeder_guards() {
 function test_switch_boot_policy() {
     setup
     printf '0\n' >"$WORK/api-status"
-    expect_status 0 main monit start 2>"$WORK/error"
-    expect_status 0 main switch safe 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command switch safe 2>"$WORK/error"
     boot_again 2
     : >"$WORK/events"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     grep -qx reason=switch_safe "$WORK/run/selection" || fail 'manual safe entry'
     grep -qx 'api record --print-observation' "$WORK/events" || fail 'missing safe entry endpoint'
     grep -Eq '^(api check|ntpq )' "$WORK/events" && fail 'manual safe evaluated threshold'
@@ -534,14 +529,14 @@ function test_switch_boot_policy() {
     for reason in threshold_exceeded ntp_timeout; do
         boot_again "$boot"
         : >"$WORK/events"
-        expect_status 0 main monit start 2>"$WORK/error"
+        expect_status 0 tool_execute_command monit start 2>"$WORK/error"
         grep -qx reason=persistent_safe "$WORK/run/selection" || fail 'safe latch lost'
         grep -Eq '^(api |ntpq )' "$WORK/events" && fail 'persistent safe evaluated threshold'
-        expect_status 0 main switch normal 2>"$WORK/error"
+        expect_status 0 tool_execute_command switch normal 2>"$WORK/error"
         boot_again "$((boot + 1))"
         printf '1\n' >"$WORK/api-status"
         [ "$reason" != ntp_timeout ] || touch "$WORK/ntp-unready"
-        expect_status 0 main monit start 2>"$WORK/error"
+        expect_status 0 tool_execute_command monit start 2>"$WORK/error"
         grep -qx "reason=$reason" "$WORK/run/selection" || fail "$reason recovery decision"
         grep -qx latch=safe "$RAOM_DECISION_DIR/decision" || fail "$reason cleared latch"
         [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail "$reason safe handoff"
@@ -549,15 +544,15 @@ function test_switch_boot_policy() {
     done
 
     sed -i 's/SAFE_MODE_ON_ERROR=true/SAFE_MODE_ON_ERROR=false/' "$WORK/config"
-    expect_status 0 main switch normal 2>"$WORK/error"
+    expect_status 0 tool_execute_command switch normal 2>"$WORK/error"
     boot_again "$boot"
     touch "$WORK/watchdog-start-fail"
-    expect_status 2 main monit start 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start 2>"$WORK/error"
     grep -qx mode=normal "$WORK/run/selection" || fail 'timeout false policy ignored'
     grep -qx latch=safe "$RAOM_DECISION_DIR/decision" || fail 'failed recovery cleared latch'
     rm "$WORK/watchdog-start-fail"
     boot_again "$((boot + 1))"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     grep -qx reason=persistent_safe "$WORK/run/selection" || fail 'failed operational boot lost safe fallback'
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'failed recovery fallback not protected'
 }
@@ -569,69 +564,69 @@ function test_watchdog_lifecycle() {
     local action action_pid attempt
     touch "$WORK/armed"
     rm "$WORK/feeding"
-    expect_status 2 main select 2>"$WORK/error"
+    expect_status 2 tool_execute_command select 2>"$WORK/error"
     grep -q watchdog_not_idle "$WORK/error" || fail 'standalone selection under active watchdog'
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'preselection handoff'
 
     touch "$WORK/armed"
     rm "$WORK/feeding"
     printf '0\n' >"$WORK/api-status"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'verified MONIT did not arm watchdog'
-    expect_status 0 main watchdog start 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog start 2>"$WORK/error"
     [[ -f "$WORK/armed" && ! -e "$WORK/feeding" ]] || fail 'requested watchdog did not take over'
 
     # An unsuccessful handoff must preserve the current MONIT and restore feeding.
     touch "$WORK/keepalive-fail"
-    expect_status 2 main monit restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit restart 2>"$WORK/error"
     [[ -f "$WORK/armed" && -s "$WORK/native/monit.pid" ]] || fail 'failed handoff lost prior feeder or MONIT'
     grep -q watchdog_restored "$WORK/error" || fail 'missing recovery evidence'
     rm "$WORK/keepalive-fail"
     touch "$WORK/watchdog-stop-fail"
-    expect_status 2 main monit stop 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit stop 2>"$WORK/error"
     [[ -f "$WORK/armed" && -s "$WORK/native/monit.pid" ]] || fail 'masked stop failure exposed PID gap'
     rm "$WORK/watchdog-stop-fail"
 
     # Hold the actual parent lock across a visible PID gap while another process
     # tries to activate the watchdog. Completion alone cannot prove exclusion.
-    expect_status 0 main watchdog force-reload 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog force-reload 2>"$WORK/error"
     touch "$WORK/pause-stop"
     for action in restart stop; do
         rm -f "$WORK/pid-gap"
-        main monit "$action" >"$WORK/action.out" 2>"$WORK/action.err" &
+        tool_execute_command monit "$action" >"$WORK/action.out" 2>"$WORK/action.err" &
         action_pid=$!
         for ((attempt = 0; attempt < 200; attempt++)); do
             [ ! -e "$WORK/pid-gap" ] || break
             /bin/sleep 0.01
         done
         [[ -f "$WORK/pid-gap" && -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail "$action gap unprotected"
-        expect_status 2 main watchdog start 2>"$WORK/error"
+        expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
         grep -q storage_unavailable "$WORK/error" || fail "$action concurrent rearm escaped lock"
         wait "$action_pid" || fail "$action with handoff failed"
     done
     rm "$WORK/pause-stop"
-    expect_status 2 main watchdog restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog restart 2>"$WORK/error"
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" && ! -e "$WORK/native/monit.pid" ]] || fail 'stopped MONIT rearmed'
 
     # An intact PID with a different -c, or an incomplete publication, cannot arm.
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     printf '%s\0' "$WORK/monit" -c "$WORK/safe" >"$WORK/proc/4242/cmdline"
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     grep -q running_profile_mismatch "$WORK/error" || fail 'wrong profile armed'
-    expect_status 0 main monit restart 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit restart 2>"$WORK/error"
     touch "$WORK/watchdog-start-fail"
-    expect_status 2 main watchdog restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog restart 2>"$WORK/error"
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" ]] || fail 'failed activation lost feeding'
     rm "$WORK/watchdog-start-fail" "$WORK/run/monitrc"
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     [ ! -e "$WORK/armed" ] || fail 'unpublished profile armed'
 
-    expect_status 0 main monit start 2>"$WORK/error"
-    expect_status 0 main watchdog start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog start 2>"$WORK/error"
     touch "$WORK/start-fail"
-    expect_status 2 main monit restart 2>"$WORK/error"
-    expect_status 2 main watchdog start 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit restart 2>"$WORK/error"
+    expect_status 2 tool_execute_command watchdog start 2>"$WORK/error"
     [[ -f "$WORK/feeding" && ! -e "$WORK/armed" && ! -e "$WORK/running" ]] || fail 'failed restart lost keepalive'
 }
 
@@ -640,20 +635,20 @@ function test_watchdog_lifecycle() {
 function test_concurrent_fallback() {
     setup
     printf '%s\n' "$BASHPID" >"$WORK/test-pid"
-    main monit start >"$WORK/first-output" 2>"$WORK/first-error" &
+    tool_execute_command monit start >"$WORK/first-output" 2>"$WORK/first-error" &
     local first_pid=$! attempt daemon pid fd
     for ((attempt = 0; attempt < 100; attempt++)); do
         [ ! -f "$WORK/bootstrap-entered" ] || break
         /bin/sleep 0.01
     done
     [ -f "$WORK/bootstrap-entered" ] || fail 'first startup did not acquire gate'
-    expect_status 2 main monit start >"$WORK/result" 2>"$WORK/error"
+    expect_status 2 tool_execute_command monit start >"$WORK/result" 2>"$WORK/error"
     grep -q storage_unavailable "$WORK/error" || fail 'concurrent lock failure hidden'
     wait "$first_pid" || fail 'first startup failed'
 
     # Audit the surviving processes by inode, regardless of descriptor number.
     # Explicit request from a client safe profile exercises the same gate.
-    expect_status 0 main watchdog start 2>"$WORK/error"
+    expect_status 0 tool_execute_command watchdog start 2>"$WORK/error"
     for daemon in ntp ssd watchdog; do
         read -r pid <"$WORK/$daemon.pid" || fail "$daemon descendant PID missing"
         kill -0 "$pid" || fail "$daemon descendant exited"
@@ -661,9 +656,9 @@ function test_concurrent_fallback() {
             [ ! "$fd" -ef "$WORK/run/lock" ] || fail "$daemon descendant retained lock on fd ${fd##*/}"
         done
     done
-    expect_status 0 main status >"$WORK/result" 2>"$WORK/error"
-    expect_status 0 main monit reload 2>"$WORK/error"
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command status >"$WORK/result" 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit reload 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ "$(grep -c '^api ' "$WORK/events")" -eq 1 ] || fail 'concurrent fallback repeated decision'
     [ "$(wc -l <"$WORK/launches")" -eq 1 ] || fail 'concurrent fallback duplicated daemon'
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/safe" ] || fail 'fallback changed safe selection'
@@ -672,12 +667,10 @@ function test_concurrent_fallback() {
 # Writes a standalone fixture driver for the actual scheduler's child processes.
 # Arguments: none. Returns: 0 or exits 1. Output: private selector executable.
 function scheduler_driver() {
-    local helper module
+    local helper
     {
         printf '#!/bin/bash\nWORK=%q\nRAOM_HOME=%q\n' "$WORK" "$RAOM_HOME"
-        for module in "$RAOM_HOME/../../lib/log.sh" "$RAOM_HOME/../../lib/run.sh" "$RAOM_HOME/../resets-monitor/src/runtime/values.sh" "$RAOM_HOME/src/decision.sh" "$RAOM_HOME/src/monit.sh" "$RAOM_HOME/tool.sh"; do
-            printf 'source %q || exit 2\n' "$module"
-        done
+        printf 'source %q || exit 2\n' "$RAOM_HOME/../../bin/src-raom"
         for helper in fixture_paths fixture_monit_paths sleep; do
             printf '# Reuses %s from this test. Arguments/status/output: same helper contract.\n' "$helper"
             declare -f "$helper"
@@ -689,7 +682,7 @@ fixture_monit_paths
 log_colors ''
 # Allows disposable fixture access. Arguments: none. Returns: 0. Output: none.
 function require_root() { return 0; }
-main "$@"
+tool_execute_command "$@"
 DRIVER
     } >"$WORK/selector"
     chmod 0700 "$WORK/selector" || fail 'selector driver'
@@ -867,7 +860,7 @@ FIXTURE
 # Arguments: none. Returns: 0 or exits 1. Output: private process/status fixtures only.
 function test_native_monit_health() {
     setup
-    expect_status 0 main monit start 2>"$WORK/error"
+    expect_status 0 tool_execute_command monit start 2>"$WORK/error"
     [ "$(readlink "$WORK/run/monitrc")" = "$WORK/safe" ] || fail 'health test needs safe profile'
     mkdir "$WORK/bin"
     sed -e "s|/lib/lsb/init-functions|$WORK/lsb|" -e "s|/usr/bin/monit|$WORK/monit|g" \
@@ -907,7 +900,7 @@ else
     exit 0
 fi
 HEALTH
-    prepare_state || fail 'fixture health lock'
+    config_prepare_state || fail 'fixture health lock'
     [ -s "$WORK/native/monit.pid" ] || fail 'watchdog PID check failed'
     PATH="$WORK/bin:$PATH" expect_status 0 bash "$WORK/monit-status.sh"
     rm "$WORK/running" "$WORK/native/monit.pid"

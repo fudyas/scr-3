@@ -11,8 +11,10 @@ description: >-
 # Bash style
 
 1. KEEP implementation simple and minimal. Use direct control flow and small functions with clear responsibilities. Add abstractions only for concrete needs.
-2. REUSE LETS modular structure: thin command entry point, `main`, and focused sourced helpers only where shared behavior needs them. Keep configuration separate. Standalone runtime scripts must not acquire a development LETS dependency for style alone.
+2. REUSE LETS modular structure: thin command entry point, command dispatch, and focused sourced helpers only where shared behavior needs them. Keep configuration separate. Standalone runtime scripts must not acquire a development LETS dependency for style alone.
 3. DECLARE every Bash function with `function name() { ...; }`. Use descriptive names and `local` variables within functions.
+   3.1. NAME functions `<domain>_<verb>_<noun>`. Derive the domain from the module filename without its extension; use underscores for filename hyphens. Use an action verb and name its object. For example, `config_validate_path` replaces `valid_profile` in `config.sh`.
+   3.2. UPDATE callers when moving or renaming functions. Keep names required by an external framework, such as LETS `main`, `lets_info`, and `lets_usage`. Do not add aliases for renamed internal functions.
 4. COMMENT every function directly above its declaration, including entry points and small helpers. State purpose, arguments, exit status, and expected output.
    4.1. DOCUMENT each positional argument, optional argument, and default. State `Arguments: none` when applicable.
    4.2. DISTINGUISH numeric return status from data output. Describe success and failure statuses, stdout, and stderr. State `none` for absent output.
@@ -28,7 +30,7 @@ description: >-
 13. PREFER `[ required_condition ] || abort "specific reason"` for mandatory checks. Reuse LETS `abort` within LETS commands. Standalone scripts use a small equivalent that preserves their documented exit codes and required cleanup. LETS `abort` exits 1 and disables the EXIT trap; do not copy that behavior into a different API blindly.
 14. BORROW LETS logging: named levels, concise messages, and optional timestamp/tag. Reuse existing helpers in LETS commands. Use stdout for human-facing command logs, with explicit stream routing when needed. Keep machine-readable stdout free of log messages; JSON/data commands send diagnostics to stderr or their declared log. Add no logging framework or unused decoration.
 15. FOLLOW LETS discovery and sourcing conventions: `lets_info`, `lets_usage`, and `main` for LETS commands; helpers under `src/` and configuration under `etc/`. Source explicit trusted paths. Keep sourced modules free of automatic work. Preserve the item's required source layout.
-16. FOR project tools, use LETS layout as reference. Keep a thin executable entry point that loads shared `lib/` and tool `src/` modules, then calls a sourced `tool.sh` command layer. Put argument parsing, usage, and command dispatch in `tool.sh`; use `scr_` names for tool metadata such as `scr_info` and `scr_usage`. Do not make the tool module execute itself when sourced.
+16. FOR project tools, use LETS layout as reference. Keep a thin executable entry point that loads shared `lib/` and tool `src/` modules, then calls a sourced `tool.sh` command layer. Put argument parsing, usage, and command dispatch in `tool.sh`. Use names such as `tool_parse_arguments`, `tool_print_usage`, and `tool_execute_command`. Do not make the tool module execute itself when sourced.
 17. KEEP modules cohesive and filenames short. Merge closely related helpers: storage, file, and history operations in `history.sh`; clock and reset-window calculations in `time.sh`. Avoid one-module-per-small-function layouts and remove redundant loader modules when entry points can source modules directly.
 18. LEAVE one blank line between statement blocks that perform separate steps. Keep related statements together.
 19. KEEP tool implementation comments useful and direct. Explain module roles, important code blocks, and function contracts. Do not add comments that repeat syntax or obvious behavior.

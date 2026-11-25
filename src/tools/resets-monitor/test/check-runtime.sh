@@ -247,13 +247,23 @@ function test_concurrency() {
 # Arguments: none. Returns: 0 or exits 1. Output: assertions only.
 function test_clock_and_json() {
     setup
-    local fixture value
+    local fixture peers value alarm uncertainty
     fixture=$(< "$SCRIPT_DIR/fixtures/ntpq-rv.txt")
-    expect_status 0 parse_clock_health "$fixture"
+    peers=$(< "$SCRIPT_DIR/fixtures/ntpq-peers.txt")
+    expect_status 0 time_parse_health "$fixture" "$peers"
     [ "${OBS[clock_valid]}" -eq 1 ] && [ "${OBS[uncertainty]}" -ge 1 ] || fail 'NTP health'
-    expect_status 2 parse_clock_health "${fixture/sync_ntp/sync_unspec}"
-    expect_status 2 parse_clock_health "${fixture/tc=8/tc=7}"
-    expect_status 2 parse_clock_health "${fixture/rootdisp=77.083/rootdisp=nan}"
+    uncertainty=${OBS[uncertainty]}
+    # Peer selection and response age remain useful while system flags/reference lag.
+    alarm=${fixture/leap_none/leap_alarm}
+    alarm=${alarm/clock_sync/no_sys_peer}
+    expect_status 0 time_parse_health "${alarm/tc=8/tc=6}" "$peers"
+    expect_status 2 time_parse_health "$fixture" "${peers/\*/+}"
+    expect_status 2 time_parse_health "$fixture" "${peers/    4 /  257 }"
+    expect_status 0 time_parse_health "$fixture" "${peers/    4 /  256 }"
+    expect_status 2 time_parse_health "${fixture/rootdisp=77.083/rootdisp=nan}" "$peers"
+    expect_status 2 time_parse_health "$fixture, rootdisp=1" "$peers"
+    expect_status 0 time_parse_health "$fixture" "${peers/0.520/5000.520}"
+    [ "${OBS[uncertainty]}" -gt "$uncertainty" ] || fail 'peer offset omitted from uncertainty'
     observation 146
     OBS[cause]=$'quoted "reason" \\ tab\tline\n'
     expect_status 0 build_record
@@ -263,6 +273,65 @@ function test_clock_and_json() {
     expect_status 2 parse_record "${value/\"schema\":1/\"schema\":2}"
     expect_status 2 parse_record "$value"' extra'
     expect_status 2 parse_record "${value/Watchdog/$'bad\ttext'}"$'\t'
+}
+
+# Rejects stale, missing, malformed or ambiguous selected peers.
+# Arguments: none. Returns: 0 or exits 1. Output: assertion diagnostics only.
+function check_runtime_test_peers() {
+    setup
+    local peer='*64.176.167.142 194.27.222.5 2 u 4 64 377 3.708 0.520 0.986' value
+    expect_status 0 ntp_validate_peer "$peer"
+    expect_status 0 ntp_validate_peer "${peer/ u 4 / u 4m }"
+    for value in '-' 5m 1h 1d 257 999999999999999999999; do
+        expect_status 2 ntp_validate_peer "${peer/ u 4 / u $value }"
+    done
+    for value in 0 000 400 888; do
+        expect_status 2 ntp_validate_peer "${peer/ 377 / $value }"
+    done
+    expect_status 2 ntp_validate_peer "${peer/ 64 / 0 }"
+    expect_status 2 ntp_validate_peer "${peer/ 2 u / 16 u }"
+    expect_status 2 ntp_validate_peer "${peer/0.520/nan}"
+    expect_status 2 ntp_validate_peer "${peer/0.986/-0.986}"
+    expect_status 2 ntp_validate_peer "$peer extra"
+    expect_status 2 ntp_validate_peer "$peer"$'\n'"$peer"
+    expect_status 2 ntp_validate_peer 'leap_none, sync_ntp,'
+    expect_status 2 ntp_validate_peer ''
+}
+
+# Exercises both bounded queries without contacting NTP or hardware.
+# Arguments: none. Returns: 0 or exits 1. Output: assertion diagnostics only.
+function check_runtime_test_capture() {
+    setup
+    local query_failure= peer_fixture health_fixture
+    peer_fixture=$(<"$SCRIPT_DIR/fixtures/ntpq-peers.txt")
+    health_fixture=$(<"$SCRIPT_DIR/fixtures/ntpq-rv.txt")
+
+    # Supply captured command output and assert the production command budget.
+    # Arguments: duration, capture flag, file, command and query arguments.
+    # Returns: 0 on capture, 1 for injected failure. Output: private capture file.
+    function run_execute_command() {
+        [ "$1:$2:$4" = '2:--capture:/usr/bin/ntpq' ] || fail 'NTP query bounds'
+        [ "$query_failure" != "$5" ] || return 1
+        case "$5" in
+        -pn) printf '%s\n' "$peer_fixture" >"$3" ;;
+        -c)
+            [ "$6" = 'rv 0' ] || fail 'system query arguments'
+            printf '%s\n' "$health_fixture" >"$3"
+            ;;
+        *) fail 'unexpected NTP query' ;;
+        esac
+    }
+
+    expect_status 0 read_clock
+    [ "${OBS[clock_valid]}" -eq 1 ] || fail 'selected peer capture'
+    for query_failure in -pn -c; do
+        expect_status 0 read_clock
+        [ "${OBS[clock_valid]}:${OBS[clock_reason]}" = 0:unsynchronized ] || fail 'failed query trusted'
+    done
+    query_failure=
+    peer_fixture=${peer_fixture/\*/+}
+    expect_status 0 read_clock
+    [ "${OBS[clock_valid]}" -eq 0 ] || fail 'missing peer capture trusted'
 }
 
 # Verifies required CLI arguments and rejection before device access.
@@ -662,7 +731,7 @@ function main() {
         bash -n "$module" || return 1
     done
 
-    for test in test_parser test_acquisition test_history test_commit_failures test_storage_failures test_concurrency test_clock_and_json \
+    for test in test_parser test_acquisition test_history test_commit_failures test_storage_failures test_concurrency test_clock_and_json check_runtime_test_peers check_runtime_test_capture \
         test_arguments test_window_decisions test_window_evidence test_status test_failed_refresh test_status_preflight \
         test_capture test_switch_counts test_switch_without_ack test_switch_evidence test_switch_epochs; do
         ("$test") || return 1

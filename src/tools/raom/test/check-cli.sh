@@ -24,12 +24,7 @@ function expect_status() {
 # Loads the production logger, root helper, and RAOM modules without dispatch.
 # Arguments: none. Returns: 0 or exits 1. Output: module globals; no stdout.
 function setup() {
-    source "$SCR_ROOT/lib/log.sh" || fail 'shared logger'
-    source "$SCR_ROOT/lib/run.sh" || fail 'shared root helper'
-    source "$RAOM_HOME/../resets-monitor/src/runtime/values.sh" || fail 'values'
-    source "$RAOM_HOME/src/decision.sh" || fail 'decision'
-    source "$RAOM_HOME/src/monit.sh" || fail 'native adapters'
-    source "$RAOM_HOME/tool.sh" || fail 'command layer'
+    source "$RAOM_HOME/../../bin/src-raom" || fail 'RAOM entry point'
     log_colors ''
     WORK=$(mktemp -d) || fail 'scratch'
     trap 'rm -rf -- "$WORK"' EXIT
@@ -44,20 +39,20 @@ function test_early_arguments() {
     function require_root() { fail 'arguments accessed root preflight'; }
     local option
     for option in -h --help help; do
-        expect_status 0 main "$option" >"$WORK/out" 2>"$WORK/err"
+        expect_status 0 tool_execute_command "$option" >"$WORK/out" 2>"$WORK/err"
         grep -q '^Usage: scr-raom ' "$WORK/out" || fail 'missing help'
         [ ! -s "$WORK/err" ] || fail 'help diagnostic pollution'
     done
-    expect_status 2 main >"$WORK/out" 2>"$WORK/err"
+    expect_status 2 tool_execute_command >"$WORK/out" 2>"$WORK/err"
     [[ ! -s "$WORK/out" && -s "$WORK/err" ]] || fail 'missing-argument streams'
     for option in 'select bad' 'select --ntp-start-failed extra' 'status extra' \
         'switch' 'switch reboot' 'switch safe extra' 'switch normal extra' 'profile extra' 'monit' 'watchdog reload' 'watchdog start extra' 'monit start extra' '--help extra'; do
         local -a arguments=()
         read -r -a arguments <<<"$option"
-        expect_status 2 main "${arguments[@]}" >"$WORK/out" 2>"$WORK/err"
+        expect_status 2 tool_execute_command "${arguments[@]}" >"$WORK/out" 2>"$WORK/err"
         [[ ! -s "$WORK/out" && -s "$WORK/err" ]] || fail 'invalid-argument streams'
     done
-    scr_info >"$WORK/info"
+    tool_print_description >"$WORK/info"
     [ -s "$WORK/info" ] || fail 'missing tool description'
 }
 
@@ -65,7 +60,7 @@ function test_early_arguments() {
 # Arguments: none. Returns: 0 or exits 1. Output: private capture; no runtime access.
 function test_trusted_paths() {
     setup
-    # Source the command layer with poisoned ambient variables; do not call main.
+    # Source the command layer with poisoned ambient variables; do not dispatch a command.
     expect_status 0 env RAOM_POLICY_FILE=/wrong RAOM_STATE_DIR=/wrong RAOM_RESETS_MONITOR=/wrong \
         RAOM_REBOOT=/wrong RAOM_DECISION_DIR=/wrong RAOM_WTMP=/wrong RAOM_MONIT_BINARY=/wrong RAOM_STATE_UID=999 RAOM_DEFAULT_SAFE_PROFILE=/wrong \
         bash -c '
@@ -107,17 +102,58 @@ function test_shared_root() {
     fi
 }
 
+# Check capture streams, argv, file limits and lock inheritance in a child process.
+# Arguments: none. Return 0 on success or exit 1 on failure. Output: private fixture files.
+function test_shared_bounded() {
+    setup
+    local original_limit lock_fd
+    original_limit=$(ulimit -f) || fail 'caller file limit'
+    exec {lock_fd}>"$WORK/lock" || fail 'fixture descriptor'
+    cat >"$WORK/child" <<'CHILD'
+for fd in /proc/self/fd/*; do
+    [ ! "$fd" -ef "$1" ] || exit 99
+done
+shift
+printf '<%s>\n' "$@"
+ulimit -f
+printf 'diagnostic\n' >&2
+exit 7
+CHILD
+    local -a child=(bash "$WORK/child" "$WORK/lock" 'two words' '' '*' '-n')
+    printf '<two words>\n<>\n<*>\n<-n>\n' >"$WORK/argv"
+    printf 'diagnostic\n' >"$WORK/diagnostic"
+
+    expect_status 7 run_execute_command 2 "${child[@]}" {lock_fd}>&- >"$WORK/out" 2>"$WORK/err"
+    { cat "$WORK/argv"; printf '%s\n' "$original_limit"; } >"$WORK/expected"
+    cmp -s "$WORK/expected" "$WORK/out" || fail 'inherited stdout or limit'
+    cmp -s "$WORK/diagnostic" "$WORK/err" || fail 'inherited stderr'
+
+    { cat "$WORK/argv"; printf '64\n'; } >"$WORK/expected"
+    expect_status 7 run_execute_command 2 --capture "$WORK/capture file" "${child[@]}" {lock_fd}>&- >"$WORK/out" 2>"$WORK/err"
+    [ ! -s "$WORK/out" ] || fail 'capture leaked stdout'
+    cmp -s "$WORK/expected" "$WORK/capture file" || fail 'stdout capture'
+    cmp -s "$WORK/diagnostic" "$WORK/err" || fail 'capture redirected stderr'
+
+    cat "$WORK/diagnostic" >>"$WORK/expected"
+    expect_status 7 run_execute_command 2 --capture-all "$WORK/capture file" "${child[@]}" {lock_fd}>&- >"$WORK/out" 2>"$WORK/err"
+    [[ ! -s "$WORK/out" && ! -s "$WORK/err" ]] || fail 'combined capture leaked output'
+    cmp -s "$WORK/expected" "$WORK/capture file" || fail 'combined capture'
+    [ "$(ulimit -f)" = "$original_limit" ] || fail 'caller file limit changed'
+    [ "/proc/self/fd/$lock_fd" -ef "$WORK/lock" ] || fail 'caller descriptor closed'
+    exec {lock_fd}>&-
+}
+
 # Proves shared named logging stays off stdout and preserves status/cleanup.
 # Arguments: none. Returns: 0 or exits 1. Output: private logs and cleanup marker.
 function test_logger_and_cleanup() {
     setup
     expect_status 2 bash -c '
         source "$1/lib/log.sh" || exit 99
-        source "$2/src/decision.sh" || exit 99
+        source "$2/src/config.sh" || exit 99
         log_colors ""
         log_tag scr-raom
         trap '\''printf "cleanup\n" >"$3"'\'' EXIT
-        raom_error publication_failed
+        config_report_error publication_failed
         exit $?
     ' _ "$SCR_ROOT" "$RAOM_HOME" "$WORK/cleanup" >"$WORK/out" 2>"$WORK/err"
     [ ! -s "$WORK/out" ] || fail 'error polluted machine-readable stdout'
@@ -129,7 +165,7 @@ function test_logger_and_cleanup() {
 # Arguments: none. Returns: 0 pass, 1 failure. Output: one PASS per group.
 function main() {
     local test
-    for test in test_early_arguments test_trusted_paths test_shared_root test_logger_and_cleanup; do
+    for test in test_early_arguments test_trusted_paths test_shared_root test_shared_bounded test_logger_and_cleanup; do
         ("$test") || return 1
         printf 'PASS %s\n' "$test"
     done

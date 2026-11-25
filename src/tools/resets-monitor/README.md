@@ -75,10 +75,16 @@ dpkg --install /tmp/scr-raom_1.1.1_all.deb
 | 2 | Root access | Required for the monitor commands and package lifecycle. |
 | 3 | Bash 4.3 or later, `coreutils`, `util-linux`, and `dpkg` 1.17 or later | Declared Debian package dependencies. |
 | 4 | ADLINK-compatible SEMA firmware, library, and `/usr/bin/sema` | Supplies read-only BMC readings. The package does not install SEMA. |
-| 5 | `ntpq` with synchronized NTP data | Supplies clock quality for timed decisions. Counter capture can succeed with `clock_valid=0`. A valid acknowledgment can still bound eligible resets. |
+| 5 | `ntpq` with a fresh selected `*` peer | Supplies clock quality for timed decisions. Counter capture can succeed with `clock_valid=0`. A valid acknowledgment can still bound eligible resets. |
 | 6 | `logrotate` | Runs the installed rotation policy and its history-coordination hooks. The package does not declare it as a dependency. |
 | 7 | Writable `/var/log` and `/run/lock` filesystems | Stores history, state, diagnostics, and the invocation lock. |
 | 8 | MONIT, native NTP/logging, `watchdog`, and `wd_keepalive` | RAOM verifies native feeder handoff before planned MONIT stops and restarts. |
+
+Clock trust requires one selected `*` peer from `ntpq -pn`, stratum 1–15, nonzero reach, and response age within four poll intervals.
+The system flags and reference timestamp can lag peer selection. They do not override fresh selected-peer evidence.
+The monitor also reads system dispersion, delay, and offset from `ntpq -c 'rv 0'`.
+Timestamp uncertainty includes these values, peer delay, offset and jitter, and acquisition duration. Each query has a two-second limit.
+Missing or malformed evidence leaves `clock_valid=0`. Clock-jump detection and conservative window calculations remain active.
 
 ## Run on the target
 

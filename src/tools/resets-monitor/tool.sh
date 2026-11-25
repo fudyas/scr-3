@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 
 # Shared runtime state. Entry points load runtime modules before this file.
 LOG_DIR=/var/log/scr

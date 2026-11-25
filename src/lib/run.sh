@@ -205,3 +205,29 @@ function stop_proc() {
 function require_root() {
     [ "$EUID" -eq 0 ] || return 2
 }
+
+# Run an external command with the timeout in $1 seconds and one second of termination grace.
+# After the duration, optional --capture FILE saves stdout. --capture-all FILE also saves stderr.
+# Remaining arguments are the command and its argv. By default both streams pass to the caller.
+# Return the command or timeout status, or 2 for missing arguments or capture setup failure.
+function run_execute_command() {
+    [ "$#" -ge 2 ] || return 2
+    local duration=$1
+    shift
+
+    # Limit file growth only during capture. Keep caller limits and descriptors intact.
+    (
+        case "$1" in
+        --capture|--capture-all)
+            [ "$#" -ge 3 ] || exit 2
+            ulimit -f 64 || exit 2
+            exec >"$2" || exit 2
+            if [ "$1" = --capture-all ]; then
+                exec 2>&1
+            fi
+            shift 2
+            ;;
+        esac
+        exec timeout -k 1 -- "$duration" "$@"
+    )
+}

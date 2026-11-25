@@ -1,7 +1,9 @@
 # 1. Overview
 
-RAOM selects the MONIT profile for this boot. Safe mode persists across reboots after manual entry, a reset threshold violation, or an error that selects safe.
-A root operator can request the opposite mode with `scr-raom switch safe` or `scr-raom switch normal`. Both commands request an orderly reboot.
+RAOM selects one MONIT profile per boot. A root operator can request an orderly reboot into the opposite mode.
+From normal mode, `scr-raom switch safe` requests safe mode regardless of the reset count.
+After manual entry, a reset threshold violation, or an error that selects safe, the device stays in safe mode across reboots.
+To leave safe mode, an operator must run `scr-raom switch normal` and the device must complete normal recovery.
 
 | # | Mode | Purpose | Default profile |
 | --- | --- | --- | --- |
@@ -54,7 +56,7 @@ flowchart TD
     Lock --> Bootstrap["Verify keepalive, start logging and NTP"]
     Bootstrap --> Bind["Read persistent decision and bind any submitted switch to this boot"]
     Bind --> Decide["Select profile under section 2.3"]
-    Decide --> Save["Persist safe entry before publishing selection"]
+    Decide --> Save["If safe, retain or save the safe latch. Publish the boot selection."]
     Save --> Validate["Check START flag, storage, and profile syntax"]
     Validate --> Pointer["Publish runtime profile link"]
     Pointer --> Start["Start MONIT through start-stop-daemon"]
@@ -111,7 +113,7 @@ Section 3.4.1 describes the operator request that precedes a switch reboot.
       1. **3.1.1** USE configured reset limit, reset window, NTP timeout, error policy, and profile paths.
       2. **3.1.2** ***if*** the latch is safe ***and*** no bound normal request exists ***then***
          1. **3.1.2.1** SELECT safe with reason `switch_safe` on manual entry or `persistent_safe` on later boots.
-         2. **3.1.2.2** CONTINUE at step 5.
+         2. **3.1.2.2** CONTINUE at step 5 without the NTP readiness wait or reset check.
    2. **3.2** ***else***
       1. **3.2.1** USE complete built-in defaults.
       2. **3.2.2** SELECT safe mode with reason `configuration_invalid`.
@@ -163,7 +165,7 @@ Section 3.4.1 describes the operator request that precedes a switch reboot.
    4. **7.4** ***if*** normal recovery passes these checks for the current decision and destination ***then***
       1. **7.4.1** SAVE normal mode, the recovery acknowledgment, and the fixed switch interval together.
       2. **7.4.2** ***if*** the completion save fails ***then***
-         1. **7.4.2.1** REPORT recovery failure.
+         1. **7.4.2.1** REPORT recovery failure. Safe remains the fallback for the next boot.
 
 8. HANDLE subsequent service actions.
    1. **8.1** REUSE committed mode throughout current boot.
@@ -177,8 +179,13 @@ The error policy selects the boot profile when evidence is indeterminate. An inv
 
 ## 2.3 Safe and normal mode selection
 
-NTP readiness requires local `ntpq -c 'rv 0'` output with both `leap_none,` and `sync_ntp,`.
+NTP readiness requires one selected `*` peer in local `ntpq -pn` output.
+The peer must have stratum 1–15, nonzero reach, and a response age no greater than four poll intervals.
+Malformed, missing, ambiguous, or stale selected peers remain unavailable. System flags and reference time can lag valid peer selection.
 Each probe uses at most two seconds, capped by remaining readiness budget.
+The reset monitor repeats the peer check and reads system uncertainty with a separate two-second query limit for each command.
+It includes system dispersion, system and peer delays, offsets, peer jitter, and acquisition duration in timestamp uncertainty.
+Clock-jump checks and conservative reset-window bounds still apply. Peer readiness alone does not guarantee a conclusive reset decision.
 After readiness, RAOM calls the reset API with a separate 15-second budget. An ordinary check without saved evidence uses this command.
 
 ```bash
@@ -221,9 +228,13 @@ flowchart TD
 | 9 | Manual safe entry | `switch_safe` | Safe. RAOM skips the readiness wait and threshold check. |
 | 10 | Existing safe latch without a bound normal request | `persistent_safe` | Safe on each subsequent boot with valid policy. |
 
-Recovery acknowledges the BMC boot count that `switch normal` captures before reboot. Earlier resets remain in raw history.
-Safe entry never advances this acknowledgment. For a switch in either direction, RAOM checks the saved request, both boot IDs, and native shutdown/boot records.
+During recovery, the reset monitor counts only resets after the BMC boot count that `switch normal` saved before reboot.
+The journal retains the raw counts and deltas. Entering safe mode leaves the acknowledgment unchanged.
+For a switch in either direction, RAOM checks the saved request, both boot IDs, and native shutdown/boot records.
 The reset monitor checks the ordered observations against retained history for the same controller, firmware, and counter epoch.
+
+If the BMC count rises by exactly one across an identified switch reboot, that reset contributes zero toward the threshold.
+If the count rises by more than one, the full increase counts. Ordinary reboots follow the usual threshold rules.
 
 | # | Boot-count change | Eligible resets |
 | --- | --- | --- |
@@ -243,15 +254,24 @@ RAOM retains the marker after a successful check because a wider window can incl
 | # | Source | Responsibility |
 | --- | --- | --- |
 | 1 | [`../../bin/src-raom`](../../bin/src-raom) | Load shared SCR libraries, reset numeric parser, and RAOM modules. |
+| 1.1 | [`../../lib/run.sh`](../../lib/run.sh) | Check root privileges. Run commands with a timeout and a file size limit for captured output. |
+| 1.2 | [`../../lib/ntp.sh`](../../lib/ntp.sh) | Apply the same selected-peer freshness checks to RAOM readiness and reset timestamps. |
 | 2 | [`tool.sh`](tool.sh) | Parse commands, require root, hold invocation lock, and dispatch actions. |
-| 3 | [`src/decision.sh`](src/decision.sh) | Save switch requests, identify their destination, evaluate policy, and publish the boot selection. |
-| 4 | [`src/monit.sh`](src/monit.sh) | Bootstrap services, validate MONIT, coordinate feeders, and record decision timing. |
+| 3 | [`src/mode.sh`](src/mode.sh) | Select safe or normal mode, submit switch requests, match reset observations to the reboot, and complete recovery. |
+| 3.1 | [`src/config.sh`](src/config.sh) | Read client policy, protect private paths, and validate and store both the boot selection and the persistent decision. |
+| 3.2 | [`src/ntp.sh`](src/ntp.sh) | Start native logging and NTP under keepalive protection. Use the monotonic clock to limit the wait for synchronization. |
+| 4 | [`src/monit.sh`](src/monit.sh) | Coordinate startup, record decision timing, and manage the selected MONIT daemon. |
+| 4.1 | [`src/profile.sh`](src/profile.sh) | Validate the MONIT profile, publish its link, and verify the running daemon and its arguments. |
+| 4.2 | [`src/watchdog.sh`](src/watchdog.sh) | Run bounded native init commands and transfer timer feeding between watchdog and keepalive. |
 | 5 | [`src/scr-raom.init`](src/scr-raom.init) | Route SysV lifecycle actions through RAOM. |
 | 6 | [`etc/raom.conf`](etc/raom.conf) | Define trusted internal paths and fallback profile paths. |
 | 7 | [`etc/default-policy.conf`](etc/default-policy.conf) | Supply default client policy. |
 | 8 | [`etc/runlevels.conf`](etc/runlevels.conf) | Define startup links while retaining scheduler identity `monit`. |
 
-Shared SCR libraries supply logging and root checks. Client policy contains data only. RAOM never sources it as shell code.
+Client policy contains literal key/value pairs. RAOM validates all six settings before it applies them.
+
+Runtime function names use `<domain>_<verb>_<noun>`. Domain follows module filename, as in `config_validate_path`.
+The entry point calls `tool_execute_command`. Shared `run_execute_command` supplies bounded command execution.
 
 | # | Runtime path | Contract |
 | --- | --- | --- |
@@ -391,9 +411,9 @@ These commands inspect the current boot.
 /etc/init.d/wd_keepalive status
 ```
 
-`status` prints `schema`, `boot_id`, `mode`, `profile`, and `reason`. `profile` prints selected path.
-Both require existing current-boot selection. Native MONIT `status` reports process state without RAOM lock.
-The selection identifies the requested boot profile. Native status reports process state. Section 3.4.1 gives the completion checks.
+`status` prints `schema`, `boot_id`, `mode`, `profile`, and `reason`. `profile` prints the selected path.
+Both commands read the current boot selection, even when a reboot request is pending.
+Native MONIT `status` reports process state without the RAOM lock. Section 3.4.1 gives the recovery completion checks.
 
 ## 3.4 Manage services
 
@@ -431,7 +451,7 @@ Exit `2` means unavailable operation or invalid arguments. These codes differ fr
 1. READ `scr-raom status` for the current mode and `boot_id`.
 2. SUBMIT the opposite-mode command from the table when authorized to reboot the device.
    1. **2.1** ***if*** the command returns `0` ***then***
-      1. **2.1.1** WAIT for the requested reboot. The current selection and feeder stay active until native shutdown.
+      1. **2.1.1** WAIT for the requested reboot. Exit `0` confirms submission. The current selection and feeder stay active until native shutdown.
    2. **2.2** ***if*** the command returns `2` ***then***
       1. **2.2.1** READ the diagnostic before retrying. An interrupted submission can already have reached native shutdown.
 3. COMPARE the new `scr-raom status` boot ID, mode, profile, and reason with the request.
@@ -461,7 +481,8 @@ On retry, an earlier request can still be active even if the retry returns `swit
 Check the actual boot ID and the decision's `phase` before another retry. A failed retry does not cancel an accepted reboot.
 
 The destination uses its first observation and native boot accounting. Rotation, missing records, or an intervening boot can prevent attribution.
-An ambiguous submission cannot exempt a reset. If a normal request boots into safe, read the stored reason before requesting recovery again.
+If the next boot finds only a prepared request, RAOM selects safe for either target. That request grants no reset exemption.
+If a normal request boots into safe mode, read the stored reason before requesting recovery again.
 `status`, `profile`, and decision-only `select` cannot certify recovery. A failed startup or completion save leaves safe as the next-boot fallback.
 
 ## 3.5 Diagnose selection and startup

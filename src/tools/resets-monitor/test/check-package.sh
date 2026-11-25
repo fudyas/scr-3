@@ -101,10 +101,10 @@ function fixture_select() (
     RAOM_POLICY_FILE="$ROOT/etc/default/scr-raom"
     RAOM_RESETS_MONITOR=/bin/false RAOM_NTP_QUERY=/bin/false
     # Arguments: $1 - directory. Returns: target ancestry status. Output: none.
-    function trusted_ancestry() { target_ancestry "$1"; }
+    function config_validate_ancestry() { target_ancestry "$1"; }
     # Arguments: none. Returns: 3 (fixture watchdog absent). Output: none.
-    function watchdog_status() { return 3; }
-    if ! declare -F initialize_decision >/dev/null; then
+    function watchdog_check_process() { return 3; }
+    if ! declare -F config_initialize_decision >/dev/null; then
         # 1.1.0 validates host ancestry inline. Seed its private fixture directory
         # and exercise its installed decision and publication functions directly.
         umask 077
@@ -113,7 +113,7 @@ function fixture_select() (
         selection_record
         exit $?
     fi
-    main select "$@"
+    tool_execute_command select "$@"
 )
 
 # Builds a versioned or failing derivative from the exact tested Debian archive.
